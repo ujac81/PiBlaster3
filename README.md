@@ -133,7 +133,15 @@ Enable nginx proxy at boot
 
 ## Required Packages
 
-    $ sudo aptitude install python3-flask ipython3 python3-pip
-    $ sudo pip3 install flask-socketio
-    $ sudo pip3 install flask-bootstrap
+    $ sudo aptitude install python3-django python3-django-appconf python3-django-assets python3-django-compressor python3-django-downloadview python3-django-extensions python3-django-websocket-redis python3-django-uwsgi
+    $ sudo aptitude install coffeescript ruby-sass
+    $ sudo pip3 install django-bootstrap3
+    $ sudo pip3 install django-hamlpy
+    $ sudo pip3 install django-static-precompiler
+
+
+# Configuration
+
+    python3 manage.py migrate
+    python3 manage.py migrate static_precompiler
 
