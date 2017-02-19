@@ -94,3 +94,5 @@ db.sqlite3
 
 piblaster3/__pycache__/
 piblaster3/static/COMPILED/
+static/
+.sass-cache/

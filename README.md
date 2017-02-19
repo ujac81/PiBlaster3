@@ -113,14 +113,19 @@ Configuration will be done, when PiBlaster3 is installed.
 
 ## Required Packages
 
-    $ sudo aptitude install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount
-    $ sudo pip3 install django==1.8.17
-    $ sudo pip3 install django-bootstrap3
-    $ sudo pip3 install django-hamlpy
-    $ sudo pip3 install django-static-precompiler
+    $ sudo aptitude install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git
+    $ sudo pip3 install django==1.10.5
+
+At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might use this directly)
+
+    $ sudo pip3 install git+https://github.com/matannoam/pypugjs.git@master
+    $ sudo pip3 install django_compressor
+    <!--$ sudo pip3 install django-bootstrap3-->
+    <!--$ sudo pip3 install django-hamlpy-->
+    <!--$ sudo pip3 install django-static-precompiler-->
     $ sudo pip3 install uwsgi
     $ sudo pip3 install python-mpd2
-    $ sudo pip3 install libsass django-compressor django-sass-processor
+    <!--$ sudo pip3 install libsass django-compressor django-sass-processor-->
 
 ## PiBlaster3 software
 
@@ -165,3 +170,16 @@ Link directories to scan to mpd library and update it.
 
 ## Run piblaster3 server from command line
 To see full debugging output and interact with django server:
+
+    $ sudo service piblaster stop
+    $ cd /opt/PiBlaster3
+    $ ./manage.py runserver 0.0.0.0:8000
+
+Connect to http://YOUR_PI_HOST:8000
+
+## PyPugJS templates
+All templates are built using the pypugjs(https://github.com/matannoam/pypugjs) interface for pugjs(https://pugjs.org/api/getting-started.html)
+
+## Coffeescript / Sass
+Javascript and CSS files are compiled by django_compress http://django-compressor.readthedocs.io/en/latest/ .
+Sass/coffeescript files are handled via COMPRESS_PRECOMPILERS in settings.py.
