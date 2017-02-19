@@ -1,3 +1,9 @@
+//-
+    base.pug -- extended by all templates
+
+    Provides basic css, javascript and meta data
+    Loads content block for body
+
 -load compress
 !!!5
 html(lang="en")
@@ -16,6 +22,7 @@ html(lang="en")
         title PiBlater3 Remote
 
     body
+        //- requires closing endblock because of empty block
         -block content
         -endblock
 

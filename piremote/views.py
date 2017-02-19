@@ -10,3 +10,11 @@ def index(request):
     context = {'state': mpc.get_currentsong()}
     return HttpResponse(template.render(context, request))
 
+
+def browse(request):
+    template = loader.get_template('piremote/browse.pug')
+    path = ''
+    mpc = MPC()
+    context = {'browse': mpc.browse(path)}
+    return HttpResponse(template.render(context, request))
+

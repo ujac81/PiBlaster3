@@ -120,12 +120,8 @@ At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might u
 
     $ sudo pip3 install git+https://github.com/matannoam/pypugjs.git@master
     $ sudo pip3 install django_compressor
-    <!--$ sudo pip3 install django-bootstrap3-->
-    <!--$ sudo pip3 install django-hamlpy-->
-    <!--$ sudo pip3 install django-static-precompiler-->
     $ sudo pip3 install uwsgi
     $ sudo pip3 install python-mpd2
-    <!--$ sudo pip3 install libsass django-compressor django-sass-processor-->
 
 ## PiBlaster3 software
 
@@ -179,6 +175,8 @@ Connect to http://YOUR_PI_HOST:8000
 
 ## PyPugJS templates
 All templates are built using the pypugjs(https://github.com/matannoam/pypugjs) interface for pugjs(https://pugjs.org/api/getting-started.html)
+
+Use pypugjs file.pug to check output.
 
 ## Coffeescript / Sass
 Javascript and CSS files are compiled by django_compress http://django-compressor.readthedocs.io/en/latest/ .

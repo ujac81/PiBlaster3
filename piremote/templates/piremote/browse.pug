@@ -1,0 +1,20 @@
+//-
+    browse.pug -- GET /piremote/browse template
+
+-extends "piremote/base.pug"
+
+-block content
+
+    -include "piremote/navbar.pug"
+
+    .browse-list
+
+        table.table.table-striped
+            tbody
+                -for item in browse
+                    tr.dir-item(data-dirname='hallo')
+                        td
+                            img(src='/static/img/folder-blue.png')
+                        td
+                            =item.1
+
