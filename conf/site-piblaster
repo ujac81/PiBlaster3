@@ -1,0 +1,18 @@
+
+upstream django {
+        server unix:/tmp/piblaster3.sock fail_timeout=0;
+}
+
+server {
+        listen 80;
+        server_name pi.blaster;
+        access_log off;
+
+        location /static {
+                alias /opt/PiBlaster3/piblaster3/static;
+        }
+        location / {
+                include /etc/nginx/uwsgi_params;
+                uwsgi_pass django;
+        }
+}

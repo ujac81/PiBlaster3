@@ -25,7 +25,7 @@ SECRET_KEY = '!hgqqtjd8z*4w0y%(f#ucpjs7fuj5&jm=_5kstz=8a31*#aiok'
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ['pi.blaster', '0.0.0.0', '*']
 
 
 # Application definition

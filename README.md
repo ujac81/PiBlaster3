@@ -105,43 +105,63 @@ To make web interface accessible via ***pi.blaster***.
     1       IN PTR  pi.blaster.
 
 ## Reverse Proxy
-Use nginx to forward :5000 flask web server to port 80.
-Use nginx to deliver mp3 files directly.
+Nginx will be used as revere proxy and delivery of mp3 files.
+Configuration will be done, when PiBlaster3 is installed.
 
     $ sudo aptitude install nginx
-
-/etc/nginx/sites-enabled/default
-
-    server {
-            listen 80;
-            server_name pi.blaster;
-            access_log off;
-            location / {
-                    proxy_set_header X-Real-IP $remote_addr;
-                    proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-                    proxy_set_header X-Forwarded-Proto $scheme;
-                    proxy_set_header Host $http_host;
-                    proxy_set_header X-NginX-Proxy true;
-                    proxy_pass http://127.0.0.1:5000/;
-                    proxy_redirect off;
-            }
-    }
-
-Enable nginx proxy at boot
-
     $ sudo update-rc.d nginx enable
 
 ## Required Packages
 
-    $ sudo aptitude install python3-django python3-django-appconf python3-django-assets python3-django-compressor python3-django-downloadview python3-django-extensions python3-django-websocket-redis python3-django-uwsgi
-    $ sudo aptitude install coffeescript ruby-sass
+    $ sudo aptitude install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount
+    $ sudo pip3 install django==1.8.17
     $ sudo pip3 install django-bootstrap3
     $ sudo pip3 install django-hamlpy
     $ sudo pip3 install django-static-precompiler
+    $ sudo pip3 install uwsgi
+    $ sudo pip3 install python-mpd2
+    $ sudo pip3 install libsass django-compressor django-sass-processor
 
+## PiBlaster3 software
+
+    $ cd /opt
+    $ sudo chown pi:pi .
+    $ git clone https://github.com/ujac81/PiBlaster3.git
 
 # Configuration
 
-    python3 manage.py migrate
-    python3 manage.py migrate static_precompiler
+    $ cd /opt/PiBlaster3
+    $ python3 manage.py migrate
+    $ python3 manage.py migrate static_precompiler
 
+## NGINX
+
+    $ cd /etc/nginx/sites-enabled/
+    $ sudo rm default
+    $ sudo ln -s /opt/PiBlaster3/conf/site-piblaster
+    $ sudo service nginx restart
+
+## UWSGI
+
+    $ sudo cp /opt/PiBlaster3/conf/piblaster.service /etc/systemd/system
+
+## MPD
+Link directories to scan to mpd library and update it.
+
+    $ sudo ln -s /local /var/lib/mpd/music/local
+    $ sudo ln -s /media/usb0 /var/lib/mpd/music/usb0
+    $ sudo ln -s /media/usb1 /var/lib/mpd/music/usb1
+    $ mpc update
+
+# Developer Notes
+
+## Create new django project
+
+    $ sudo pip3 install django=x
+    See version list
+    $ sudo pip3 install django=1.10.5
+
+## Restart service
+
+## Run piblaster3 server from command line
+To see full debugging output and interact with django server:
