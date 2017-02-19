@@ -9,7 +9,7 @@ server {
         access_log off;
 
         location /static {
-                alias /opt/PiBlaster3/piblaster3/static;
+                alias /opt/PiBlaster3/PiBlaster3/static;
         }
         location / {
                 include /etc/nginx/uwsgi_params;
