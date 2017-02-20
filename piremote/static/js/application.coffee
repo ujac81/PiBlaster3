@@ -1,18 +1,14 @@
+# application.coffee -- document ready function - loaded last in base.pug
 
-PiRemote = {}
 
-
+# Run on document.ready event.
+# Install callbacks and init web socket.
 $ ->
 
-    console.log 'hello world.'
-
-    $('div.browse-list > table > tbody > tr.dir-item').off 'click'
-    $('div.browse-list > table > tbody > tr.dir-item').on 'click', ->
-        console.log $(this).data().dirname
-        return
+    PiRemote.install_browse_handlers()
 
 
 
-PiRemote.browse_dir = (event) ->
-    console.log event
-    return
+
+
+

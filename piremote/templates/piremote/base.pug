@@ -9,8 +9,18 @@
 html(lang="en")
     head
         -compress js
+        //-
+            vendor javascripts -- required before loading internal ones.
         script(type='text/javascript', charset='utf-8', src='/static/vendor/js/jquery.min.js')
         script(type='text/javascript', charset='utf-8', src='/static/vendor/js/bootstrap.min.js')
+        script(type='text/javascript', charset='utf-8', src='/static/vendor/js/d3.v4.min.js')
+        //-
+            Project javascript -- loaded after vendor requirements.
+            global.coffee needs to be loaded 1st, application.coffee last.
+            application.coffee includes document.ready function.
+        script(type='text/coffeescript', charset='utf-8', src='/static/js/global.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/static/js/ajax.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/static/js/browse.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/static/js/application.coffee')
         -endcompress
         -compress css
@@ -22,6 +32,7 @@ html(lang="en")
         title PiBlater3 Remote
 
     body
+        -csrf_token
         //- requires closing endblock because of empty block
         -block content
         -endblock

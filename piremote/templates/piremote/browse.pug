@@ -9,12 +9,13 @@
 
     .browse-list
 
-        table.table.table-striped
-            tbody
+        table.table.table-striped(id='tbbrowse')
+            tbody#browse
                 -for item in browse
-                    tr.dir-item(data-dirname='hallo')
-                        td
-                            img(src='/static/img/folder-blue.png')
-                        td
-                            =item.1
+                    if item.0 == '1'
+                        tr.dir-item(data-dirname=item[5])
+                            td
+                                img(src='/static/img/folder-blue.png')
+                            td
+                                =item.1
 

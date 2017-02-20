@@ -27,7 +27,9 @@ DEBUG = True
 
 ALLOWED_HOSTS = ['localhost', 'pi.blaster', '0.0.0.0', '*']
 
-COMPRESS_ENABLED = True
+# TODO Set to True for release mode
+COMPRESS_ENABLED = False
+
 COMPRESS_PRECOMPILERS = (
     ('text/coffeescript', 'coffee --compile --stdio'),
     ('text/less', 'lessc {infile} {outfile}'),

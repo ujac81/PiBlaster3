@@ -109,7 +109,7 @@ class MPC:
         """
 
         :param path:
-        :return:
+        :return: Array of ['1', title, '', '', '', directory] for dirs
         """
         if path is None:
             return None
