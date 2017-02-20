@@ -11,14 +11,14 @@ def index(request):
     return HttpResponse(template.render(context, request))
 
 
+# GET /browse/#
+# build empty browse view -- document.ready will call POST ajax/browse on base dir.
 def browse(request):
     template = loader.get_template('piremote/browse.pug')
-    path = ''
-    mpc = MPC()
-    context = {'browse': mpc.browse(path)}
-    return HttpResponse(template.render(context, request))
+    return HttpResponse(template.render({}, request))
 
 
+# POST /ajax/browse/
 def browse_ajax(request):
     dirname = request.POST.get('dirname', None)
     if dirname is not None:

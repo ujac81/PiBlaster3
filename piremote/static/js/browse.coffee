@@ -18,16 +18,18 @@ PiRemote.install_browse_handlers = ->
 # On double click on tr.dir-item
 PiRemote.browse_dir = (element, event) ->
     event.preventDefault()
+    PiRemote.do_browse element.data().dirname
+    return
+
+PiRemote.do_browse = (dirname) ->
     PiRemote.do_ajax_post
         url: 'browse'
-        data: 'dirname': element.data().dirname
+        data: 'dirname': dirname
         success: (data) ->
             PiRemote.rebuild_browse data
             return
-
-
-
     return
+
 
 
 PiRemote.rebuild_browse = (data) ->

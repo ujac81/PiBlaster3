@@ -11,11 +11,4 @@
 
         table.table.table-striped(id='tbbrowse')
             tbody#browse
-                -for item in browse
-                    if item.0 == '1'
-                        tr.dir-item(data-dirname=item[5])
-                            td
-                                img(src='/static/img/folder-blue.png')
-                            td
-                                =item.1
-
+            //- no table content here, document.ready will invoke ajax rebuild of browse table
