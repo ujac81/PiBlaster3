@@ -28,12 +28,14 @@ html(lang="en")
         link(type='text/x-sass', rel='stylesheet', href='/static/css/application.sass', charset='utf-8')
         -endcompress
         meta(charset="utf-8")
-        meta(name="viewport", content="width: device-width")
+        meta(name="viewport", content="width=device-width, maximum-scale=1.0, user-scalable=yes")
         title PiBlater3 Remote
 
     body
         -csrf_token
-        //- requires closing endblock because of empty block
-        -block content
-        -endblock
+        -include "piremote/navbar.pug"
+        .container-fluid(id='basecont')
+            //- requires closing endblock because of empty block
+            -block content
+            -endblock
 

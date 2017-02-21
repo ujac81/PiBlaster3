@@ -7,7 +7,6 @@ $ ->
 
     PiRemote.install_browse_handlers()
 
-
     # invoke AJAX POST to /ajax/browse for dir '' to build table for root dir
     if $('tbody#browse')[0]
         PiRemote.do_browse ''

@@ -141,6 +141,13 @@ class MPC:
                 length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
                 res.append(length)
                 res.append(item['file'])
+
+                # add extension as result for files --> matches image png in static/img
+                ext = os.path.splitext(item['file'])[1][1:].lower()
+                if ext not in ['mp3', 'wma', 'ogg', 'wav', 'flac', 'mp4']:
+                    ext = 'audio'
+                res.append(ext)
+
                 result.append(res)
 
         return result

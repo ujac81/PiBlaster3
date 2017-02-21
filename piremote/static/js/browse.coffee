@@ -9,22 +9,18 @@ PiRemote.install_browse_handlers = ->
 
     # double-click to enter dir
     $('div.browse-list > table > tbody > tr.dir-item').on 'dblclick', (event) ->
-        PiRemote.browse_dir $(this), event
+        event.preventDefault()
+        dirname = $(this).data('dirname')
+        PiRemote.do_browse dirname
         return
-
     return
 
-
-# On double click on tr.dir-item
-PiRemote.browse_dir = (element, event) ->
-    event.preventDefault()
-    PiRemote.do_browse element.data().dirname
-    return
 
 PiRemote.do_browse = (dirname) ->
     PiRemote.do_ajax_post
         url: 'browse'
-        data: 'dirname': dirname
+        data:
+            'dirname': dirname
         success: (data) ->
             PiRemote.rebuild_browse data
             return
@@ -34,21 +30,41 @@ PiRemote.do_browse = (dirname) ->
 
 PiRemote.rebuild_browse = (data) ->
     tbody = d3.select('tbody#browse')
+    tbody.selectAll('tr').remove()
+
+    if data.dirname != ''
+        updir = data.dirname.split('/').slice(0, -1).join('/')
+        uptr = tbody.append('tr').classed('dir-item', 1).attr('data-dirname', updir)
+        uptr.append('td')
+        uptr.append('td').html('..')
 
     dirs = data.browse.filter (d) -> d[0] == '1'
 
     tbody.selectAll('tr')
-        .remove()
         .data(dirs, (d) -> d).enter()
         .append('tr').classed('dir-item', 1).attr('data-dirname', (d) -> d[5])
         .selectAll('td')
-        .data((d, i) -> ['<img src="/static/img/folder-blue.png" />', d[1]]).enter()
-        .append('td').classed('browse-head', (d, i) -> i == 0).html((d) -> d)
+        .data((d, i) -> ['<img src="/static/img/folder-blue.png"/>', d[1]]).enter()
+        .append('td')
+            .classed('browse-head', (d, i) -> i == 0)
+            .classed('browse-dir', (d, i) -> i == 1)
+            .html((d) -> d)
 
+    files = data.browse.filter (d) -> d[0] == '2'
+    tbody.selectAll('tr')
+        .data(files, (d) -> d).enter()
+        .append('tr').classed('file-item', 1).attr('data-filename', (d) -> d[5])
+        .selectAll('td')
+        .data((d, i) -> ['<img src="/static/img/'+d[6]+'.png"/>', d[1]]).enter()
+        .append('td')
+            .classed('browse-head', (d, i) -> i == 0)
+            .classed('browse-file', (d, i) -> i == 1)
+            .html((d) -> d)
 
 
 
 
     PiRemote.install_browse_handlers()
+    window.scrollTo 0, 0
 
     return
