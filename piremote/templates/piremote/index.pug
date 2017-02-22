@@ -3,9 +3,22 @@
 
 -extends "piremote/base.pug"
 
+-block navcontent
+    li
+        a(href='#') Play
+    li
+        a(href='#') Playlist
+    li
+        a(href='/piremote/browse') Browse
+    li
+        a(href='#') Upload
+    li
+        a(href='#') Settings
+
+
+
 -block content
 
-    -include "piremote/navbar.pug"
 
     h1 Hello World!
     p

@@ -19,8 +19,14 @@ table#tbbrowse
 
 table#tbbrowse tr td:first-child
     width: 53px
+    text-align: center
+    color: #888
     vertical-align: middle
     padding: 8px 10px 8px 20px
+
+table#tbbrowse tr.selected
+    background-color: blue
+    color: white
 
 
 table#tbbrowse tr td.browse-head img
@@ -29,6 +35,21 @@ table#tbbrowse tr td.browse-head img
 
 table#tbbrowse tr td.browse-dir
     vertical-align: middle
+    width: 95%
 
 table#tbbrowse tr td.browse-file
     vertical-align: middle
+    width: 95%
+
+table#tbbrowse tr td.browse-action
+    vertical-align: middle
+    text-align: center
+    width: 40px
+    color: #888
+
+span.browse-arrow
+    padding-left: 10px
+    padding-right: 10px
+
+span.browse-span
+    color: blue

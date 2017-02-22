@@ -5,11 +5,12 @@
 # Install callbacks and init web socket.
 $ ->
 
-    PiRemote.install_browse_handlers()
-
     # invoke AJAX POST to /ajax/browse for dir '' to build table for root dir
     if $('tbody#browse')[0]
+        PiRemote.install_browse_actions()
+        PiRemote.install_browse_handlers()
         PiRemote.do_browse ''
+        PiRemote.in
 
 
     return
