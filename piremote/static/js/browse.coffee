@@ -127,7 +127,12 @@ PiRemote.rebuild_browse = (data) ->
         .data(files, (d) -> d).enter()
         .append('tr')
             .attr('class', 'file-item selectable')
+            .attr('data-title', (d) -> d[1])
+            .attr('data-artist', (d) -> d[2])
+            .attr('data-album', (d) -> d[3])
+            .attr('data-length', (d) -> d[4])
             .attr('data-filename', (d) -> d[5])
+            .attr('data-date', (d) -> d[7])
         .selectAll('td')
         .data((d, i) -> ['<img src="/static/img/'+d[6]+'.png"/>', d[1], action_span]).enter()
         .append('td')
@@ -149,6 +154,24 @@ PiRemote.rebuild_browse = (data) ->
 # Action glyph pressed on file item.
 PiRemote.raise_file_dialog = (element) ->
     d3.select('#smallModalLabel').html('Audio File')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    cont.append('h5').html(element.data('title'))
+
+    artist = element.data('artist')
+    album = element.data('album')
+    length = element.data('length')
+    year = element.data('date')
+
+    p = cont.append('p')
+    for item in ['Artist', 'Album', 'Length', 'Date']
+        data = element.data(item.toLowerCase())
+        if data.length > 0
+            p.append('strong').html(item+': ')
+            p.append('span').html(data)
+            p.append('br')
+
+
     $('#modalSmall').modal()
     return
 

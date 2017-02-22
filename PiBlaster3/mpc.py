@@ -110,6 +110,7 @@ class MPC:
 
         :param path:
         :return: Array of ['1', title, '', '', '', directory] for dirs
+                 Array of ['2', title, artist, album, length, file, ext, date] for audio files
         """
         if path is None:
             return None
@@ -123,6 +124,18 @@ class MPC:
         except CommandError:
             return None
 
+        # check if we have differing artists in directory
+        mixed_artists = False
+        last_artist = None
+        for item in lsdir:
+            if 'file' in item:
+                if 'artist' in item:
+                    if last_artist is None:
+                        last_artist = item['artist']
+                    elif last_artist != item['artist']:
+                        mixed_artists = True
+                        break
+
         for item in lsdir:
             if 'directory' in item:
                 title = os.path.basename(item['directory'])
@@ -131,7 +144,10 @@ class MPC:
             elif 'file' in item:
                 res = ['2']
                 if 'title' in item:
-                    res.append(item['title'])
+                    if mixed_artists and 'artist' in item:
+                        res.append(item['artist'] + ' - ' + item['title'])
+                    else:
+                        res.append(item['title'])
                 else:
                     no_ext = os.path.splitext(item['file'])[0]
                     res.append(os.path.basename(no_ext).replace('_', ' '))
@@ -147,6 +163,8 @@ class MPC:
                 if ext not in ['mp3', 'wma', 'ogg', 'wav', 'flac', 'mp4']:
                     ext = 'audio'
                 res.append(ext)
+
+                res.append(item['date'] if 'date' in item else '')
 
                 result.append(res)
 
