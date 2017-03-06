@@ -7,5 +7,6 @@ urlpatterns = [
     url(r'^browse/', views.browse, name='browse'),
     url(r'^ajax/browse/$', views.browse_ajax, name='browse_ajax'),
     url(r'^ajax/status/$', views.status_ajax, name='status_ajax'),
+    url(r'^ajax/cmd/$', views.cmd_ajax, name='cmd_ajax'),
 ]
 

@@ -105,6 +105,58 @@ class MPC:
             res = {'album': '', 'artist': '', 'title': 'Not Playing!', 'time': 0, 'file': ''}
         return res
 
+    def get_status_data(self):
+        """Combined currentsong / status data for AJAX GET or POST on index page
+
+        :return:
+        """
+        status = self.get_status()
+        current = self.get_currentsong()
+        data = {}
+        data['title'] = current['title'] if 'title' in current else current['file']
+        data['time'] = current['time'] if 'time' in current else 0
+        for key in ['album', 'artist', 'date']:
+            data[key] = current[key] if key in current else ''
+        for key in ['elapsed', 'random', 'repeat', 'volume', 'state']:
+            data[key] = status[key] if key in status else '0'
+        return data
+
+    def exex_command(self, cmd):
+        """
+
+        :param cmd:
+        :return:
+        """
+        success = True
+        self.ensure_connected()
+        try:
+            if cmd == 'back':
+                self.client.previous()
+            elif cmd == 'playpause':
+                status = self.get_status()
+                if status == 'play':
+                    self.client.pause()
+                else:
+                    self.client.play()
+            elif cmd == 'stop':
+                self.client.stop()
+            elif cmd == 'next':
+                self.client.next()
+            else:
+                success = False
+        except CommandError:
+            success = False
+            pass
+        except ConnectionError:
+            success = False
+            pass
+
+        data = self.get_status_data()
+        data['cmd'] = cmd
+        data['success'] = success
+        return data
+
+
     def browse(self, path):
         """
 

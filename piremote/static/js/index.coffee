@@ -12,6 +12,20 @@ PiRemote.install_index_actions = ->
 
     PiRemote.start_status_poll()
 
+    $('.idxbuttons span').off 'click'
+    $('.idxbuttons span').on 'click', (event) ->
+        PiRemote.do_ajax_post
+            url: 'cmd'
+            data:
+                'cmd': $(this).data('action')
+            success: (data) ->
+                console.log data
+                if data.success
+                    PiRemote.update_status data
+                return
+
+        return
+
     return
 
 
@@ -82,5 +96,15 @@ PiRemote.update_status = (data) ->
         PiRemote.set_position pct
 
         $('h5#idxtime').html(PiRemote.secToMin(data.elapsed)+' / '+PiRemote.secToMin(data.time))
+
+    d3.select('span#playpause').classed('glyphicon-play', data.state != 'play')
+    d3.select('span#playpause').classed('glyphicon-pause', data.state == 'play')
+
+    d3.select('span#random').classed('enabled', data.random == '1')
+    d3.select('span#random').classed('disabled', data.random != '1')
+
+    d3.select('span#repeat').classed('enabled', data.repeat == '1')
+    d3.select('span#repeat').classed('disabled', data.repeat != '1')
+
 
     return
