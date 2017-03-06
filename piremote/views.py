@@ -27,3 +27,21 @@ def browse_ajax(request):
         return JsonResponse(data)
 
     return JsonResponse({})
+
+
+# GET /ajax/status/
+def status_ajax(request):
+    mpc = MPC()
+    status = mpc.get_status()
+    current = mpc.get_currentsong()
+    data = {}
+    data['title'] = current['title'] if 'title' in current else current['file']
+    data['time'] = current['time'] if 'time' in current else 0
+    for key in ['album', 'artist', 'date']:
+        data[key] = current[key] if key in current else ''
+    for key in ['elapsed', 'random', 'repeat', 'volume']:
+        data[key] = status[key] if key in status else '0'
+
+    return JsonResponse(data)
+
+

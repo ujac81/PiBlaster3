@@ -102,7 +102,7 @@ class MPC:
         self.ensure_connected()
         res = self.client.currentsong()
         if len(res) == 0:
-            res = {'album': '', 'artist': '', 'title': 'Not Playing!'}
+            res = {'album': '', 'artist': '', 'title': 'Not Playing!', 'time': 0, 'file': ''}
         return res
 
     def browse(self, path):

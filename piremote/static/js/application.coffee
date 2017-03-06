@@ -12,5 +12,8 @@ $ ->
         PiRemote.do_browse ''
         PiRemote.in
 
+    if $('#idxshow')[0]
+        PiRemote.install_index_actions()
+
 
     return
