@@ -14,8 +14,9 @@ PiRemote.install_index_actions = ->
 
     $('.idxbuttons span').off 'click'
     $('.idxbuttons span').on 'click', (event) ->
-        PiRemote.do_ajax_post
+        PiRemote.do_ajax
             url: 'cmd'
+            method: 'POST'
             data:
                 'cmd': $(this).data('action')
             success: (data) ->
@@ -40,25 +41,18 @@ PiRemote.do_status_poll = ->
     if PiRemote.polling
         return
 
-    data = {}
-    data.csrfmiddlewaretoken = $('input[name=csrfmiddlewaretoken')[0].value
-    $.ajax
-        url: '/piremote/ajax/status/'
-        dataType: 'json'
-        data: data
-        method: 'GET'
-        success: (data) ->
-            PiRemote.update_status data
-            PiRemote.polling = true
-            window.setTimeout ( ->
-                PiRemote.polling = false
-                PiRemote.do_status_poll()
-            ), 1000
-            return
-        error: (jqXHR) ->
-            console.log 'AJAX ERROR'
-            console.log jqXHR
-            return
+    PiRemote.do_ajax
+            url: 'status'
+            method: 'GET'
+            data: {}
+            success: (data) ->
+                PiRemote.update_status data
+                PiRemote.polling = true
+                window.setTimeout ( ->
+                    PiRemote.polling = false
+                    PiRemote.do_status_poll()
+                ), 1000
+                return
 
     return
 

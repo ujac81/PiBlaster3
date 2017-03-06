@@ -79,6 +79,16 @@ class MPC:
         res['error'] = self.error
         return res
 
+    def get_status_int(self, key, dflt=0):
+        """Fetch value from mpd status dict as int,
+        fallback to dflt if no such key.
+        Won't catch failed conversions.
+        """
+        stat = self.get_status()
+        if key in stat:
+            return int(stat[key])
+        return dflt
+
     def ensure_connected(self):
         self.get_status()
 
@@ -121,6 +131,61 @@ class MPC:
             data[key] = status[key] if key in status else '0'
         return data
 
+    def volume(self):
+        """Current volume as int in [0,100]"""
+        return self.get_status_int('volume')
+
+    def change_volume(self, amount):
+        """Add amount to current volume int [-100, +100]"""
+        self.set_volume(self.volume() + amount)
+
+    def set_volume(self, setvol):
+        """Set current volume as int in [0,100]"""
+        self.ensure_connected()
+        vol = setvol
+        if vol < 0:
+            vol = 0
+        if vol > 100:
+            vol = 100
+        self.client.setvol(vol)
+        return self.volume()
+
+    def playlistinfo(self, start, end):
+        """Get playlist items in interval [start, end)
+        :param start: start index in playlist (start = 0)
+        :param end: end index in playlist (excluded)
+        :return: [[pos, title, artist, album, length]]
+        """
+
+        pl_len = self.get_status_int('playlistlength')
+
+        if end == -1:
+            end = pl_len
+
+        if end < start:
+            return []
+
+        if start >= pl_len:
+            return []
+
+        result = []
+        items = self.client.playlistinfo("%d:%d" % (start, end))
+        for item in items:
+            res = [item['pos']]
+            if 'title' in item:
+                res.append(item['title'])
+            elif 'file' in item:
+                no_ext = os.path.splitext(item['file'])[0]
+                res.append(os.path.basename(no_ext).replace('_', ' '))
+            res.append(item['artist'] if 'artist' in item else '')
+            res.append(item['album'] if 'album' in item else '')
+            length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
+            res.append(length)
+            res.append(item['id'])
+            result.append(res)
+
+        return result
+
     def exex_command(self, cmd):
         """
 
@@ -134,7 +199,7 @@ class MPC:
                 self.client.previous()
             elif cmd == 'playpause':
                 status = self.get_status()
-                if status == 'play':
+                if status['state'] == 'play':
                     self.client.pause()
                 else:
                     self.client.play()
@@ -142,6 +207,16 @@ class MPC:
                 self.client.stop()
             elif cmd == 'next':
                 self.client.next()
+            elif cmd == 'decvol':
+                self.change_volume(-3)
+            elif cmd == 'incvol':
+                self.change_volume(3)
+            elif cmd == 'random':
+                rand = self.get_status_int('random')
+                self.client.random(1 if rand == 0 else 0)
+            elif cmd == 'repeat':
+                rep = self.get_status_int('repeat')
+                self.client.repeat(1 if rep == 0 else 0)
             else:
                 success = False
         except CommandError:

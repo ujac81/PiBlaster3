@@ -1,0 +1,17 @@
+//-
+    browse.pug -- GET /piremote/playlist template
+
+-extends "piremote/base.pug"
+
+-block navcontent
+    li
+        a(href='#', data-toggle='browse', data-action='selectall') Select all
+    li
+        a(href='#', data-toggle='browse', data-action='deselectall') Deselect all
+
+
+-block content
+    .play-list
+        table.table.table-striped(id='tbpl')
+            tbody#pl
+            //- no table content here, document.ready will invoke ajax rebuild of browse table

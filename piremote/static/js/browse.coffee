@@ -81,8 +81,9 @@ PiRemote.install_browse_handlers = ->
 
 
 PiRemote.do_browse = (dirname) ->
-    PiRemote.do_ajax_post
+    PiRemote.do_ajax
         url: 'browse'
+        method: 'POST'
         data:
             'dirname': dirname
         success: (data) ->

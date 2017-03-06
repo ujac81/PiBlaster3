@@ -5,14 +5,14 @@
 
 
 # Perform AJAX post request
-PiRemote.do_ajax_post = (req) ->
+PiRemote.do_ajax = (req) ->
     data = req.data
     data.csrfmiddlewaretoken = $('input[name=csrfmiddlewaretoken')[0].value
     $.ajax
         url: '/piremote/ajax/' + req.url + '/'
         data: data
         dataType: 'json'
-        method: 'POST'
+        method: req.method
         success: (data) ->
             req.success(data)
             return
