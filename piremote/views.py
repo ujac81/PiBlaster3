@@ -49,6 +49,15 @@ def cmd_ajax(request):
     return JsonResponse(mpc.exex_command(cmd))
 
 
+# POST /ajax/plaction/
+def plaction_ajax(request):
+    cmd = request.POST.get('cmd', None)
+    plname = request.POST.get('plname', '')
+    items = request.POST.getlist('list[]', [])
+    mpc = MPC()
+    return JsonResponse({'status': mpc.playlist_action(cmd, plname, items)})
+
+
 # GET /ajax/plinfo/
 def plinfo_ajax(request):
     mpc = MPC()

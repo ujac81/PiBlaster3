@@ -22,3 +22,19 @@ PiRemote.do_ajax = (req) ->
             return
 
     return
+
+# Perform insert or add actions on playlists.
+# Invoked by dialogs in browse/search/....
+PiRemote.pl_action = (cmd, plname, list) ->
+    PiRemote.do_ajax
+        url: 'plaction'
+        data:
+            'cmd': cmd
+            'plname': plname
+            'list': list
+        method: 'POST'
+        success: (data) ->
+            # TODO post to status line
+            # console.log data
+            return
+    return

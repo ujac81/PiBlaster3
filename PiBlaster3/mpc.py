@@ -296,6 +296,46 @@ class MPC:
 
         return result
 
+    def playlist_action(self, cmd, plname, items):
+        """
+
+        :param cmd:
+        :param plname:
+        :param items:
+        :return:
+        """
+
+        self.ensure_connected()
+
+        if cmd == 'append':
+            for item in items:
+                print("Append: "+item)
+                try:
+                    self.client.add(item)
+                except CommandError:
+                    print("ADD URI ERROR: " + item)
+                    pass
+            return {'res': '%d' % len(items) + ' items added to playlist ' + plname, 'items': items}
+
+        #
+        #
+        # self.main.led.set_led_yellow(1)
+        #
+        # if mode == 1 or 'pos' not in self.get_currentsong():
+        #     # Insert at end
+        #
+        # else:
+        #     # Insert after current -- reversed order
+        #     for item in reversed(payload):
+        #         try:
+        #             self.client.addid(item, -1)
+        #         except CommandError:
+        #             print("ADD URI ERROR: " + item)
+        #             pass
+        #
+        # self.main.led.set_led_yellow(0)
+
+        return 'Unknown command '+cmd
 
 
 
