@@ -7,7 +7,7 @@
     li
         a(href='#') Play
     li
-        a(href='#') Playlist
+        a(href='/piremote/playlist') Playlist
     li
         a(href='/piremote/browse') Browse
     li
@@ -18,9 +18,33 @@
 
 
 -block content
+    #idxshow
+        h2#idxtitle
+            =state.title
+        h3#idxartist
+            =state.artist
+        h4#idxalbum
+            =state.album
+
+    #idxpos
+        #idxposfill
+
+    #idxtime
+        h5#idxtime 0:00 / 0:00
 
 
-    h1 Hello World!
-    p
-        =state.title
+    .idxbuttons
+        span(data-action='back', class='glyphicon glyphicon-step-backward')
+        span#playpause(data-action='playpause', class='glyphicon glyphicon-play')
+        span(data-action='stop', class='glyphicon glyphicon-stop')
+        span(data-action='next', class='glyphicon glyphicon-step-forward')
+
+    .idxbuttons
+        span(data-action='decvol', class='glyphicon glyphicon-volume-down')
+        span(data-action='mute', class='glyphicon glyphicon-volume-off')
+        span(data-action='incvol', class='glyphicon glyphicon-volume-up')
+
+    .idxbuttons
+        span#random(data-action='random', class='glyphicon glyphicon-random')
+        span#repeat(data-action='repeat', class='glyphicon glyphicon-repeat')
 

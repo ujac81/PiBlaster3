@@ -11,21 +11,23 @@ html(lang="en")
         -compress js
         //-
             vendor javascripts -- required before loading internal ones.
-        script(type='text/javascript', charset='utf-8', src='/static/vendor/js/jquery.min.js')
-        script(type='text/javascript', charset='utf-8', src='/static/vendor/js/bootstrap.min.js')
-        script(type='text/javascript', charset='utf-8', src='/static/vendor/js/d3.v4.min.js')
+        script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/jquery.min.js')
+        script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/bootstrap.min.js')
+        script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/d3.v4.min.js')
         //-
             Project javascript -- loaded after vendor requirements.
             global.coffee needs to be loaded 1st, application.coffee last.
             application.coffee includes document.ready function.
-        script(type='text/coffeescript', charset='utf-8', src='/static/js/global.coffee')
-        script(type='text/coffeescript', charset='utf-8', src='/static/js/ajax.coffee')
-        script(type='text/coffeescript', charset='utf-8', src='/static/js/browse.coffee')
-        script(type='text/coffeescript', charset='utf-8', src='/static/js/application.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/global.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/ajax.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/browse.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/index.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/playlist.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/application.coffee')
         -endcompress
         -compress css
-        link(type='text/css', rel='stylesheet', href='/static/vendor/css/bootstrap.min.css', charset='utf-8')
-        link(type='text/x-sass', rel='stylesheet', href='/static/css/application.sass', charset='utf-8')
+        link(type='text/css', rel='stylesheet', href='/piremote/static/vendor/css/bootstrap.min.css', charset='utf-8')
+        link(type='text/x-sass', rel='stylesheet', href='/piremote/static/css/application.sass', charset='utf-8')
         -endcompress
         meta(charset="utf-8")
         meta(name="viewport", content="width=device-width, maximum-scale=1.0, user-scalable=yes")
@@ -42,7 +44,7 @@ html(lang="en")
                         span.icon-bar
                         span.icon-bar
                         span.icon-bar
-                    a.navbar-brand(href='/piremote') PiBlaster
+                    a.navbar-brand(href='/piremote') PiBlaster2
 
                 //- ul.nav.navbar-nav
 

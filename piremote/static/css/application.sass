@@ -1,4 +1,5 @@
 
+
 html
     position: relative
     min-height: 100%
@@ -12,6 +13,49 @@ body
 #basecont
     padding: 0px
 
+
+////////////////// INDEX //////////////////
+
+#idxshow, #idxtime, .idxbuttons
+    margin: 20px
+
+#idxtime h5
+    text-align: center
+
+.idxbuttons
+    text-align: center
+
+.idxbuttons span
+    padding: 10px
+    font-size: x-large
+
+.idxbuttons span.enabled
+    color: black
+
+.idxbuttons span.disabled
+    color: #777
+
+#idxpos
+    position: relative
+    z-index: 1
+    margin: 20px
+    height: 20px
+    background: #eee
+    border: 1px solid black
+    width: 100px
+
+#idxposfill
+    content: ""
+    position: absolute
+    z-index: -1
+    top: 0
+    right: 30%
+    bottom: 0
+    left: 0
+    background: #333
+
+
+////////////////// BROWSE //////////////////
 
 table#tbbrowse
     table-layout: fixed
@@ -53,3 +97,38 @@ span.browse-arrow
 
 span.browse-span
     color: blue
+
+////////////////// PLAYLIST //////////////////
+
+table.pltbsub
+    max-width: 100%
+    width: 100%
+    background-color: transparent
+
+.table tbody tr  td.pltdmain
+    padding: 0
+
+tr.pltr-0 td
+    font-size: large
+    padding: 3px 10px 3px 10px
+    vertical-align: middle
+
+tr.pltr-0 td.pltd-0, tr.pltr-1 td.pltd-0
+    text-align: right
+    border-right: 1px solid #ddd
+
+tr.pltr-0 td.pltd-3
+    text-align: center
+    vertical-align: middle
+    padding: 5px
+
+tr.pltr-0 td.pltd-2
+    text-align: right
+    max-width: 95%
+
+tr.pltr-1 td
+    font-size: medium
+    padding: 0px 0px 5px 0px
+    vertical-align: top
+    text-align: center
+    color: #777

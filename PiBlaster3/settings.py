@@ -127,7 +127,7 @@ AUTH_PASSWORD_VALIDATORS = [
 
 LANGUAGE_CODE = 'en-us'
 
-TIME_ZONE = 'UTC'
+TIME_ZONE = 'Europe/Berlin'
 
 USE_I18N = True
 
@@ -145,5 +145,5 @@ STATICFILES_FINDERS = (
     'compressor.finders.CompressorFinder',
 )
 
-STATIC_URL = '/static/'
-STATIC_ROOT = 'static/'
+STATIC_URL = '/piremote/static/'
+STATIC_ROOT = 'piremote/static/'

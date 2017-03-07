@@ -86,8 +86,9 @@ PiRemote.install_browse_handlers = ->
 
 
 PiRemote.do_browse = (dirname) ->
-    PiRemote.do_ajax_post
+    PiRemote.do_ajax
         url: 'browse'
+        method: 'POST'
         data:
             'dirname': dirname
         success: (data) ->
@@ -119,7 +120,7 @@ PiRemote.rebuild_browse = (data) ->
             .attr('class', 'dir-item selectable')
             .attr('data-dirname', (d) -> d[5])
         .selectAll('td')
-        .data((d, i) -> ['<img src="/static/img/folder-blue.png"/>', d[1], action_span]).enter()
+        .data((d, i) -> ['<img src="/piremote/static/img/folder-blue.png"/>', d[1], action_span]).enter()
         .append('td')
             .classed('browse-head', (d, i) -> i == 0)
             .classed('browse-head-dir', (d, i) -> i == 0)
@@ -140,7 +141,7 @@ PiRemote.rebuild_browse = (data) ->
             .attr('data-filename', (d) -> d[5])
             .attr('data-date', (d) -> d[7])
         .selectAll('td')
-        .data((d, i) -> ['<img src="/static/img/'+d[6]+'.png"/>', d[1], action_span]).enter()
+        .data((d, i) -> ['<img src="/piremote/static/img/'+d[6]+'.png"/>', d[1], action_span]).enter()
         .append('td')
             .classed('browse-head', (d, i) -> i == 0)
             .classed('browse-action', (d, i) -> i == 0)

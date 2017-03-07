@@ -96,3 +96,4 @@ piblaster3/__pycache__/
 piblaster3/static/COMPILED/
 static/CACHE/
 .sass-cache/
+piremote/static/CACHE/

@@ -10,7 +10,14 @@ $ ->
         PiRemote.install_browse_actions()
         PiRemote.install_browse_handlers()
         PiRemote.do_browse ''
-        PiRemote.in
+
+    if $('tbody#pl')[0]
+        PiRemote.install_pl_actions()
+        PiRemote.install_pl_handlers()
+        PiRemote.get_playlist()
+
+    if $('#idxshow')[0]
+        PiRemote.install_index_actions()
 
 
     return
