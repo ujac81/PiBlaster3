@@ -1,5 +1,12 @@
 
 
+$horiz-pad: 5px
+$vert-pad: 3px
+
+$normal-font-size: small
+$small-font-size: smaller
+
+
 html
     position: relative
     min-height: 100%
@@ -61,6 +68,9 @@ table#tbbrowse
     table-layout: fixed
 
 
+table#tbbrowse tr td
+    font-size: $normal-font-size
+
 table#tbbrowse tr td:first-child
     width: 48px
     text-align: center
@@ -109,35 +119,42 @@ span.browse-action
 
 ////////////////// PLAYLIST //////////////////
 
+// no padding for outer table
+.table tbody tr  td.pltdmain
+    padding: 0
+
+// inner table
 table.pltbsub
     max-width: 100%
     width: 100%
     background-color: transparent
 
-.table tbody tr  td.pltdmain
-    padding: 0
-
+// all td first line
 tr.pltr-0 td
-    font-size: large
-    padding: 3px 10px 3px 10px
+    font-size: $normal-font-size
+    padding: $vert-pad $horiz-pad
     vertical-align: middle
 
+// index
 tr.pltr-0 td.pltd-0, tr.pltr-1 td.pltd-0
     text-align: right
     border-right: 1px solid #ddd
 
+// ... vertical dots
 tr.pltr-0 td.pltd-3
     color: #888
     text-align: center
     vertical-align: middle
     padding: 5px
 
+// time
 tr.pltr-0 td.pltd-2
     text-align: right
     max-width: 95%
 
+// album - artist
 tr.pltr-1 td
-    font-size: medium
+    font-size: $small-font-size
     padding: 0px 0px 5px 0px
     vertical-align: top
     text-align: center

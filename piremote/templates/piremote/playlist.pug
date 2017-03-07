@@ -5,9 +5,20 @@
 
 -block navcontent
     li
-        a(href='#', data-toggle='browse', data-action='selectall') Select all
+        a(href='#') Play
     li
-        a(href='#', data-toggle='browse', data-action='deselectall') Deselect all
+        a(href='/piremote/playlist') Playlist
+    li
+        a(href='/piremote/browse') Browse
+    li
+        a(href='#') Upload
+    li
+        a(href='#') Settings
+    //-
+        li
+            a(href='#', data-toggle='browse', data-action='selectall') Select all
+        li
+            a(href='#', data-toggle='browse', data-action='deselectall') Deselect all
 
 
 -block content

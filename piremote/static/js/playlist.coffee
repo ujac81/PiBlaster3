@@ -43,8 +43,8 @@ PiRemote.rebuild_playlist = (data) ->
         tb_data.push([elem[5], rows])
 
     no_text = '' + tb_data.length
-    no_width = no_text.width('large')+30
-    time_width = '000:00'.width('large')+30
+    no_width = no_text.width('large')+20
+    time_width = '000:00'.width('large')+20
 
 
     tbody
