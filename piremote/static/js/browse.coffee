@@ -41,6 +41,7 @@ PiRemote.install_browse_handlers = ->
     $('div.browse-list > table > tbody > tr.dir-item').off 'dblclick'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-action').off 'click'
+    $('div.browse-list > table > tbody > tr.selectable > td > img').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-head-dir').off 'click'
     $('#trupdir').off 'click'
 
@@ -77,6 +78,10 @@ PiRemote.install_browse_handlers = ->
 
         return
 
+    $('div.browse-list > table > tbody > tr.selectable > td > img').on 'click', (event) ->
+        PiRemote.raise_file_dialog $(this).parent().parent()
+        return
+
     return
 
 
@@ -102,7 +107,8 @@ PiRemote.rebuild_browse = (data) ->
         updir = data.dirname.split('/').slice(0, -1).join('/')
         uptr = tbody.append('tr').classed('dir-item', 1).attr('data-dirname', updir).attr('id', 'trupdir')
         uptr.append('td').classed('browse-head', 1).html(up_span)
-        uptr.append('td').classed('browse-file', 1).html('/'+data.dirname+'/../')
+        dirname = '/'+data.dirname+'/../'
+        uptr.append('td').classed('browse-file', 1).html(dirname.replace(/\//g, ' / '))
         uptr.append('td').classed('browse-action', 1)
 
     dirs = data.browse.filter (d) -> d[0] == '1'
@@ -137,6 +143,7 @@ PiRemote.rebuild_browse = (data) ->
         .data((d, i) -> ['<img src="/static/img/'+d[6]+'.png"/>', d[1], action_span]).enter()
         .append('td')
             .classed('browse-head', (d, i) -> i == 0)
+            .classed('browse-action', (d, i) -> i == 0)
             .classed('browse-file', (d, i) -> i == 1)
             .classed('browse-selectable', (d, i) -> i == 1)
             .classed('browse-action', (d, i) -> i == 2)
