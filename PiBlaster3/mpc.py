@@ -231,7 +231,6 @@ class MPC:
         data['success'] = success
         return data
 
-
     def browse(self, path):
         """
 

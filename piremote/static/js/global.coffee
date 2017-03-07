@@ -20,3 +20,16 @@ PiRemote.secToMin = (secs) ->
     res += seconds
 
     return res
+
+
+String::width = (font_size) ->
+    fsize = font_size or 'medium'
+    o = $('<div>' + this + '</div>').css(
+        'position': 'absolute'
+        'float': 'left'
+        'white-space': 'nowrap'
+        'visibility': 'hidden'
+        'font-size': fsize).appendTo($('body'))
+    w = o.width()
+    o.remove()
+    w
