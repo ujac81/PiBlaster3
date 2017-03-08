@@ -6,7 +6,20 @@ window.PiRemote = {}
 PiRemote.poll_started = false
 PiRemote.polling = false
 
+PiRemote.last_status = ''
 
+PiRemote.setStatusText = (text, fade=3000) ->
+    $('.footer').fadeTo('fast', 1)
+    $('#statusbar').html(text)
+
+    window.setTimeout ( ->
+        if text == $('#statusbar').html()
+            # text was not changed --> do fade out
+            $('.footer').fadeTo 'slow', 0
+        return
+        ), fade
+
+    return
 
 PiRemote.secToMin = (secs) ->
     res = ''

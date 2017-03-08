@@ -315,7 +315,7 @@ class MPC:
                 except CommandError:
                     print("ADD URI ERROR: " + item)
                     pass
-            return {'res': '%d' % len(items) + ' items added to playlist ' + plname, 'items': items}
+            return '%d' % len(items) + ' items added to playlist ' + plname
 
         #
         #
