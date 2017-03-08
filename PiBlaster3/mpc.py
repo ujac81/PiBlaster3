@@ -307,7 +307,8 @@ class MPC:
 
         self.ensure_connected()
 
-        if cmd == 'append':
+        if (cmd == 'append') or (cmd == 'insert' and 'pos' not in self.get_currentsong()):
+            # append at end if command is append or insert and not playing
             for item in items:
                 print("Append: "+item)
                 try:
@@ -315,25 +316,15 @@ class MPC:
                 except CommandError:
                     print("ADD URI ERROR: " + item)
                     pass
-            return '%d' % len(items) + ' items added to playlist ' + plname
-
-        #
-        #
-        # self.main.led.set_led_yellow(1)
-        #
-        # if mode == 1 or 'pos' not in self.get_currentsong():
-        #     # Insert at end
-        #
-        # else:
-        #     # Insert after current -- reversed order
-        #     for item in reversed(payload):
-        #         try:
-        #             self.client.addid(item, -1)
-        #         except CommandError:
-        #             print("ADD URI ERROR: " + item)
-        #             pass
-        #
-        # self.main.led.set_led_yellow(0)
+            return '%d' % len(items) + ' items appended to playlist ' + plname
+        elif cmd == 'insert':
+            for item in reversed(items):
+                try:
+                    self.client.addid(item, -1)
+                except CommandError:
+                    print("ADD URI ERROR: " + item)
+                    pass
+            return '%d' % len(items) + ' items inserted into playlist ' + plname
 
         return 'Unknown command '+cmd
 

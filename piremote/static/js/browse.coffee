@@ -237,7 +237,9 @@ PiRemote.raise_file_actions = (element) ->
         ['select-all', 'Select all'],
         ['deselect-all', 'Deselect all'],
         ['append-item', 'Append Item'],
+        ['insert-item', 'Insert Item'],
         ['append', 'Append Selection'],
+        ['insert', 'Insert Selection'],
         ['append-other', 'Append Item to Playlist']
         ['append-other', 'Append Selection to Playlist']
         ]
@@ -298,9 +300,14 @@ PiRemote.do_browse_action = (action, item, type) ->
         d3.selectAll('tr.selectable').classed('selected', 0)
     else if action == 'append-item'
         PiRemote.pl_action 'append', '', [item], type
-    #else if action == 'insert-item'
-    #    PiRemote.pl_action 'insert', '', [item], type
+    else if action == 'insert-item'
+        PiRemote.pl_action 'insert', '', [item], type
     else if action == 'append'
+        sel = d3.selectAll('tr.'+type+'-item.selected')
+        items = sel.data().map((d) -> d[5])
+        PiRemote.pl_action action, '', items, type
+        sel.classed('selected', 0)
+    else if action == 'insert'
         sel = d3.selectAll('tr.'+type+'-item.selected')
         items = sel.data().map((d) -> d[5])
         PiRemote.pl_action action, '', items, type
