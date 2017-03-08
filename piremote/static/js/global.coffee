@@ -8,6 +8,7 @@ PiRemote.polling = false
 
 PiRemote.last_status = ''
 PiRemote.current_page = ''
+PiRemote.safe_page = 'index'
 PiRemote.last_browse = ''
 
 
