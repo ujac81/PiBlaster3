@@ -1,5 +1,19 @@
 # browse.coffee -- install callbacks for browse view
 
+# Build browse page
+PiRemote.load_browse_page = ->
+
+    root = d3.select('.piremote-content')
+    console.log root
+    bl = root.append('div').attr('class', 'browse-list')
+    tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')
+    tb.append('tbody').attr('id', 'browse')
+
+    PiRemote.install_browse_actions()
+    PiRemote.do_browse PiRemote.last_browse
+
+    return
+
 # Install browse menu actions
 PiRemote.install_browse_actions = ->
 
@@ -106,6 +120,7 @@ PiRemote.install_browse_handlers = ->
 
 # Invoke ajax call to browse directory
 PiRemote.do_browse = (dirname) ->
+    PiRemote.last_browse = dirname
     PiRemote.do_ajax
         url: 'browse'
         method: 'POST'

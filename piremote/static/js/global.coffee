@@ -7,6 +7,8 @@ PiRemote.poll_started = false
 PiRemote.polling = false
 
 PiRemote.last_status = ''
+PiRemote.current_page = ''
+PiRemote.last_browse = ''
 
 PiRemote.setStatusText = (text, fade=3000) ->
     $('.footer').fadeTo('fast', 1)
@@ -33,7 +35,6 @@ PiRemote.secToMin = (secs) ->
     res += seconds
 
     return res
-
 
 String::width = (font_size) ->
     fsize = font_size or 'medium'

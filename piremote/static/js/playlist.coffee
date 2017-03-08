@@ -1,7 +1,22 @@
 # playlist.coffee -- install callbacks for playlist view
 
+# Build browse page
+PiRemote.load_playlist_page = ->
+
+    root = d3.select('.piremote-content')
+    console.log root
+    bl = root.append('div').attr('class', 'play-list')
+    tb = bl.append('table').attr('id', 'tbpl').attr('class', 'table table-striped')
+    tb.append('tbody').attr('id', 'pl')
+
+    PiRemote.install_pl_actions()
+    PiRemote.get_playlist()
+    return
+
 
 PiRemote.install_pl_actions = ->
+
+    PiRemote.install_pl_handlers()
 
     return
 

@@ -5,46 +5,18 @@
 
 -block navcontent
     li
-        a(href='#') Play
+        a(href='#', data-toggle='menu', data-action='index') Play
     li
-        a(href='/piremote/playlist') Playlist
+        a(href='#', data-toggle='menu', data-action='playlist') Playlist
     li
-        a(href='/piremote/browse') Browse
+        a(href='#', data-toggle='menu', data-action='browse') Browse
     li
-        a(href='#') Upload
+        a(href='#', data-toggle='menu', data-action='search') Search
     li
-        a(href='#') Settings
-
+        a(href='#', data-toggle='menu', data-action='upload') Upload
+    li
+        a(href='#', data-toggle='menu', data-action='settings') Settings
 
 
 -block content
-    #idxshow
-        h2#idxtitle
-            =state.title
-        h3#idxartist
-            =state.artist
-        h4#idxalbum
-            =state.album
-
-    #idxpos
-        #idxposfill
-
-    #idxtime
-        h5#idxtime 0:00 / 0:00
-
-
-    .idxbuttons
-        span(data-action='back', class='glyphicon glyphicon-step-backward')
-        span#playpause(data-action='playpause', class='glyphicon glyphicon-play')
-        span(data-action='stop', class='glyphicon glyphicon-stop')
-        span(data-action='next', class='glyphicon glyphicon-step-forward')
-
-    .idxbuttons
-        span(data-action='decvol', class='glyphicon glyphicon-volume-down')
-        span(data-action='mute', class='glyphicon glyphicon-volume-off')
-        span(data-action='incvol', class='glyphicon glyphicon-volume-up')
-
-    .idxbuttons
-        span#random(data-action='random', class='glyphicon glyphicon-random')
-        span#repeat(data-action='repeat', class='glyphicon glyphicon-repeat')
-
+    .piremote-content
