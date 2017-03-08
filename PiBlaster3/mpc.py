@@ -125,7 +125,7 @@ class MPC:
         data = {}
         data['title'] = current['title'] if 'title' in current else current['file']
         data['time'] = current['time'] if 'time' in current else 0
-        for key in ['album', 'artist', 'date']:
+        for key in ['album', 'artist', 'date', 'id']:
             data[key] = current[key] if key in current else ''
         for key in ['elapsed', 'random', 'repeat', 'volume', 'state']:
             data[key] = status[key] if key in status else '0'
@@ -154,7 +154,7 @@ class MPC:
         """Get playlist items in interval [start, end)
         :param start: start index in playlist (start = 0)
         :param end: end index in playlist (excluded)
-        :return: [[pos, title, artist, album, length]]
+        :return: [[pos, title, artist, album, length, id]]
         """
 
         pl_len = self.get_status_int('playlistlength')

@@ -16,17 +16,16 @@ $ ->
     # Initial load of main page.
     PiRemote.load_page 'index'
 
-
-
     # Disable polling while focus is lost.
     # Load blur page on focus loss and reload page on focus return.
-    $(window).blur ->
-        PiRemote.safe_page = PiRemote.current_page
-        PiRemote.load_page 'blur'
-        return
-    $(window).focus ->
-        PiRemote.load_page PiRemote.safe_page
-        return
+# TODO renable for release
+#    $(window).blur ->
+#        PiRemote.safe_page = PiRemote.current_page
+#        PiRemote.load_page 'blur'
+#        return
+#    $(window).focus ->
+#        PiRemote.load_page PiRemote.safe_page
+#        return
 
     PiRemote.setStatusText 'PiRemote v3.0 loaded.'
     return

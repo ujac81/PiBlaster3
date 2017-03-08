@@ -9,12 +9,18 @@ PiRemote.load_playlist_page = ->
     tb = bl.append('table').attr('id', 'tbpl').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'pl')
 
+
     PiRemote.get_playlist()
     return
 
 
 # Invoke AJAX get of current playlist, callback will rebuild playlist table.
 PiRemote.get_playlist = ->
+
+    PiRemote.playlist_poll_started = false
+    PiRemote.playlist_polling = false
+
+
     PiRemote.do_ajax
         url: 'plinfo'
         method: 'GET'
@@ -99,10 +105,52 @@ PiRemote.rebuild_playlist = (data) ->
 
 
     PiRemote.install_pl_handlers()
-    # TODO: scroll to current position
+    PiRemote.start_pl_poll()
     return
 
 # Install callback functions for action elements in playlist table.
 PiRemote.install_pl_handlers = ->
 
     return
+
+
+PiRemote.start_pl_poll = ->
+    return if PiRemote.playlist_poll_started
+    PiRemote.playlist_poll_started = true
+    PiRemote.do_pl_poll()
+    return
+
+PiRemote.do_pl_poll = ->
+    return if PiRemote.playlist_polling
+    return unless PiRemote.playlist_poll_started
+    return if PiRemote.current_page != 'playlist'
+
+    PiRemote.do_ajax
+        url: 'status'
+        method: 'GET'
+        data: {}
+        success: (data) ->
+            PiRemote.update_pl_status data  # <-- poll callback
+            PiRemote.playlist_polling = true
+            window.setTimeout ( ->
+                PiRemote.playlist_polling = false
+                PiRemote.do_pl_poll()
+                return
+            ),  1000 # <-- short polling interval
+            return
+    return
+
+
+PiRemote.update_pl_status = (data) ->
+
+    if data.id
+        # turn off running for all but running
+        d3.selectAll('table#tbpl tr.selectable').filter((d) -> d[0] != data.id).classed('running', 0)
+        # activate running song
+        d3.selectAll('table#tbpl tr.selectable[data-id="'+data.id+'"').classed('running', 1)
+    else
+        # turn off all
+        d3.selectAll('table#tbpl tr.selectable').classed('running', 0)
+
+    return
+

@@ -6,6 +6,10 @@ window.PiRemote = {}
 PiRemote.poll_started = false
 PiRemote.polling = false
 
+
+PiRemote.playlist_poll_started = false
+PiRemote.playlist_polling = false
+
 PiRemote.last_status = ''
 PiRemote.current_page = ''
 PiRemote.safe_page = 'index'

@@ -53,6 +53,7 @@ PiRemote.load_index_page = ->
     PiRemote.install_index_actions()
 
     PiRemote.poll_started = false
+    PiRemote.polling = false
     PiRemote.resize_index()
     PiRemote.set_position(0)
     PiRemote.start_status_poll()
