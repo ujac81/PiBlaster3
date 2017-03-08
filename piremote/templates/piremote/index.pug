@@ -1,22 +1,89 @@
 //-
     index.pug -- PiBlaster 3 Remote landing page
 
--extends "piremote/base.pug"
+-load compress
+!!!5
+html(lang="en")
+    head
+        -compress js
+        //-
+            vendor javascripts -- required before loading internal ones.
+        script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/jquery.min.js')
+        script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/bootstrap.min.js')
+        script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/d3.v4.min.js')
+        //-
+            Project javascript -- loaded after vendor requirements.
+            global.coffee needs to be loaded 1st, application.coffee last.
+            application.coffee includes document.ready function.
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/global.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/ajax.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/browse.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/index.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/playlist.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/application.coffee')
+        -endcompress
+        -compress css
+        link(type='text/css', rel='stylesheet', href='/piremote/static/vendor/css/bootstrap.min.css', charset='utf-8')
+        link(type='text/x-sass', rel='stylesheet', href='/piremote/static/css/application.sass', charset='utf-8')
+        -endcompress
+        meta(charset="utf-8")
+        meta(name="viewport", content="width=device-width, maximum-scale=1.0, user-scalable=yes")
+        title PiBlater3 Remote
 
--block navcontent
-    li
-        a(href='#', data-toggle='menu', data-action='index') Play
-    li
-        a(href='#', data-toggle='menu', data-action='playlist') Playlist
-    li
-        a(href='#', data-toggle='menu', data-action='browse') Browse
-    li
-        a(href='#', data-toggle='menu', data-action='search') Search
-    li
-        a(href='#', data-toggle='menu', data-action='upload') Upload
-    li
-        a(href='#', data-toggle='menu', data-action='settings') Settings
+    body
+        -csrf_token
+        nav.navbar.navbar-default.navbar-fixed-top(role='navigation')
+            .container-fluid
+                //- non-collapsable header 'PiBlaster home button'
+                .navbar-header
+                    button.navbar-toggle.collapsed(type='button', data-toggle='collapse',data-target='#bs-collapse-nav', aria-expanded='false')
+                        span.sr-only =Toggle navigation
+                        span.icon-bar
+                        span.icon-bar
+                        span.icon-bar
+                    a.navbar-brand(href='/piremote') PiBlaster
+
+                //-
+                    collapsable part of navigation bar
+                    navigation is always collapsed -- customized boostrap used with huge screen widths
+                .collapse.navbar-collapse(id='bs-collapse-nav')
+                    ul.nav.navbar-nav
+                        //-
+                            This menu loads all page contents via JavaScript.
+                            Dynamic content of pages is loaded via AJAX.
+
+                            PiRemote.load_page() will delete the nodes below '.piremote-content'
+                            and install new content viaw PiRemote.load_NAME_page() functions.
 
 
--block content
-    .piremote-content
+                        li
+                            a(href='#', data-toggle='menu', data-action='index') Play
+                        li
+                            a(href='#', data-toggle='menu', data-action='playlist') Playlist
+                        li
+                            a(href='#', data-toggle='menu', data-action='browse') Browse
+                        li
+                            a(href='#', data-toggle='menu', data-action='search') Search
+                        li
+                            a(href='#', data-toggle='menu', data-action='upload') Upload
+                        li
+                            a(href='#', data-toggle='menu', data-action='settings') Settings
+
+        #modalSmall.modal.fade.bs-example-modal-sm(tabindex="-1", role="dialog", aria-labelledby="smallModalLabel", aria-hidden="true")
+          .modal-dialog.modal-sm
+            .modal-content
+              .modal-header
+                button.close(aria-hidden="true", data-dismiss="modal", type="button")
+                  span(aria-hidden="true") &times;
+                  span.sr-only Close
+                h4.modal-title(id="smallModalLabel") Message
+                .modal-body(id="smallModalMessage") Message not set!
+
+
+        .container-fluid(id='basecont')
+            .piremote-content
+                //- content here built via PiRemote.load_page()
+            p#empty
+        .footer
+            .container-fluid
+                p#statusbar

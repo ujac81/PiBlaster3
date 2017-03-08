@@ -18,7 +18,6 @@ PiRemote.ajax_setup = ->
 
     return
 
-
 # Perform AJAX post request
 PiRemote.do_ajax = (req) ->
     data = req.data

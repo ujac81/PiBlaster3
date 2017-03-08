@@ -4,24 +4,11 @@ from django.template import loader
 from PiBlaster3.mpc import MPC
 
 
+# GET /
+# We only have one get for the main page.
+# Sub pages are dynamical loaded via AJAX and inner page content is rebuilt by d3.js.
 def index(request):
     template = loader.get_template('piremote/index.pug')
-    mpc = MPC()
-    context = {'state': mpc.get_currentsong()}
-    return HttpResponse(template.render(context, request))
-
-
-# GET /browse/#
-# build empty browse view -- document.ready will call POST ajax/browse on base dir.
-def browse(request):
-    template = loader.get_template('piremote/browse.pug')
-    return HttpResponse(template.render({}, request))
-
-
-# GET /playlist/#
-# build empty playlist view -- document.ready will call GET ajax/plinfo
-def playlist(request):
-    template = loader.get_template('piremote/playlist.pug')
     return HttpResponse(template.render({}, request))
 
 

@@ -10,6 +10,8 @@ PiRemote.last_status = ''
 PiRemote.current_page = ''
 PiRemote.last_browse = ''
 
+
+# Fade in status bar, set text and start fade out timer.
 PiRemote.setStatusText = (text, fade=3000) ->
     $('.footer').fadeTo('fast', 1)
     $('#statusbar').html(text)
@@ -23,6 +25,7 @@ PiRemote.setStatusText = (text, fade=3000) ->
 
     return
 
+# Convert seconds to string like 3:02
 PiRemote.secToMin = (secs) ->
     res = ''
 
@@ -34,8 +37,9 @@ PiRemote.secToMin = (secs) ->
         res += '0'
     res += seconds
 
-    return res
+    res
 
+# Calculate font width for string element.
 String::width = (font_size) ->
     fsize = font_size or 'medium'
     o = $('<div>' + this + '</div>').css(
