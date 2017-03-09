@@ -48,4 +48,4 @@ def plaction_ajax(request):
 # GET /ajax/plinfo/
 def plinfo_ajax(request):
     mpc = MPC()
-    return JsonResponse({'pl': mpc.playlistinfo(0, -1)})
+    return JsonResponse({'pl': mpc.playlistinfo(0, -1), 'status': mpc.get_status_data()})

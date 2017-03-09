@@ -127,7 +127,7 @@ class MPC:
         data['time'] = current['time'] if 'time' in current else 0
         for key in ['album', 'artist', 'date', 'id']:
             data[key] = current[key] if key in current else ''
-        for key in ['elapsed', 'random', 'repeat', 'volume', 'state']:
+        for key in ['elapsed', 'random', 'repeat', 'volume', 'state', 'playlist']:
             data[key] = status[key] if key in status else '0'
         return data
 
@@ -158,6 +158,7 @@ class MPC:
         """
 
         pl_len = self.get_status_int('playlistlength')
+        pl_ver = self.get_status_int('playlist')
 
         if end == -1:
             end = pl_len
@@ -184,7 +185,7 @@ class MPC:
             res.append(item['id'])
             result.append(res)
 
-        return result
+        return {'version': pl_ver, 'data': result}
 
     def exex_command(self, cmd):
         """
@@ -318,9 +319,10 @@ class MPC:
                     pass
             return '%d' % len(items) + ' items appended to playlist ' + plname
         elif cmd == 'insert':
+            pos = int(self.get_currentsong()['pos'])+1
             for item in reversed(items):
                 try:
-                    self.client.addid(item, -1)
+                    self.client.addid(item, pos)
                 except CommandError:
                     print("ADD URI ERROR: " + item)
                     pass

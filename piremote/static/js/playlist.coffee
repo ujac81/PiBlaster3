@@ -48,11 +48,13 @@ PiRemote.rebuild_playlist = (data) ->
     tbody = d3.select('tbody#pl')
     tbody.selectAll('tr').remove()
 
+    PiRemote.last_pl_version = data.pl.version
+
     # Prepare data for table build:
     # Array of
     # [ ID, [ [number, title, length, action-span], ['', artist, '']]
     tb_data = []
-    for elem in data.pl
+    for elem in data.pl.data
         span_item = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
         rows = [[parseInt(elem[0])+1, elem[1], elem[4], span_item]]
         art = ''
@@ -106,26 +108,44 @@ PiRemote.rebuild_playlist = (data) ->
                 if i == 3       # NOTE: only row1 has 4 elements, 2nd row has 3.
                     return '2'
                 return '1')
+            .classed('pl-action', (d, i) -> i ==3)
+            .classed('selectable', (d, i) -> i != 3)
             .html((d)->d)
 
-
     PiRemote.last_pl_id = '-1'
+    PiRemote.update_pl_status data.status
     PiRemote.install_pl_handlers()
     PiRemote.start_pl_poll()
     return
 
+
 # Install callback functions for action elements in playlist table.
 PiRemote.install_pl_handlers = ->
+
+    # single-click on selectable items toggles select
+    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').off 'click'
+    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').on 'click', (event) ->
+        $(this).parent().parent().parent().parent().toggleClass 'selected'
+        return
+
+    $('td.pl-action').off 'click'
+    $('td.pl-action').on 'click', (event) ->
+        id = $(this).parent().parent().parent().parent().data('id')
+        PiRemote.pl_raise_action_dialog id
+        return
 
     return
 
 
+# Initiate short polling for current playlist position and song position indicator
 PiRemote.start_pl_poll = ->
     return if PiRemote.playlist_poll_started
     PiRemote.playlist_poll_started = true
     PiRemote.do_pl_poll()
     return
 
+
+# Short polling for play status
 PiRemote.do_pl_poll = ->
     return if PiRemote.playlist_polling
     return unless PiRemote.playlist_poll_started
@@ -150,6 +170,13 @@ PiRemote.do_pl_poll = ->
 # Callback for status polling loop.
 # Update currently played song and position indicator
 PiRemote.update_pl_status = (data) ->
+
+    # Check if playlist version changed
+    if PiRemote.last_pl_version != parseInt(data.playlist)
+        d3.select('tbody#pl').selectAll('tr').remove()
+        d3.select('tbody#pl').selectAll('tr').append('td').html('refetching....')
+        PiRemote.get_playlist()
+        return
 
     # Update position indicator and currently highlighted item only if song id changed.
     if data.id and data.id != PiRemote.last_pl_id
@@ -203,4 +230,86 @@ PiRemote.pl_set_position_indicator = (pct) ->
     pct_set = 100 if pct_set > 100
 
     $('#plposfill').css('right', pct_set+'%')
+    return
+
+
+# Raise modal action dialog after click on vertical action dots.
+PiRemote.pl_raise_action_dialog = (id) ->
+
+    title = d3.select('tr[data-id="'+id+'"]').data()[0][1][1][1]
+    return unless title
+
+    d3.select('#smallModalLabel').html('Playlist Action')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    cont.append('h5').html(title)
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+    items = [
+        ['select-all', 'Select All'],
+        ['deselect-all', 'Deselect All'],
+        ['play', 'Play Item Now'],
+        ['next', 'Play Item Next'],
+        ['selection-after-current', 'Selection After Current'],
+        ['item-to-end', 'Item to End'],
+        ['selection-to-end', 'Selection to End'],
+        ['item-to-pl', 'Item to Another Playlist'],
+        ['selection-to-pl', 'Selection to Another Playlist'],
+        ['clear-selection', 'Clear Selection'],
+        ['clear', 'Clear Playlist'],
+        ['save', 'Save Playlist As'],
+        ['randomize', 'Randomize Playlist'],
+        ['randomize-rest', 'Randomize Playlist After Current'],
+        ]
+    for elem in items
+        navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', elem[0]).attr('data-id', id)
+            .html(elem[1])
+
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        PiRemote.pl_do_action $(this).data('action'), $(this).data('id')
+        $('#modalSmall').modal('hide')
+        return
+
+    # Raise dialog.
+    $('#modalSmall').modal()
+    return
+
+
+# Callback for actions clicked in playlist action dialog
+PiRemote.pl_do_action = (action, id) ->
+
+    if action == 'select-all'
+        console.log 'TODO '+action
+    else if action == 'deselect-all'
+        console.log 'TODO '+action
+    else if action == 'play'
+        console.log 'TODO '+action
+    else if action == 'next'
+        console.log 'TODO '+action
+    else if action == 'selection-after-current'
+        console.log 'TODO '+action
+    else if action == 'item-to-end'
+        console.log 'TODO '+action
+    else if action == 'selection-to-end'
+        console.log 'TODO '+action
+    else if action == 'item-to-pl'
+        console.log 'TODO '+action
+    else if action == 'selection-to-pl'
+        console.log 'TODO '+action
+    else if action == 'clear-selection'
+        console.log 'TODO '+action
+    else if action == 'clear'
+        console.log 'TODO '+action
+    else if action == 'save'
+        console.log 'TODO '+action
+    else if action == 'randomize'
+        console.log 'TODO '+action
+    else if action == 'randomize-rest'
+        console.log 'TODO '+action
+
+
     return
