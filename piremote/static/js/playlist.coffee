@@ -10,6 +10,11 @@ PiRemote.load_playlist_page = ->
     tb.append('tbody').attr('id', 'pl')
 
 
+    # Resize position indicator on window resize
+    $(window).resize ->
+        PiRemote.resize_pl_position_indicator()
+        return
+
     PiRemote.get_playlist()
     return
 
@@ -142,8 +147,11 @@ PiRemote.do_pl_poll = ->
     return
 
 
+# Callback for status polling loop.
+# Update currently played song and position indicator
 PiRemote.update_pl_status = (data) ->
 
+    # Update position indicator and currently highlighted item only if song id changed.
     if data.id and data.id != PiRemote.last_pl_id
             # turn off running for all but running
             d3.selectAll('table#tbpl tr.selectable').filter((d) -> d[0] != data.id).classed('running', 0)
@@ -154,9 +162,45 @@ PiRemote.update_pl_status = (data) ->
             # scroll to current item
             window.scrollTo 0, $('table#tbpl tr.selectable.running').offset().top -
                 window.innerHeight*0.2
+
+            # remove old position div
+            d3.selectAll('#plpos').remove()
+
+            # add position div and adjust width
+            d3.select('table#tbpl tr.selectable.running td table tr.pltr-0 td.pltd-1')
+                .append('div').attr('id', 'plpos')
+                .append('div').attr('id', 'plposfill')
+            PiRemote.resize_pl_position_indicator()
     else if not data.id
-        # turn off all
+        # remove old position div
+        d3.selectAll('#plpos').remove()
+        # turn off all indicators
         d3.selectAll('table#tbpl tr.selectable').classed('running', 0)
+
+    # position indicator
+    if (data.time) and (data.elapsed)
+        pct = 100.0 * parseFloat(data.elapsed) / parseFloat(data.time)
+        PiRemote.pl_set_position_indicator pct
+    else
+        PiRemote.pl_set_position_indicator 0
 
     return
 
+
+# Resize width of the position indicator frame.
+# Callback for resize event and also invoked after status update if current song changed.
+PiRemote.resize_pl_position_indicator = ->
+    $('#plpos').width 1
+    w = $('table#tbpl tr.selectable.running td table tr.pltr-0 td.pltd-1').width()
+    if w
+        $('#plpos').width w - 2
+    return
+
+# Set position fill in position slider (percentage value required).
+PiRemote.pl_set_position_indicator = (pct) ->
+    pct_set = 100-pct
+    pct_set = 0 if pct_set < 0
+    pct_set = 100 if pct_set > 100
+
+    $('#plposfill').css('right', pct_set+'%')
+    return

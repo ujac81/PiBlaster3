@@ -44,9 +44,9 @@ PiRemote.load_index_page = ->
 
     # BUTTON ROW 3
     row3 = root.append('div').attr('class', 'idxbuttons')
-    row3.append('span').attr('data-action', 'random')
+    row3.append('span').attr('data-action', 'random').attr('id', 'random')
                        .attr('class', 'glyphicon glyphicon-random')
-    row3.append('span').attr('data-action', 'repeat')
+    row3.append('span').attr('data-action', 'repeat').attr('id', 'repeat')
                        .attr('class', 'glyphicon glyphicon-repeat')
 
     # infinite short polling loop
