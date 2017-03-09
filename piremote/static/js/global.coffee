@@ -15,6 +15,8 @@ PiRemote.current_page = ''
 PiRemote.safe_page = 'index'
 PiRemote.last_browse = ''
 
+PiRemote.last_pl_id = '-1'
+
 
 # Fade in status bar, set text and start fade out timer.
 PiRemote.setStatusText = (text, fade=3000) ->

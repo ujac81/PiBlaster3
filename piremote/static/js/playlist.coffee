@@ -104,6 +104,7 @@ PiRemote.rebuild_playlist = (data) ->
             .html((d)->d)
 
 
+    PiRemote.last_pl_id = '-1'
     PiRemote.install_pl_handlers()
     PiRemote.start_pl_poll()
     return
@@ -143,12 +144,17 @@ PiRemote.do_pl_poll = ->
 
 PiRemote.update_pl_status = (data) ->
 
-    if data.id
-        # turn off running for all but running
-        d3.selectAll('table#tbpl tr.selectable').filter((d) -> d[0] != data.id).classed('running', 0)
-        # activate running song
-        d3.selectAll('table#tbpl tr.selectable[data-id="'+data.id+'"').classed('running', 1)
-    else
+    if data.id and data.id != PiRemote.last_pl_id
+            # turn off running for all but running
+            d3.selectAll('table#tbpl tr.selectable').filter((d) -> d[0] != data.id).classed('running', 0)
+            # activate running song
+            d3.selectAll('table#tbpl tr.selectable[data-id="'+data.id+'"').classed('running', 1)
+            PiRemote.last_pl_id = data.id
+
+            # scroll to current item
+            window.scrollTo 0, $('table#tbpl tr.selectable.running').offset().top -
+                window.innerHeight*0.2
+    else if not data.id
         # turn off all
         d3.selectAll('table#tbpl tr.selectable').classed('running', 0)
 

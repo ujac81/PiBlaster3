@@ -5,7 +5,6 @@
 PiRemote.load_browse_page = ->
 
     root = d3.select('.piremote-content')
-    console.log root
     bl = root.append('div').attr('class', 'browse-list')
     tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'browse')
