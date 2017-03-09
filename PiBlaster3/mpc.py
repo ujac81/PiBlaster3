@@ -315,18 +315,86 @@ class MPC:
                 try:
                     self.client.add(item)
                 except CommandError:
-                    print("ADD URI ERROR: " + item)
+                    return 'Add error'
                     pass
             return '%d' % len(items) + ' items appended to playlist ' + plname
+        elif cmd == 'clear':
+            # clear playlist
+            try:
+                self.client.clear()
+            except CommandError:
+                return 'Clear error'
+                pass
+            return 'Playlist cleared.'
+        elif cmd == 'deleteid' or cmd == 'deleteids':
+            # Remove items from playlist
+            for i in sorted([int(x) for x in items], reverse=True):
+                try:
+                    self.client.deleteid(i)
+                except CommandError:
+                    return 'Delete error'
+                    pass
+            return '%d items removed from playlist' % len(items)
         elif cmd == 'insert':
+            # insert (list of) song(s) after current song
             pos = int(self.get_currentsong()['pos'])+1
             for item in reversed(items):
                 try:
                     self.client.addid(item, pos)
                 except CommandError:
-                    print("ADD URI ERROR: " + item)
+                    return 'Add error'
                     pass
             return '%d' % len(items) + ' items inserted into playlist ' + plname
+        elif cmd == 'playid':
+            # Play song with #id now.
+            self.client.playid(int(items[0]))
+            title = self.get_status_data()['title']
+            return 'Playing ' + title
+        elif cmd == 'playidnext':
+            # Move song with #id after current song
+            try:
+                self.client.moveid(int(items[0]), -1)
+            except CommandError:
+                return 'Move error'
+                pass
+            return 'Moved 1 song after current song'
+        elif cmd == 'playidsnext':
+            # Move songs with [#id] after current song
+            for item in reversed(items):
+                try:
+                    self.client.moveid(int(item), -1)
+                except CommandError:
+                    return 'Move error'
+                    pass
+            return 'Moved %d songs after current song' % len(items)
+        elif cmd == 'moveidend' or cmd == 'moveidsend':
+            # move song(s) with id(s) to end
+            move_to = self.get_status_int('playlistlength') - 1
+            for i in [int(x) for x in items][::-1]:
+                try:
+                    self.client.moveid(i, move_to)
+                except CommandError:
+                    return 'Move error'
+                    pass
+            return 'Moved %d songs to end' % len(items)
+        elif cmd == 'randomize':
+            # clear playlist
+            try:
+                self.client.shuffle()
+            except CommandError:
+                return 'Shuffle error'
+                pass
+            return 'Playlist randomized.'
+        elif cmd == 'randomize-rest':
+            # clear playlist
+            try:
+                song_pos = self.get_status_int('song') + 1
+                pl_len = self.get_status_int('playlistlength') - 1
+                self.client.shuffle("%d:%d" % (song_pos, pl_len))
+            except CommandError:
+                return 'Shuffle error'
+                pass
+            return 'Playlist randomized after current song.'
 
         return 'Unknown command '+cmd
 

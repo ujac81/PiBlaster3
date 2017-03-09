@@ -42,9 +42,7 @@ PiRemote.do_ajax = (req) ->
 
 # Perform insert or add actions on playlists.
 # Invoked by dialogs in browse/search/....
-PiRemote.pl_action = (cmd, plname, list, type) ->
-
-    return if list.length == 0
+PiRemote.pl_action = (cmd, plname, list, type='file') ->
 
     # TODO if type is dir, ask if recursive append/insert is ok
 

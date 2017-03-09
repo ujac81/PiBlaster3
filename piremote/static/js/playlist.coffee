@@ -248,14 +248,16 @@ PiRemote.pl_raise_action_dialog = (id) ->
     items = [
         ['select-all', 'Select All'],
         ['deselect-all', 'Deselect All'],
-        ['play', 'Play Item Now'],
-        ['next', 'Play Item Next'],
-        ['selection-after-current', 'Selection After Current'],
-        ['item-to-end', 'Item to End'],
-        ['selection-to-end', 'Selection to End'],
+        ['invert-selection', 'Invert Selection'],
+        ['playid', 'Play Item Now'],
+        ['playidnext', 'Play Item Next'],
+        ['playidsnext', 'Selection After Current'],
+        ['moveidend', 'Item to End'],
+        ['moveidsend', 'Selection to End'],
         ['item-to-pl', 'Item to Another Playlist'],
         ['selection-to-pl', 'Selection to Another Playlist'],
-        ['clear-selection', 'Clear Selection'],
+        ['deleteid', 'Delete Item'],
+        ['deleteids', 'Delete Selection'],
         ['clear', 'Clear Playlist'],
         ['save', 'Save Playlist As'],
         ['randomize', 'Randomize Playlist'],
@@ -283,32 +285,27 @@ PiRemote.pl_raise_action_dialog = (id) ->
 PiRemote.pl_do_action = (action, id) ->
 
     if action == 'select-all'
-        console.log 'TODO '+action
+        d3.selectAll('tr.selectable').classed('selected', 1)
     else if action == 'deselect-all'
-        console.log 'TODO '+action
-    else if action == 'play'
-        console.log 'TODO '+action
-    else if action == 'next'
-        console.log 'TODO '+action
-    else if action == 'selection-after-current'
-        console.log 'TODO '+action
-    else if action == 'item-to-end'
-        console.log 'TODO '+action
-    else if action == 'selection-to-end'
-        console.log 'TODO '+action
+        d3.selectAll('tr.selectable').classed('selected', 0)
+    else if action == 'invert-selection'
+        d3.selectAll('tr.selectable').classed('selected', ()-> ! d3.select(this).classed('selected'))
+    else if action in ['playid', 'playidnext', 'moveidend', 'deleteid']
+        PiRemote.pl_action action, '', [id]
+    else if action in ['playidsnext', 'moveidsend', 'deleteids']
+        items = d3.selectAll('tr.selectable.selected').data().map((d)->d[0])
+        PiRemote.pl_action action, '', items
+    else if action in ['clear', 'randomize', 'randomize-rest']
+        # TODO: ask for clear?
+        PiRemote.pl_action action, '', []
     else if action == 'item-to-pl'
         console.log 'TODO '+action
     else if action == 'selection-to-pl'
         console.log 'TODO '+action
-    else if action == 'clear-selection'
-        console.log 'TODO '+action
-    else if action == 'clear'
-        console.log 'TODO '+action
     else if action == 'save'
         console.log 'TODO '+action
-    else if action == 'randomize'
-        console.log 'TODO '+action
-    else if action == 'randomize-rest'
+    else
+
         console.log 'TODO '+action
 
 
