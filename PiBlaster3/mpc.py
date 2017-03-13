@@ -127,7 +127,7 @@ class MPC:
         data['time'] = current['time'] if 'time' in current else 0
         for key in ['album', 'artist', 'date', 'id']:
             data[key] = current[key] if key in current else ''
-        for key in ['elapsed', 'random', 'repeat', 'volume', 'state', 'playlist']:
+        for key in ['elapsed', 'random', 'repeat', 'volume', 'state', 'playlist', 'playlistlength']:
             data[key] = status[key] if key in status else '0'
         return data
 

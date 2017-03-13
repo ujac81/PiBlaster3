@@ -10,6 +10,12 @@ PiRemote.load_playlist_page = ->
     tb.append('tbody').attr('id', 'pl')
 
 
+    $('#addsign').show()
+    $('#addsign').off 'click'
+    $('#addsign').on 'click', ->
+        PiRemote.pl_raise_add_dialog()
+        return
+
     # Resize position indicator on window resize
     $(window).resize ->
         PiRemote.resize_pl_position_indicator()
@@ -65,7 +71,7 @@ PiRemote.rebuild_playlist = (data) ->
                 art += ' - '
             art += elem[3]
         rows.push(['', art, ''])
-        tb_data.push([elem[5], rows])
+        tb_data.push([[elem[5], elem[0]], rows])
 
     # calculate cell widths for number and time.
     # Set fixed cell widths later to avoid misaligned right borders of number column.
@@ -78,7 +84,8 @@ PiRemote.rebuild_playlist = (data) ->
         .selectAll('tr')
         .data(tb_data, (d) -> d).enter()   # <-- ENTER outer <tr> loop, full data
         .append('tr')
-            .attr('data-id', (d) -> d[0])  # id
+            .attr('data-id', (d) -> d[0][0])  # id
+            .attr('data-pos', (d) -> d[0][1])  # pos
             .attr('class', 'selectable')
         .selectAll('td')
         .data((d)->[d[1]]).enter()        # <-- ENTER outer <td> loop, [[row1, row2]]
@@ -246,22 +253,11 @@ PiRemote.pl_raise_action_dialog = (id) ->
 
     navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
     items = [
-        ['select-all', 'Select All'],
-        ['deselect-all', 'Deselect All'],
-        ['invert-selection', 'Invert Selection'],
         ['playid', 'Play Item Now'],
         ['playidnext', 'Play Item Next'],
-        ['playidsnext', 'Selection After Current'],
         ['moveidend', 'Item to End'],
-        ['moveidsend', 'Selection to End'],
         ['item-to-pl', 'Item to Another Playlist'],
-        ['selection-to-pl', 'Selection to Another Playlist'],
         ['deleteid', 'Delete Item'],
-        ['deleteids', 'Delete Selection'],
-        ['clear', 'Clear Playlist'],
-        ['save', 'Save Playlist As'],
-        ['randomize', 'Randomize Playlist'],
-        ['randomize-rest', 'Randomize Playlist After Current'],
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -281,8 +277,48 @@ PiRemote.pl_raise_action_dialog = (id) ->
     return
 
 
+
+# Raise modal action dialog after click on vertical action dots.
+PiRemote.pl_raise_add_dialog = ->
+
+    d3.select('#smallModalLabel').html('Playlist Action')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+
+    items = [
+        ['select-all', 'Select All'],
+        ['deselect-all', 'Deselect All'],
+        ['invert-selection', 'Invert Selection'],
+        ['playidsnext', 'Selection After Current'],
+        ['moveidsend', 'Selection to End'],
+        ['selection-to-pl', 'Selection to Another Playlist'],
+        ['deleteids', 'Delete Selection'],
+        ['clear', 'Clear Playlist'],
+        ['save', 'Save Playlist As'],
+        ['randomize', 'Randomize Playlist'],
+        ['randomize-rest', 'Randomize Playlist After Current'],
+        ]
+    for elem in items
+        navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', elem[0])
+            .html(elem[1])
+
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        PiRemote.pl_do_action $(this).data('action')
+        $('#modalSmall').modal('hide')
+        return
+
+    # Raise dialog.
+    $('#modalSmall').modal()
+    return
+
+
 # Callback for actions clicked in playlist action dialog
-PiRemote.pl_do_action = (action, id) ->
+PiRemote.pl_do_action = (action, id=-1) ->
 
     if action == 'select-all'
         d3.selectAll('tr.selectable').classed('selected', 1)

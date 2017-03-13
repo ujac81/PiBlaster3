@@ -9,6 +9,12 @@ PiRemote.load_browse_page = ->
     tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'browse')
 
+    $('#addsign').show()
+    $('#addsign').off 'click'
+    $('#addsign').on 'click', ->
+        PiRemote.browse_raise_add_dialog()
+        return
+
     PiRemote.do_browse PiRemote.last_browse
 
     return
@@ -56,7 +62,7 @@ PiRemote.rebuild_browse = (data) ->
     tbody.selectAll('tr')
         .data(dirs, (d) -> d).enter()
         .append('tr')
-            .attr('class', 'dir-item selectable')
+            .attr('class', 'dir-item')
             .attr('data-dirname', (d) -> d[5])
         .selectAll('td')
         .data((d, i) -> ['<img src="/piremote/static/img/folder-blue.png"/>', d[1], action_span]).enter()
@@ -64,7 +70,7 @@ PiRemote.rebuild_browse = (data) ->
             .classed('browse-head', (d, i) -> i == 0)
             .classed('browse-head-dir', (d, i) -> i == 0)
             .classed('browse-dir', (d, i) -> i == 1)
-            .classed('browse-selectable', (d, i) -> i == 1)
+            #.classed('browse-selectable', (d, i) -> i == 1)
             .classed('browse-action', (d, i) -> i == 2)
             .html((d) -> d)
 
@@ -112,8 +118,14 @@ PiRemote.install_browse_handlers = ->
         return
 
     # single click on folder or folder td enters folder
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-head-dir').off
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-head-dir').on 'click', (event) ->
+    $('div.browse-list > table > tbody > tr.dir-item > td.browse-head-dir').off
+    $('div.browse-list > table > tbody > tr.dir-item > td.browse-head-dir').on 'click', (event) ->
+        PiRemote.do_browse $(this).parent().data('dirname')
+        return
+
+    # single click on dir name enters folder
+    $('div.browse-list > table > tbody > tr.dir-item > td.browse-dir').off
+    $('div.browse-list > table > tbody > tr.dir-item > td.browse-dir').on 'click', (event) ->
         PiRemote.do_browse $(this).parent().data('dirname')
         return
 
@@ -123,21 +135,19 @@ PiRemote.install_browse_handlers = ->
         PiRemote.raise_file_dialog $(this).parent()
         return
 
-    # action triggered
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-action').off
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-action').on 'click', (event) ->
-        parent = $(this).parent()
-        if parent.is('.dir-item')
-            PiRemote.raise_dir_dialog parent
-        else if parent.is('.file-item')
-            PiRemote.raise_file_actions parent
-        else
-            console.log 'ACTION ERROR'
-            console.log parent
-
+    # dir action triggered
+    $('div.browse-list > table > tbody > tr.dir-item > td.browse-action').off
+    $('div.browse-list > table > tbody > tr.dir-item > td.browse-action').on 'click', (event) ->
+        PiRemote.raise_dir_dialog $(this).parent()
         return
 
+    # file action triggered
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-action').off
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-action').on 'click', (event) ->
+        PiRemote.raise_file_actions $(this).parent()
+        return
     return
+
 
 # Image pressed on pressed on file item.
 PiRemote.raise_file_dialog = (element) ->
@@ -174,14 +184,9 @@ PiRemote.raise_file_actions = (element) ->
 
     navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
     items = [
-        ['select-all', 'Select all'],
-        ['deselect-all', 'Deselect all'],
         ['append-item', 'Append Item'],
         ['insert-item', 'Insert Item'],
-        ['append', 'Append Selection'],
-        ['insert', 'Insert Selection'],
         ['append-other', 'Append Item to Playlist']
-        ['append-other', 'Append Selection to Playlist']
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -226,42 +231,55 @@ PiRemote.raise_dir_dialog = (element) ->
         $('#modalSmall').modal('hide')
         return
 
+    # Raise dialog.
+    $('#modalSmall').modal()
+    return
+
+
+# Callback for press on '+' sign.
+# Raise selection actions dialog.
+PiRemote.browse_raise_add_dialog = ->
+    d3.select('#smallModalLabel').html('File Actions')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+
     navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
     items = [
         ['select-all', 'Select all'],
         ['deselect-all', 'Deselect all'],
-        ['append-item', 'Append Item'],
+        ['invert', 'Invert Selection'],
         ['append', 'Append Selection'],
-        ['append-other', 'Append Item to Playlist']
-        ['append-other', 'Append Selection to Playlist']
+        ['insert', 'Insert Selection'],
+        ['append-other', 'Append Selection to another Playlist']
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
-            .append('span').attr('class', 'browse-action-dir')
-            .attr('data-action', elem[0]).attr('data-item', dirname)
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', elem[0])
             .html(elem[1])
 
-    # Callback function for clicks on navigation actions.
-    $(document).off 'click', 'span.browse-action-dir'
-    $(document).on 'click', 'span.browse-action-dir', () ->
-        PiRemote.do_browse_action $(this).data('action'), $(this).data('item'), 'dir'
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        PiRemote.do_browse_action $(this).data('action')
         $('#modalSmall').modal('hide')
         return
 
     # Raise dialog.
     $('#modalSmall').modal()
-
     return
 
 
 # Callback if span pressed in dir or file dialog.
 # Invoke playlist actions via PiRemote.pl_action().
-PiRemote.do_browse_action = (action, item, type) ->
+PiRemote.do_browse_action = (action, item=null, type='file') ->
 
     if action == 'select-all'
         d3.selectAll('tr.selectable').classed('selected', 1)
     else if action == 'deselect-all'
         d3.selectAll('tr.selectable').classed('selected', 0)
+    else if action == 'invert'
+        d3.selectAll('tr.selectable').classed('selected', ()-> ! d3.select(this).classed('selected'))
     else if action == 'append-item'
         PiRemote.pl_action 'append', '', [item], type
     else if action == 'insert-item'

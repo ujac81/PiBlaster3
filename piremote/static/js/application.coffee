@@ -39,6 +39,7 @@ PiRemote.load_page = (page) ->
 
     # clean main page node
     d3.select('.piremote-content').html('')
+    $('#addsign').hide()
 
     if page == 'index'
         PiRemote.load_index_page()
