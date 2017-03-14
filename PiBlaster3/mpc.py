@@ -433,8 +433,38 @@ class MPC:
 
         return 'Unknown command '+cmd
 
+    def search_file(self, arg):
+        """ Search in MPD data base using 'file' tag.
+        :param arg: search pattern
+        :return: [title, artist, album, length, filename]
+        """
+        if arg is None or len(arg) < 3:
+            return []
 
+        self.ensure_connected()
 
+        result = []
+
+        try:
+            search = self.client.search('file', arg)
+        except CommandError:
+            return []
+
+        for item in search:
+            res = []
+            if 'title' in item:
+                res.append(item['title'])
+            elif 'file' in item:
+                no_ext = os.path.splitext(item['file'])[0]
+                res.append(os.path.basename(no_ext).replace('_', ' '))
+            res.append(item['artist'] if 'artist' in item else '')
+            res.append(item['album'] if 'album' in item else '')
+            length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
+            res.append(length)
+            res.append(item['file'])
+            result.append(res)
+
+        return result
 
 
 

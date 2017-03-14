@@ -64,3 +64,12 @@ def plchanges_ajax(request):
     version = request.GET.get('version', None)
     mpc = MPC()
     return JsonResponse({'pl': mpc.playlist_changes(version), 'status': mpc.get_status_data()})
+
+
+# POST /ajax/search/
+def search_ajax(request):
+    search = request.POST.get('pattern', None)
+    mpc = MPC()
+    return JsonResponse({'search': mpc.search_file(search)})
+
+

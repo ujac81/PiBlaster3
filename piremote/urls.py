@@ -11,5 +11,6 @@ urlpatterns = [
     url(r'^ajax/plaction/$', views.plaction_ajax, name='plaction_ajax'),
     url(r'^ajax/plinfo/$', views.plinfo_ajax, name='plinfo_ajax'),
     url(r'^ajax/plchanges/$', views.plchanges_ajax, name='plchanges_ajax'),
+    url(r'^ajax/search/$', views.search_ajax, name='search_ajax'),
 ]
 

@@ -18,6 +18,9 @@ PiRemote.last_browse = ''
 PiRemote.last_pl_id = '-1'
 PiRemote.last_pl_version = '-1'
 
+PiRemote.last_search = ''
+PiRemote.last_data = []
+
 PiRemote.dragging = false  # true while element is dragged in playlist
 
 
