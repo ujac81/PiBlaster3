@@ -18,6 +18,8 @@ PiRemote.last_browse = ''
 PiRemote.last_pl_id = '-1'
 PiRemote.last_pl_version = '-1'
 
+PiRemote.dragging = false  # true while element is dragged in playlist
+
 
 # Fade in status bar, set text and start fade out timer.
 PiRemote.setStatusText = (text, fade=3000) ->

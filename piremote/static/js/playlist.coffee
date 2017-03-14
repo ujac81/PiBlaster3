@@ -218,10 +218,36 @@ PiRemote.install_pl_handlers = ->
         PiRemote.tb_data[pos][5] = ! PiRemote.tb_data[pos][5]
         return
 
+    # single click on action raises action dialog
     $('td.pl-action').off 'click'
     $('td.pl-action').on 'click', (event) ->
         id = $(this).parent().parent().parent().parent().data('id')
         PiRemote.pl_raise_action_dialog id
+        return
+
+    # Detect click-and-hold on item
+    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').off 'mousedown'
+    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').on 'mousedown', (event) ->
+        $this = $(this).data "mousedown", true
+        setTimeout ( ->
+            if $this.data('mousedown') == true  # prevent too short hold time
+                PiRemote.pl_raise_drag_element event, $this
+                # TODO: invert selection state of the element
+            return
+        ), 1000  # <-- click and hold timeout
+        return
+
+    # Set mousedown data to false if mouse no longer down:
+    # Prevent mouse-hold event if hold too short.
+    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').off 'mouseup'
+    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').on 'mouseup', ->
+        $(this).data "mousedown", false
+        return
+
+    # Detect mouse up events while dragging
+    $(document).off 'mouseup'
+    $(document).on 'mouseup', (event) ->
+        PiRemote.pl_drop_drag_element event if PiRemote.dragging
         return
 
     return
@@ -435,6 +461,54 @@ PiRemote.pl_do_action = (action, id=-1) ->
     else
 
         console.log 'TODO '+action
+    return
 
+
+# Callback for click-and-hold event.
+# Show playlist drag element and move it below cursor.
+PiRemote.pl_raise_drag_element = (event, element) ->
+    return if PiRemote.dragging
+
+    tr = element.parent().parent().parent().parent()
+    pos = tr.data('pos')
+    PiRemote.drag_id = tr.data('id')
+
+    $('#dragdiv').text(PiRemote.tb_data[pos][2])
+    $('#dragdiv').show()
+    $('#dragdiv').css('top', event.pageY-20)
+
+
+    $(document).on 'mousemove', (event) ->
+        event.preventDefault()
+        $('#dragdiv').css('top', event.pageY-20)
+        return
+
+
+    PiRemote.dragging = true
+    return
+
+
+# Callback for mouseup.
+# Drop dragged element if dragging.
+PiRemote.pl_drop_drag_element = (event) ->
+    return unless PiRemote.dragging
+    PiRemote.dragging = false
+
+    # stop dragging
+    $(document).off 'mousemove'
+    $('#dragdiv').hide()
+
+    # get position id of element where dragging has stopped
+    elem = $(document.elementFromPoint($(window).width()/2, event.pageY))
+    find_tr = elem
+    while not find_tr.is('html') and not find_tr.is('tr.mainrow')
+        find_tr = find_tr.parent()
+
+    pos = PiRemote.tb_data.length  # dropped somewhere else --> put to end
+    if find_tr.is('tr.mainrow')
+        pos = find_tr.data('pos')  # dropped on item -> use its position
+
+    # perform move
+    PiRemote.pl_action 'moveid', '', [PiRemote.drag_id, pos]
 
     return

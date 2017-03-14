@@ -394,6 +394,14 @@ class MPC:
                     return 'Move error'
                     pass
             return 'Moved %d songs after current song' % len(items)
+        elif cmd == 'moveid':
+            # move song(s) with id(s) to end
+            try:
+                self.client.moveid(items[0], items[1])
+            except CommandError:
+                return 'Move error'
+                pass
+            return 'Moved song to position %d' % (int(items[1])+1)
         elif cmd == 'moveidend' or cmd == 'moveidsend':
             # move song(s) with id(s) to end
             move_to = self.get_status_int('playlistlength') - 1
