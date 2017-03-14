@@ -29,8 +29,6 @@ PiRemote.load_playlist_page = ->
 PiRemote.get_playlist = ->
 
     PiRemote.playlist_poll_started = false
-    PiRemote.playlist_polling = false
-
 
     PiRemote.do_ajax
         url: 'plinfo'
@@ -38,6 +36,23 @@ PiRemote.get_playlist = ->
         data: {}
         success: (data) ->
             PiRemote.rebuild_playlist data   # <-- rebuild table callback
+            return
+    return
+
+
+# Invoke AJAX post of changes in playlist.
+# Called if playlist version has changed.
+PiRemote.get_playlist_changes = (last_version) ->
+
+    PiRemote.playlist_poll_started = false
+
+    PiRemote.do_ajax
+        url: 'plchanges'
+        method: 'GET'
+        data:
+            version: last_version
+        success: (data) ->
+            PiRemote.pl_apply_changes data   # <-- change playlist
             return
     return
 
@@ -51,18 +66,14 @@ PiRemote.get_playlist = ->
 #
 PiRemote.rebuild_playlist = (data) ->
 
-    tbody = d3.select('tbody#pl')
-    tbody.selectAll('tr').remove()
-
+    d3.select('tbody#pl').selectAll('tr').remove()
     PiRemote.last_pl_version = data.pl.version
 
     # Prepare data for table build:
     # Array of
-    # [ ID, [ [number, title, length, action-span], ['', artist, '']]
-    tb_data = []
+    # [pos, id, title, length, arist-album]
+    PiRemote.tb_data = []
     for elem in data.pl.data
-        span_item = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
-        rows = [[parseInt(elem[0])+1, elem[1], elem[4], span_item]]
         art = ''
         if elem[2].length
             art = elem[2]
@@ -70,40 +81,48 @@ PiRemote.rebuild_playlist = (data) ->
             if elem[2].length
                 art += ' - '
             art += elem[3]
-        rows.push(['', art, ''])
-        tb_data.push([[elem[5], elem[0]], rows])
+        item = [parseInt(elem[0]), parseInt(elem[5]), elem[1], elem[4], art, false]
+        PiRemote.tb_data.push(item)
+
+    PiRemote.pl_update_table()
+
+    PiRemote.last_pl_id = '-1'
+    PiRemote.update_pl_status data.status
+    PiRemote.install_pl_handlers()
+    PiRemote.start_pl_poll()
+    return
+
+
+# Rebuild playlist table with current content from PiRemote.tb_data.
+# Called by rebuild_playlist() and pl_apply_changes()
+PiRemote.pl_update_table =  ->
 
     # calculate cell widths for number and time.
     # Set fixed cell widths later to avoid misaligned right borders of number column.
-    no_text = '' + tb_data.length
+    no_text = '' + PiRemote.tb_data.length
     no_width = no_text.width('large')+20
     time_width = '000:00'.width('large')+20
 
-    # Build table
-    tbody
-        .selectAll('tr')
-        .data(tb_data, (d) -> d).enter()   # <-- ENTER outer <tr> loop, full data
-        .append('tr')
-            .attr('data-id', (d) -> d[0][0])  # id
-            .attr('data-pos', (d) -> d[0][1])  # pos
-            .attr('class', 'selectable')
-        .selectAll('td')
-        .data((d)->[d[1]]).enter()        # <-- ENTER outer <td> loop, [[row1, row2]]
-        .append('td')
-            .attr('class', 'pltdmain')
-        .selectAll('table')
-        .data((d)->[d]).enter()           # <-- ENTER inner <table>, [[row1, row2]]
-        .append('table')
-            .attr('class', 'pltbsub')
-        .selectAll('tr')
-        .data((d)->d).enter()           # <-- ENTER inner <tr>, [row1, row2]
-        .append('tr')
-        .attr('class', (d, i) -> 'pltr-'+i)
-        .selectAll('td')
-        .data((d)->d).enter()           # <-- ENTER inner <td>, [row1|2_elements]
-        .append('td')
-            .attr('class', (d, i) -> 'pltd-'+i)
-            .attr('style', (d, i) ->
+    # action element in last cell of first row in sub table
+    span_item = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
+
+    # MAINROW
+    tbody = d3.select('tbody#pl')
+    mainrows = tbody.selectAll('tr.mainrow').data(PiRemote.tb_data)
+    mainrows.attr('data-id', (d) -> d[1])  # id
+            .attr('data-pos', (d) -> d[0])  # pos
+            .classed('selected', (d) -> d[5])
+
+    # DELETE
+    mainrows.exit().remove()
+
+    # UPDATE
+    maincellup = mainrows.selectAll('td.pltdmain').data((d)->[d])
+    subtableup = maincellup.selectAll('table.pltbsub').data((d)->[d])
+    subrowsup = subtableup.selectAll('tr').data((d)->[[d[0]+1, d[2], d[3], span_item], ['', d[4], '']])
+    subcellsup = subrowsup.selectAll('td').data((d)->d)
+    subcellsup
+        .attr('style', (d, i) ->
                 if i == 0
                     return 'width: '+no_width+'px;'     # number column
                 if i == 2
@@ -111,14 +130,76 @@ PiRemote.rebuild_playlist = (data) ->
                 if i == 3
                     return 'width: 20px;'               # action column
                 return 'max-width: 100%;')
-            .attr('rowspan', (d, i) ->
-                if i == 3       # NOTE: only row1 has 4 elements, 2nd row has 3.
-                    return '2'
-                return '1')
-            .classed('pl-action', (d, i) -> i ==3)
-            .classed('selectable', (d, i) -> i != 3)
-            .html((d)->d)
+        .html((d)->d)
 
+    # NEW
+    maincells = mainrows.enter().append('tr')
+        .attr('data-id', (d) -> d[1])  # id
+        .attr('data-pos', (d) -> d[0])  # pos
+        .attr('class', 'selectable mainrow')
+        .classed('selected', (d) -> d[5])
+        .selectAll('td.pltdmain').data((d)->[d])
+
+    subtables = maincells.enter().append('td').attr('class', 'pltdmain')
+        .selectAll('table.pltbsub').data((d)->[d])
+
+    subrows = subtables.enter().append('table').attr('class', 'pltbsub')
+        .selectAll('tr').data((d)->[[d[0]+1, d[2], d[3], span_item], ['', d[4], '']])
+
+    subcells = subrows.enter().append('tr').attr('class', (d, i) -> 'pltr-'+i)
+        .selectAll('td').data((d)->d)
+
+    subcell = subcells.enter().append('td')
+        .attr('class', (d, i) -> 'pltd-'+i)
+        .attr('style', (d, i) ->
+            if i == 0
+                return 'width: '+no_width+'px;'     # number column
+            if i == 2
+                return 'width: '+time_width+'px;'   # number time
+            if i == 3
+                return 'width: 20px;'               # action column
+            return 'max-width: 100%;')
+        .attr('rowspan', (d, i) ->
+            if i == 3       # NOTE: only row1 has 4 elements, 2nd row has 3.
+                return '2'
+            return '1')
+        .classed('pl-action', (d, i) -> i ==3)
+        .classed('selectable', (d, i) -> i != 3)
+        .html((d)->d)
+
+    return
+
+
+# Apply changes to playlist.
+# Callback for POST /piremote/plchanges AJAX call.
+PiRemote.pl_apply_changes = (data) ->
+
+    PiRemote.last_pl_version = data.pl.version
+    len = data.pl.length
+    change_list = data.pl.changes
+
+    selected_ids = []
+    selected_ids.push elem[1] for elem in PiRemote.tb_data when elem[5]
+
+    PiRemote.tb_data.length = len
+
+    for elem in change_list
+        pos = parseInt(elem[0])
+        id = parseInt(elem[5])
+        art = ''
+        if elem[2].length
+            art = elem[2]
+        if elem[3].length
+            if elem[2].length
+                art += ' - '
+            art += elem[3]
+        selected = id in selected_ids
+        item = [pos, id, elem[1], elem[4], art, selected]
+        PiRemote.tb_data[pos] = item
+
+    PiRemote.pl_update_table()
+
+    # Reinstall callbacks and set position and current song indicator
     PiRemote.last_pl_id = '-1'
     PiRemote.update_pl_status data.status
     PiRemote.install_pl_handlers()
@@ -133,6 +214,8 @@ PiRemote.install_pl_handlers = ->
     $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').off 'click'
     $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').on 'click', (event) ->
         $(this).parent().parent().parent().parent().toggleClass 'selected'
+        pos = $(this).parent().parent().parent().parent().data('pos')
+        PiRemote.tb_data[pos][5] = ! PiRemote.tb_data[pos][5]
         return
 
     $('td.pl-action').off 'click'
@@ -154,7 +237,7 @@ PiRemote.start_pl_poll = ->
 
 # Short polling for play status
 PiRemote.do_pl_poll = ->
-    return if PiRemote.playlist_polling
+    return if PiRemote.playlist_polling > 1
     return unless PiRemote.playlist_poll_started
     return if PiRemote.current_page != 'playlist'
 
@@ -164,10 +247,10 @@ PiRemote.do_pl_poll = ->
         data: {}
         success: (data) ->
             PiRemote.update_pl_status data  # <-- poll callback
-            PiRemote.playlist_polling = true
+            PiRemote.playlist_polling += 1
             window.setTimeout ( ->
-                PiRemote.playlist_polling = false
                 PiRemote.do_pl_poll()
+                PiRemote.playlist_polling -= 1
                 return
             ),  1000 # <-- short polling interval
             return
@@ -180,30 +263,33 @@ PiRemote.update_pl_status = (data) ->
 
     # Check if playlist version changed
     if PiRemote.last_pl_version != parseInt(data.playlist)
-        d3.select('tbody#pl').selectAll('tr').remove()
-        d3.select('tbody#pl').selectAll('tr').append('td').html('refetching....')
-        PiRemote.get_playlist()
+        PiRemote.get_playlist_changes PiRemote.last_pl_version
         return
 
     # Update position indicator and currently highlighted item only if song id changed.
     if data.id and data.id != PiRemote.last_pl_id
+
             # turn off running for all but running
-            d3.selectAll('table#tbpl tr.selectable').filter((d) -> d[0] != data.id).classed('running', 0)
+            d3.selectAll('table#tbpl tr.selectable').filter((d) -> d[1] != data.id).classed('running', 0)
             # activate running song
             d3.selectAll('table#tbpl tr.selectable[data-id="'+data.id+'"').classed('running', 1)
             PiRemote.last_pl_id = data.id
 
             # scroll to current item
-            window.scrollTo 0, $('table#tbpl tr.selectable.running').offset().top -
-                window.innerHeight*0.2
+            # TODO BUG tr.selectable.running can be undefined
+            running = $('table#tbpl tr.selectable.running')
+            if running.length > 0
+                window.scrollTo 0, running.offset().top -
+                    window.innerHeight*0.2
 
             # remove old position div
             d3.selectAll('#plpos').remove()
 
             # add position div and adjust width
-            d3.select('table#tbpl tr.selectable.running td table tr.pltr-0 td.pltd-1')
-                .append('div').attr('id', 'plpos')
-                .append('div').attr('id', 'plposfill')
+            if running.length > 0
+                d3.select('table#tbpl tr.selectable.running td table tr.pltr-0 td.pltd-1')
+                    .append('div').attr('id', 'plpos')
+                    .append('div').attr('id', 'plposfill')
             PiRemote.resize_pl_position_indicator()
     else if not data.id
         # remove old position div
@@ -225,9 +311,11 @@ PiRemote.update_pl_status = (data) ->
 # Callback for resize event and also invoked after status update if current song changed.
 PiRemote.resize_pl_position_indicator = ->
     $('#plpos').width 1
-    w = $('table#tbpl tr.selectable.running td table tr.pltr-0 td.pltd-1').width()
-    if w
-        $('#plpos').width w - 2
+    running = $('table#tbpl tr.selectable.running')
+    if running.length > 0
+        w = $('table#tbpl tr.selectable.running td table tr.pltr-0 td.pltd-1').width()
+        if w
+            $('#plpos').width w - 2
     return
 
 # Set position fill in position slider (percentage value required).
@@ -243,7 +331,7 @@ PiRemote.pl_set_position_indicator = (pct) ->
 # Raise modal action dialog after click on vertical action dots.
 PiRemote.pl_raise_action_dialog = (id) ->
 
-    title = d3.select('tr[data-id="'+id+'"]').data()[0][1][1][1]
+    title = d3.select('tr[data-id="'+id+'"]').data()[0][2]
     return unless title
 
     d3.select('#smallModalLabel').html('Playlist Action')
@@ -329,7 +417,7 @@ PiRemote.pl_do_action = (action, id=-1) ->
     else if action in ['playid', 'playidnext', 'moveidend', 'deleteid']
         PiRemote.pl_action action, '', [id]
     else if action in ['playidsnext', 'moveidsend', 'deleteids']
-        items = d3.selectAll('tr.selectable.selected').data().map((d)->d[0])
+        items = d3.selectAll('tr.selectable.selected').data().map((d)->d[1])
         PiRemote.pl_action action, '', items
     else if action in ['clear', 'randomize', 'randomize-rest']
         # TODO: ask for clear?

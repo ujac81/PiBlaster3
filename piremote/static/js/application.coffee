@@ -14,7 +14,7 @@ $ ->
         PiRemote.load_page action
 
     # Initial load of main page.
-    PiRemote.load_page 'index'
+    PiRemote.load_page PiRemote.current_page, true
 
     # Disable polling while focus is lost.
     # Load blur page on focus loss and reload page on focus return.
@@ -33,8 +33,8 @@ $ ->
 
 # Dynamic page loader -- pages built via d3.js.
 # For loader functions see browse.coffee, playlist.coffee, ....
-PiRemote.load_page = (page) ->
-    return if page == PiRemote.current_page
+PiRemote.load_page = (page, force=false) ->
+    # return if page == PiRemote.current_page && ! force
     PiRemote.current_page = page
 
     # clean main page node

@@ -4,15 +4,15 @@ window.PiRemote = {}
 
 
 PiRemote.poll_started = false
-PiRemote.polling = false
+PiRemote.polling = 0
 
 
 PiRemote.playlist_poll_started = false
 PiRemote.playlist_polling = false
 
 PiRemote.last_status = ''
-PiRemote.current_page = ''
-PiRemote.safe_page = 'index'
+PiRemote.current_page = 'index'  # overwritten on load by script in index.pug
+PiRemote.safe_page = 'index'  # safe last active page while blurring
 PiRemote.last_browse = ''
 
 PiRemote.last_pl_id = '-1'

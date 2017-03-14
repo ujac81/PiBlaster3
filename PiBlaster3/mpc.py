@@ -159,18 +159,19 @@ class MPC:
 
         pl_len = self.get_status_int('playlistlength')
         pl_ver = self.get_status_int('playlist')
+        result = {'version': pl_ver, 'data': [], 'length': pl_len}
 
         if end == -1:
             end = pl_len
 
         if end < start:
-            return []
+            return result
 
         if start >= pl_len:
-            return []
+            return result
 
-        result = []
         items = self.client.playlistinfo("%d:%d" % (start, end))
+        data = []
         for item in items:
             res = [item['pos']]
             if 'title' in item:
@@ -183,11 +184,37 @@ class MPC:
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append(item['id'])
+            data.append(res)
+        result['data'] = data
+        return result
+
+    def playlist_changes(self, version):
+        """Get changes in playlist since version.
+
+        :param version:
+        :return:
+        """
+        pl_len = self.get_status_int('playlistlength')
+        pl_ver = self.get_status_int('playlist')
+        changes = self.client.plchanges(version)
+        result = []
+        for change in changes:
+            item = self.client.playlistinfo(change['pos'])[0]
+            res = [item['pos']]
+            if 'title' in item:
+                res.append(item['title'])
+            elif 'file' in item:
+                no_ext = os.path.splitext(item['file'])[0]
+                res.append(os.path.basename(no_ext).replace('_', ' '))
+            res.append(item['artist'] if 'artist' in item else '')
+            res.append(item['album'] if 'album' in item else '')
+            length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
+            res.append(length)
+            res.append(item['id'])
             result.append(res)
+        return {'version': pl_ver, 'changes': result, 'length': pl_len}
 
-        return {'version': pl_ver, 'data': result}
-
-    def exex_command(self, cmd):
+    def exec_command(self, cmd):
         """
 
         :param cmd:

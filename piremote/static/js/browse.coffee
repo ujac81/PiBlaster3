@@ -231,6 +231,26 @@ PiRemote.raise_dir_dialog = (element) ->
         $('#modalSmall').modal('hide')
         return
 
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+    items = [
+        ['append-item', 'Append Directory'],
+        ['append-other', 'Append Directory to another Playlist']
+        ]
+    for elem in items
+        navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-dir')
+            .attr('data-action', elem[0]).attr('data-item', dirname)
+            .html(elem[1])
+
+    # Callback function for clicks on navigation actions.
+    $(document).off 'click', 'span.browse-action-dir'
+    $(document).on 'click', 'span.browse-action-dir', () ->
+        PiRemote.do_browse_action $(this).data('action'), $(this).data('item'), 'dir'
+        $('#modalSmall').modal('hide')
+        return
+
+
     # Raise dialog.
     $('#modalSmall').modal()
     return
