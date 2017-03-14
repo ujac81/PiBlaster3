@@ -410,15 +410,19 @@ PiRemote.pl_do_action = (action, id=-1) ->
 
     if action == 'select-all'
         d3.selectAll('tr.selectable').classed('selected', 1)
+        elem[5] = true for elem in PiRemote.tb_data
     else if action == 'deselect-all'
         d3.selectAll('tr.selectable').classed('selected', 0)
+        elem[5] = false for elem in PiRemote.tb_data
     else if action == 'invert-selection'
         d3.selectAll('tr.selectable').classed('selected', ()-> ! d3.select(this).classed('selected'))
+        elem[5] = ! elem[5] for elem in PiRemote.tb_data
     else if action in ['playid', 'playidnext', 'moveidend', 'deleteid']
         PiRemote.pl_action action, '', [id]
     else if action in ['playidsnext', 'moveidsend', 'deleteids']
         items = d3.selectAll('tr.selectable.selected').data().map((d)->d[1])
         PiRemote.pl_action action, '', items
+        PiRemote.pl_do_action 'deselect-all'
     else if action in ['clear', 'randomize', 'randomize-rest']
         # TODO: ask for clear?
         PiRemote.pl_action action, '', []
