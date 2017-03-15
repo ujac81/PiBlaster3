@@ -188,14 +188,14 @@ class MPC:
         result['data'] = data
         return result
 
-    def playlistinfo_full(self, pos):
-        """Return full playlistinfo for song at position
+    def playlistinfo_full(self, id):
+        """Return full playlistinfo for song with id
 
         :param pos:
         :return:
         """
         self.ensure_connected()
-        return self.client.playlistinfo(pos)
+        return self.client.playlistid(id)
 
     def playlist_changes(self, version):
         """Get changes in playlist since version.

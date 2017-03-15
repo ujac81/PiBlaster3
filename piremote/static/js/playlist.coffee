@@ -372,6 +372,7 @@ PiRemote.pl_raise_action_dialog = (id) ->
         ['moveidend', 'Item to End'],
         ['item-to-pl', 'Item to Another Playlist'],
         ['deleteid', 'Delete Item'],
+        ['goto', 'Go to Folder'],
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -458,9 +459,19 @@ PiRemote.pl_do_action = (action, id=-1) ->
         console.log 'TODO '+action
     else if action == 'save'
         console.log 'TODO '+action
+    else if action == 'goto'
+        # Fetch folder for id
+        PiRemote.do_ajax
+            url: 'plinfo/'+id
+            method: 'GET'
+            success: (data) ->
+                if data.result isnt `undefined` and data.result.length > 0 and data.result[0].file isnt `undefined`
+                    PiRemote.last_browse = data.result[0].file.split('/').slice(0,-1).join('/')
+                    PiRemote.load_page 'browse'
+                return
     else
-
         console.log 'TODO '+action
+        
     return
 
 
