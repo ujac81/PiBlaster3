@@ -188,6 +188,15 @@ class MPC:
         result['data'] = data
         return result
 
+    def playlistinfo_full(self, pos):
+        """Return full playlistinfo for song at position
+
+        :param pos:
+        :return:
+        """
+        self.ensure_connected()
+        return self.client.playlistinfo(pos)
+
     def playlist_changes(self, version):
         """Get changes in playlist since version.
 
@@ -433,9 +442,10 @@ class MPC:
 
         return 'Unknown command '+cmd
 
-    def search_file(self, arg):
-        """ Search in MPD data base using 'file' tag.
+    def search_file(self, arg, limit=1000):
+        """ Search in MPD data base using 'any' and 'file' tag.
         :param arg: search pattern
+        :param limit: max amount of results
         :return: {status: '', error: '', result: [title, artist, album, length, filename]}
         """
         if arg is None or len(arg) < 3:
@@ -445,12 +455,46 @@ class MPC:
 
         result = []
 
+        # Search for first word and filter results later.
+        # MPD search does not support AND for multiple words.
+        first_arg = arg.split(' ')[0]
+        other_args = [s.lower() for s in arg.split(' ')[1:] if len(s)]
+
         try:
-            search = self.client.search('file', arg)
+            search = self.client.search('any', first_arg)
+            search += self.client.search('file', first_arg)
         except CommandError as e:
             return {'error': 'Command error in search: %s' % e}
 
-        for item in search:
+        has_files = []
+
+        for item in search[:limit]:
+            if 'file' not in item:
+                continue
+            if item['file'] in has_files:
+                continue
+
+            has_files.append(item['file'])
+
+            # Filter for remaining args.
+            if len(other_args):
+                # Generate string of all values in search item to check for search terms.
+                match_list = [value for key, value in item.items()]
+                try:
+                    match = ''.join(match_list).lower()
+                except TypeError:
+                    # There are arrays inside the results.... Bad thing!
+                    match_list = [i for sublist in match_list for i in sublist]
+                    match = ''.join(match_list).lower()
+
+                # Check remaining patterns
+                valid = True
+                for check in other_args:
+                    if check not in match:
+                        valid = False
+                if not valid:
+                    continue
+
             res = []
             if 'title' in item:
                 res.append(item['title'])

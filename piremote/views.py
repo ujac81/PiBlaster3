@@ -58,6 +58,11 @@ def plinfo_ajax(request):
     mpc = MPC()
     return JsonResponse({'pl': mpc.playlistinfo(0, -1), 'status': mpc.get_status_data()})
 
+# GET /ajax/plinfo/POSITION
+def plinfo_pos_ajax(request, pos):
+    mpc = MPC()
+    return JsonResponse(mpc.playlistinfo_full(pos))
+
 
 # GET /ajax/plchanges/
 def plchanges_ajax(request):
