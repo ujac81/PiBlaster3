@@ -37,6 +37,9 @@ PiRemote.load_page = (page, force=false) ->
     # return if page == PiRemote.current_page && ! force
     PiRemote.current_page = page
 
+    # remove page specific classes from body
+    $('body').removeClass()
+
     # clean main page node
     d3.select('.piremote-content').html('')
     $('#addsign').hide()

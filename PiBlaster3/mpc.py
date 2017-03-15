@@ -436,10 +436,10 @@ class MPC:
     def search_file(self, arg):
         """ Search in MPD data base using 'file' tag.
         :param arg: search pattern
-        :return: [title, artist, album, length, filename]
+        :return: {status: '', error: '', result: [title, artist, album, length, filename]}
         """
         if arg is None or len(arg) < 3:
-            return []
+            return {'error': 'Search pattern must contain at least 3 characters!'}
 
         self.ensure_connected()
 
@@ -447,8 +447,8 @@ class MPC:
 
         try:
             search = self.client.search('file', arg)
-        except CommandError:
-            return []
+        except CommandError as e:
+            return {'error': 'Command error in search: %s' % e}
 
         for item in search:
             res = []
@@ -464,7 +464,7 @@ class MPC:
             res.append(item['file'])
             result.append(res)
 
-        return result
+        return {'status': '%d items found' % len(result), 'search': result}
 
 
 

@@ -17,6 +17,9 @@ body
     // footer height
     // margin-bottom: 40px
 
+body.search
+    padding-top: 100px
+
 #basecont
     padding: 0px
 
@@ -29,9 +32,19 @@ p#empty
     position: fixed
     bottom: 0
     width: 100%
-    height: 40px
-    background-color: rgb(248, 248, 248)
+    height: 35px
     padding-top: 10px
+    background-color: rgb(248, 248, 248)
+
+.footer.status
+    background-color: rgb(248, 248, 248)
+    p
+        font-weight: medium
+
+.footer.error
+    background-color: red
+    p
+        font-weight: bold
 
 ////////////////// ADD DIV //////////////////
 
@@ -277,4 +290,52 @@ table#searchbar tr td#searchbarinput input
 table#searchbar tr td#searchbarbutton
     float: right
 
+
+////////////////// SEARCH RESULTS //////////////////
+
+// no padding for outer table
+.table tbody tr  td.searchtdmain
+    padding: 0
+
+// inner table
+table.searchtbsub
+    max-width: 100%
+    width: 100%
+    background-color: transparent
+
+// all td first line
+tr.searchtr-0 td
+    font-size: $normal-font-size
+    padding: $vert-pad $horiz-pad
+    vertical-align: middle
+
+// index
+tr.searchtr-0 td.searchtd-0, tr.searchtr-1 td.searchtd-0
+    text-align: right
+    border-right: 1px solid #ddd
+
+// ... vertical dots
+tr.searchtr-0 td.searchtd-3
+    color: #888
+    text-align: center
+    vertical-align: middle
+    padding: 5px
+
+// time
+tr.searchtr-0 td.searchtd-2
+    text-align: right
+    max-width: 95%
+
+// album - artist
+tr.searchtr-1 td
+    font-size: $small-font-size
+    padding: 0px 0px 5px 0px
+    vertical-align: top
+    text-align: center
+    color: #777
+
+// select
+table#tbsearch tr.selected
+    background-color: blue
+    color: white
 

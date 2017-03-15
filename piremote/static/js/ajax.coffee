@@ -18,6 +18,7 @@ PiRemote.ajax_setup = ->
 
     return
 
+
 # Perform AJAX post request
 PiRemote.do_ajax = (req) ->
     data = req.data
@@ -29,16 +30,18 @@ PiRemote.do_ajax = (req) ->
         dataType: 'json'
         method: req.method
         success: (data) ->
-            if data.status
-                PiRemote.setStatusText data.status
-            req.success(data)
+            PiRemote.setStatusText data.status if data.status
+            PiRemote.setErrorText data.error if data.error
+            req.success(data) if req.success
             return
         error: (jqXHR) ->
             console.log 'AJAX ERROR'
             console.log jqXHR
+            PiRemote.setErrorText 'AJAX communication error! You might want to reload.'
             return
 
     return
+
 
 # Perform insert or add actions on playlists.
 # Invoked by dialogs in browse/search/....
@@ -53,7 +56,5 @@ PiRemote.pl_action = (cmd, plname, list, type='file') ->
             'plname': plname
             'list': list
         method: 'POST'
-        success: (data) ->
-            # setStatusText done by do_ajax
-            return
+
     return

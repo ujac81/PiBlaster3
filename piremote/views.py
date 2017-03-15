@@ -15,7 +15,7 @@ def index(request):
 # GET /pages/(PAGE)
 # We only have one get for the main page.
 # Sub pages are dynamical loaded via AJAX and inner page content is rebuilt by d3.js.
-def page(request, page):
+def pages(request, page):
     template = loader.get_template('piremote/index.pug')
     return HttpResponse(template.render({'page': page}, request))
 
@@ -70,6 +70,6 @@ def plchanges_ajax(request):
 def search_ajax(request):
     search = request.POST.get('pattern', None)
     mpc = MPC()
-    return JsonResponse({'search': mpc.search_file(search)})
+    return JsonResponse(mpc.search_file(search))
 
 

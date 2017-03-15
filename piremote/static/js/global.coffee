@@ -19,15 +19,18 @@ PiRemote.last_pl_id = '-1'
 PiRemote.last_pl_version = '-1'
 
 PiRemote.last_search = ''
-PiRemote.last_data = []
+PiRemote.last_search_data = []
 
 PiRemote.dragging = false  # true while element is dragged in playlist
 
 
 # Fade in status bar, set text and start fade out timer.
-PiRemote.setStatusText = (text, fade=3000) ->
-    $('.footer').fadeTo('fast', 1)
+PiRemote.setStatus = (text, error, fade) ->
+    $('.footer').toggleClass('error', error)
+    $('.footer').toggleClass('status', ! error)
+
     $('#statusbar').html(text)
+    $('.footer').fadeTo('fast', 1)
 
     window.setTimeout ( ->
         if text == $('#statusbar').html()
@@ -37,6 +40,18 @@ PiRemote.setStatusText = (text, fade=3000) ->
         ), fade
 
     return
+
+# Fade in status bar, set text and start fade out timer.
+PiRemote.setStatusText = (text, fade=5000) ->
+    PiRemote.setStatus text, false, fade
+    return
+
+
+# Fade in status red bar, set text and start fade out timer.
+PiRemote.setErrorText = (text, fade=10000) ->
+    PiRemote.setStatus text, true, fade
+    return
+
 
 # Convert seconds to string like 3:02
 PiRemote.secToMin = (secs) ->
