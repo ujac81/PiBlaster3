@@ -79,3 +79,10 @@ def search_ajax(request):
     return JsonResponse(mpc.search_file(search))
 
 
+# POST /ajax/fileinfo/
+def file_info_ajax(request):
+    file = request.GET.get('file', None)
+    mpc = MPC()
+    return JsonResponse({'info': mpc.file_info(file)})
+
+

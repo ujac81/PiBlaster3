@@ -57,6 +57,8 @@ PiRemote.do_search = (pattern) ->
 # Rebuild results table
 PiRemote.search_rebuild = (data) ->
 
+    $('#addsign').hide()
+
     PiRemote.last_search_data = data
 
     # no search result so far
@@ -87,7 +89,9 @@ PiRemote.search_rebuild = (data) ->
     # items: [title, artist, album, length, filename]
     mainrows = tbody.selectAll('tr.mainrow').data(data.search)
     maincells = mainrows.enter().append('tr')
-        .attr('data-filename', (d)->d[4])
+        .attr('data-filename', (d)->d[5])
+        .attr('data-title', (d)->d[0])
+        .attr('class', 'mainrow selectable file-item')
         .selectAll('td.searchtdmain').data((d)->[d])
 
     subtables = maincells.enter().append('td').attr('class', 'searchtdmain')
@@ -114,10 +118,112 @@ PiRemote.search_rebuild = (data) ->
                 return '2'
             return '1')
         .classed('search-action', (d, i) -> i ==3)
-        .classed('selectable', (d, i) -> i != 3)
+        .classed('selectable', (d, i) -> i != 3 and i != 0)
         .html((d)->d)
 
+
+    $('#addsign').show()
+    $('#addsign').off 'click'
+    $('#addsign').on 'click', ->
+        PiRemote.search_raise_add_dialog()
+        return
+
+    PiRemote.install_search_handlers()
+
+    return
+
+# (Re)install event handlers for items in search list
+PiRemote.install_search_handlers = ->
+
+    # single-click on selectable items toggles select
+    $('table#tbsearch > tbody > tr.selectable > td > table > tr > td.selectable').off 'click'
+    $('table#tbsearch > tbody > tr.selectable > td > table > tr > td.selectable').on 'click', (event) ->
+        $(this).parent().parent().parent().parent().toggleClass 'selected'
+        return
+
+    # single click on action raises action dialog
+    $('td.search-action').off 'click'
+    $('td.search-action').on 'click', (event) ->
+        PiRemote.search_raise_action_dialog $(this).parent().parent().parent().parent()
+        return
+
+
+    # single click on index column raises info dialog
+    $('td.searchtd-0').off 'click'
+    $('td.searchtd-0').on 'click', (event) ->
+        file = $(this).parent().parent().parent().parent().data('filename')
+        PiRemote.search_raise_info_dialog file
+        return
 
 
     return
 
+
+# Callback for add sign.
+PiRemote.search_raise_add_dialog = ->
+    # browse actions are identical
+    PiRemote.browse_raise_add_dialog()
+    return
+
+
+# Callback for action dots clicked.
+PiRemote.search_raise_action_dialog = (element) ->
+    # browse actions are identical
+    PiRemote.raise_file_actions element
+    return
+
+PiRemote.search_raise_info_dialog = (file) ->
+    PiRemote.do_ajax
+        url: 'fileinfo'
+        method: 'GET'
+        data:
+            file: file
+        success: (data) ->
+            if data.info isnt `undefined` and data.info.length > 0 and data.info[0].file isnt `undefined`
+                info = data.info[0]
+
+                d3.select('#smallModalLabel').html('File Info')
+                cont = d3.select('#smallModalMessage')
+                cont.html('')
+                p = cont.append('p')
+
+                for item in ['Title', 'Artist', 'Album', 'Track', 'Time', 'Date', 'Genre']
+                    res = info[item.toLowerCase()]
+                    if res isnt `undefined` and res.length > 0
+                        if item == 'Time'
+                            res = PiRemote.secToMin res
+                        p.append('strong').html(item+': ')
+                        p.append('span').html(res)
+                        p.append('br')
+
+                filename = info.file.split('/').slice(-1)[0]
+                dirs = info.file.split('/').slice(0, -1)
+
+                p.append('strong').html('Filename: ')
+                p.append('span').html(filename)
+                p.append('br')
+                p.append('strong').html('Folder: ')
+                p.append('br')
+
+                p = cont.append('p')
+                full_path = ''
+                p.append('span').attr('class', 'browse-span').attr('data-dirname', '').html('Root')
+                for dir in dirs
+                    p.append('span').attr('class', 'browse-arrow glyphicon glyphicon-arrow-right')
+                    p.append('span')
+                        .attr('class', 'browse-span')
+                        .attr('data-dirname', full_path+dir)
+                        .html(dir)
+                    full_path += dir + '/'
+
+                # Callback function for clicks on dir items in header.
+                $(document).off 'click', 'span.browse-span'
+                $(document).on 'click', 'span.browse-span', () ->
+                    $('#modalSmall').modal('hide')
+                    PiRemote.last_browse = $(this).data('dirname')
+                    PiRemote.load_page 'browse'
+                    return
+
+                $('#modalSmall').modal()
+            return
+    return

@@ -164,7 +164,7 @@ PiRemote.pl_update_table =  ->
                 return '2'
             return '1')
         .classed('pl-action', (d, i) -> i ==3)
-        .classed('selectable', (d, i) -> i != 3)
+        .classed('selectable', (d, i) -> i != 3 && i != 0)
         .html((d)->d)
 
     return
@@ -223,6 +223,20 @@ PiRemote.install_pl_handlers = ->
     $('td.pl-action').on 'click', (event) ->
         id = $(this).parent().parent().parent().parent().data('id')
         PiRemote.pl_raise_action_dialog id
+        return
+
+    # single click on index column raises info dialog
+    $('td.pltd-0').off 'click'
+    $('td.pltd-0').on 'click', (event) ->
+        # Fetch filename
+        id = $(this).parent().parent().parent().parent().data('id')
+        PiRemote.do_ajax
+            url: 'plinfo/'+id
+            method: 'GET'
+            success: (data) ->
+                if data.result isnt `undefined` and data.result.length > 0 and data.result[0].file isnt `undefined`
+                    PiRemote.search_raise_info_dialog data.result[0].file
+                return
         return
 
     # Detect click-and-hold on item
@@ -471,7 +485,7 @@ PiRemote.pl_do_action = (action, id=-1) ->
                 return
     else
         console.log 'TODO '+action
-        
+
     return
 
 

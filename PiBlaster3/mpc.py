@@ -197,6 +197,24 @@ class MPC:
         self.ensure_connected()
         return self.client.playlistid(id)
 
+    def file_info(self, file):
+        """Return full info for file
+
+        :param file
+        :return: [{'last-modified': '2016-02-29T18:03:53Z',
+            'time': '313',
+            'album': 'Master Of Puppets',
+            'artist': 'Metallica',
+            'file': 'Mp3/M/......mp3',
+            'title': 'Battery',
+            'date': '1986',
+            'track': '01/08',
+            'albumartist': 'Metallica',
+            'genre': 'Thrash Metal'}]
+        """
+        self.ensure_connected()
+        return self.client.find('file', file)
+
     def playlist_changes(self, version):
         """Get changes in playlist since version.
 
@@ -446,7 +464,8 @@ class MPC:
         """ Search in MPD data base using 'any' and 'file' tag.
         :param arg: search pattern
         :param limit: max amount of results
-        :return: {status: '', error: '', result: [title, artist, album, length, filename]}
+        :return: {status: '', error: '', result: [title, artist, album, length, '', filename]}
+                    Dummy element added at position #4 to have filename at position #5
         """
         if arg is None or len(arg) < 3:
             return {'error': 'Search pattern must contain at least 3 characters!'}
@@ -505,6 +524,7 @@ class MPC:
             res.append(item['album'] if 'album' in item else '')
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
+            res.append('')  # dummy to push file to pos #5
             res.append(item['file'])
             result.append(res)
 

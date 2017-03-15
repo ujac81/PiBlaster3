@@ -132,7 +132,8 @@ PiRemote.install_browse_handlers = ->
     # Single click on file image or file image cell raises file dialog
     $('div.browse-list > table > tbody > tr.selectable > td.browse-head-file').off
     $('div.browse-list > table > tbody > tr.selectable > td.browse-head-file').on 'click', (event) ->
-        PiRemote.raise_file_dialog $(this).parent()
+        # PiRemote.raise_file_dialog $(this).parent()
+        PiRemote.search_raise_info_dialog $(this).parent().data('filename')
         return
 
     # dir action triggered
