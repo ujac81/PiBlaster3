@@ -155,7 +155,7 @@ class MPC:
         """Get playlist items in interval [start, end)
         :param start: start index in playlist (start = 0)
         :param end: end index in playlist (excluded)
-        :return: [[pos, title, artist, album, length, id]]
+        :return: [[pos, title, artist, album, length, id, file]]
         """
 
         pl_len = self.get_status_int('playlistlength')
@@ -185,8 +185,34 @@ class MPC:
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append(item['id'])
+            res.append(item['file'])
             data.append(res)
         result['data'] = data
+        return result
+
+    def playlistinfo_by_name(self, plname):
+        """Get condensed playlist info.
+
+        Used for playlist edit mode.
+
+        :param plname: name of playlist
+        :return: [[file, artist - title, pos]]
+        """
+        self.ensure_connected()
+        info = self.client.listplaylistinfo(plname)
+        result = []
+        pos = 0
+        for item in info:
+            res = ''
+            if 'artist' in item:
+                res += item['artist'] + ' - '
+            if 'title' in item:
+                res += item['title']
+            else:
+                no_ext = os.path.splitext(item['file'])[0]
+                res = os.path.basename(no_ext).replace('_', ' ')
+            result.append([item['file'], res, pos])
+            pos += 1
         return result
 
     def playlistinfo_full(self, id):
@@ -239,6 +265,7 @@ class MPC:
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append(item['id'])
+            res.append(item['file'])
             result.append(res)
         return {'version': pl_ver, 'changes': result, 'length': pl_len}
 
@@ -368,7 +395,10 @@ class MPC:
             for item in items:
                 print("Append: "+item)
                 try:
-                    self.client.add(item)
+                    if len(plname):
+                        self.client.playlistadd(plname, item)
+                    else:
+                        self.client.add(item)
                 except CommandError:
                     return 'Add error'
                     pass
@@ -539,7 +569,7 @@ class MPC:
 
         return {'status': '%d items found' % len(result), 'search': result}
 
-    def playlists_action(self, cmd, plname):
+    def playlists_action(self, cmd, plname, payload):
         """
 
         :param cmd:
@@ -547,12 +577,26 @@ class MPC:
         :return:
         """
         self.ensure_connected()
+        if cmd == 'clear':
+            self.client.playlistclear(plname)
+            return {'status': 'Playlist %s cleared' % plname}
+        if cmd == 'delete':
+            positions = sorted([int(i) for i in payload], reverse=True)
+            for pos in positions:
+                self.client.playlistdelete(plname, pos)
+            return {'status': '%d items removed from playlist %s' % (len(positions), plname)}
         if cmd == 'list':
             pls = sorted([i['playlist'] for i in self.client.listplaylists() if 'playlist' in i])
             return {'pls': pls}
         if cmd == 'load':
             self.client.load(plname)
             return {'status': 'Playlist %s added to playlist' % plname}
+        if cmd == 'rename':
+            plname_old = payload[0]
+            if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
+                return {'error': 'Playlist %s already exists.' % plname}
+            self.client.rename(plname_old, plname)
+            return {'status': 'Playlist %s renamed to %s' % (plname_old, plname)}
         if cmd == 'rm':
             self.client.rm(plname)
             return {'status': 'Playlist %s removed' % plname}

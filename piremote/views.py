@@ -57,14 +57,22 @@ def plaction_ajax(request):
 def plsaction_ajax(request):
     cmd = request.POST.get('cmd', None)
     plname = request.POST.get('plname', '')
+    payload = request.POST.getlist('payload[]', [])
     mpc = MPC()
-    return JsonResponse(mpc.playlists_action(cmd, plname))
+    return JsonResponse(mpc.playlists_action(cmd, plname, payload))
 
 
 # GET /ajax/plinfo/
 def plinfo_ajax(request):
     mpc = MPC()
     return JsonResponse({'pl': mpc.playlistinfo(0, -1), 'status': mpc.get_status_data()})
+
+
+# GET /ajax/plshortinfo/
+def plshortinfo_ajax(request):
+    plname = request.GET.get('plname', '')
+    mpc = MPC()
+    return JsonResponse({'pl': mpc.playlistinfo_by_name(plname), 'plname': plname})
 
 
 # GET /ajax/plinfo/POSITION

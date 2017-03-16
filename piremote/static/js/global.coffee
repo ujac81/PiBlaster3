@@ -18,6 +18,7 @@ PiRemote.last_browse = ''
 
 PiRemote.last_pl_id = '-1'
 PiRemote.last_pl_version = '-1'
+PiRemote.pl_edit_name = ''  # name of playlist in edit mode (='' if no edit)
 
 PiRemote.last_search = ''
 PiRemote.last_search_data = []

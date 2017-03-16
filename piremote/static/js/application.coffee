@@ -14,7 +14,7 @@ $ ->
         PiRemote.load_page action
 
     # Initial load of main page.
-    PiRemote.load_page PiRemote.current_page, true
+    PiRemote.load_page PiRemote.current_page, 'home', true
 
     # Disable polling while focus is lost.
     # Load blur page on focus loss and reload page on focus return.
