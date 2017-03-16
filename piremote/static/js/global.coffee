@@ -12,6 +12,7 @@ PiRemote.playlist_polling = false
 
 PiRemote.last_status = ''
 PiRemote.current_page = 'index'  # overwritten on load by script in index.pug
+PiRemote.current_sub_page = 'home'
 PiRemote.safe_page = 'index'  # safe last active page while blurring
 PiRemote.last_browse = ''
 
@@ -79,3 +80,54 @@ String::width = (font_size) ->
     w = o.width()
     o.remove()
     w
+
+# Clear nav-bar button area.
+PiRemote.clear_navbar_buttons = ->
+    d3.select('#button-line').html('')
+    return
+
+
+# Add a button to .buttonline and install load_page callbacks.
+PiRemote.add_navbar_button = (sub_page, text, glyphicon=false, sub_page_event=true) ->
+
+    btn = d3.select('#button-line').append('button')
+        .attr('class', 'btn btn-default navbar-btn')
+        .attr('data-subpage', sub_page)
+        .attr('id', 'navbutton_'+sub_page)
+        .attr('type', 'button')
+
+    if glyphicon
+        btn.append('span').attr('class', 'glyphicon glyphicon-'+text)
+    else
+        btn.html(text)
+
+    if sub_page_event
+        # Load corresponding sub page on click.
+        $('button#navbutton_'+sub_page).off 'click'
+        $('button#navbutton_'+sub_page).on 'click', ->
+            PiRemote.load_page PiRemote.current_page, $(this).data('subpage')
+            return
+
+    return
+
+
+# Raise a dialog box including confirm button.
+# If confirm clicked, perform function.
+PiRemote.confirm_dialog = (req) ->
+
+    d3.select('#smallModalLabel').html(req.title)
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+
+    cont.append('p').attr('class', 'confirmbutton')
+        .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
+            .attr('id', 'confirmbutton').html('Confirm')
+
+    $('button#confirmbutton').off 'click'
+    $('button#confirmbutton').on 'click', ->
+        req.confirmed()
+        $('#modalSmall').modal('hide')
+        return
+
+    $('#modalSmall').modal('show')
+    return

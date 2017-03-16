@@ -1,6 +1,7 @@
 
 from mpd import MPDClient, ConnectionError, CommandError
 import os
+import random
 import time
 
 
@@ -457,6 +458,14 @@ class MPC:
                 return 'Shuffle error'
                 pass
             return 'Playlist randomized after current song.'
+        elif cmd == 'seed':
+            n = int(items[0])
+            random.seed()
+            db_files = self.client.list('file')
+            add = []
+            for i in range(n):
+                add.append(db_files[random.randrange(0, len(db_files))])
+            return self.playlist_action('append', plname, add)
 
         return 'Unknown command '+cmd
 
@@ -530,6 +539,28 @@ class MPC:
 
         return {'status': '%d items found' % len(result), 'search': result}
 
+    def playlists_action(self, cmd, plname):
+        """
 
+        :param cmd:
+        :param plname:
+        :return:
+        """
+        self.ensure_connected()
+        if cmd == 'list':
+            pls = sorted([i['playlist'] for i in self.client.listplaylists() if 'playlist' in i])
+            return {'pls': pls}
+        if cmd == 'load':
+            self.client.load(plname)
+            return {'status': 'Playlist %s added to playlist' % plname}
+        if cmd == 'rm':
+            self.client.rm(plname)
+            return {'status': 'Playlist %s removed' % plname}
+        if cmd == 'saveas':
+            if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
+                return {'error': 'Playlist %s already exists.' % plname}
+            self.client.save(plname)
+            return {'status': 'Current playlist saved to %s.' % plname}
 
+        return {'error': 'No such command: %s' % cmd}
 

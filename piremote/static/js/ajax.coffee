@@ -46,9 +46,6 @@ PiRemote.do_ajax = (req) ->
 # Perform insert or add actions on playlists.
 # Invoked by dialogs in browse/search/....
 PiRemote.pl_action = (cmd, plname, list, type='file') ->
-
-    # TODO if type is dir, ask if recursive append/insert is ok
-
     PiRemote.do_ajax
         url: 'plaction'
         data:
@@ -56,5 +53,20 @@ PiRemote.pl_action = (cmd, plname, list, type='file') ->
             'plname': plname
             'list': list
         method: 'POST'
+
+    return
+
+# Perform save/load actions on playlists.
+# Invoked by dialogs in browse/search/....
+PiRemote.pls_action = (cmd, plname, req={}) ->
+    PiRemote.do_ajax
+        url: 'plsaction'
+        data:
+            'cmd': cmd
+            'plname': plname
+        method: 'POST'
+        success: (data) ->
+            req.success(data) if req.success
+            return
 
     return

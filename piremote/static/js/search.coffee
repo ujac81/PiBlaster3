@@ -172,6 +172,10 @@ PiRemote.search_raise_action_dialog = (element) ->
     PiRemote.raise_file_actions element
     return
 
+
+# Callback for click in index column.
+# AJAX GET of file info and display of song information.
+# Also used by playlist and browse.
 PiRemote.search_raise_info_dialog = (file) ->
     PiRemote.do_ajax
         url: 'fileinfo'

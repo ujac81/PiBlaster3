@@ -4,6 +4,7 @@
 # Loaded via PiRemote.load_page('browse') every time 'Browse' is selected in menu
 PiRemote.load_browse_page = ->
 
+
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'browse-list')
     tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')

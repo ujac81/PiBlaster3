@@ -4,6 +4,43 @@
 # Loaded via PiRemote.load_page('playlist') every time 'Playlist' is selected in menu
 PiRemote.load_playlist_page = ->
 
+    # Insert buttons
+    PiRemote.add_navbar_button 'home', 'home', true
+    PiRemote.add_navbar_button 'pl_save_playlist', 'save-file', true, false
+    PiRemote.add_navbar_button 'pl_playlists', 'open-file', true
+    PiRemote.add_navbar_button 'pl_edit_playlists', 'list', true
+    PiRemote.add_navbar_button 'pl_clear_playlist', 'remove', true, false
+    PiRemote.add_navbar_button 'pl_seed_playlist', 'plus', true, false
+
+    $('button#navbutton_pl_save_playlist').off 'click'
+    $('button#navbutton_pl_save_playlist').on 'click', ->
+        PiRemote.pl_raise_save_dialog()
+        return
+
+    $('button#navbutton_pl_clear_playlist').off 'click'
+    $('button#navbutton_pl_clear_playlist').on 'click', ->
+        PiRemote.pl_raise_clear_dialog()
+        return
+
+    $('button#navbutton_pl_seed_playlist').off 'click'
+    $('button#navbutton_pl_seed_playlist').on 'click', ->
+        PiRemote.pl_raise_seed_dialog()
+        return
+
+    # build main content for current sub page.
+    if PiRemote.current_sub_page == 'pl_playlists'
+        PiRemote.pl_build_load_playlist()
+    else if  PiRemote.current_sub_page == 'pl_edit_playlists'
+        PiRemote.pl_build_edit_playlist()
+    else
+        PiRemote.pl_build_home()
+
+    return
+
+
+# Build playlist/home page and load current playlist
+PiRemote.pl_build_home = ->
+
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'play-list')
     tb = bl.append('table').attr('id', 'tbpl').attr('class', 'table table-striped')
@@ -22,6 +59,27 @@ PiRemote.load_playlist_page = ->
         return
 
     PiRemote.get_playlist()
+    return
+
+# Load list of playlists
+PiRemote.pl_build_load_playlist = ->
+
+    root = d3.select('.piremote-content')
+    bl = root.append('div').attr('class', 'play-list')
+    tb = bl.append('table').attr('id', 'tbpls').attr('class', 'table table-striped')
+    tb.append('tbody').attr('id', 'pls')
+
+    PiRemote.pls_action 'list', '',
+        success: (data)->
+            PiRemote.pl_rebuild_playlist_list data
+            return
+
+    return
+
+
+PiRemote.pl_build_edit_playlist = ->
+
+
     return
 
 
@@ -423,8 +481,6 @@ PiRemote.pl_raise_add_dialog = ->
         ['moveidsend', 'Selection to End'],
         ['selection-to-pl', 'Selection to Another Playlist'],
         ['deleteids', 'Delete Selection'],
-        ['clear', 'Clear Playlist'],
-        ['save', 'Save Playlist As'],
         ['randomize', 'Randomize Playlist'],
         ['randomize-rest', 'Randomize Playlist After Current'],
         ]
@@ -535,5 +591,154 @@ PiRemote.pl_drop_drag_element = (event) ->
 
     # perform move
     PiRemote.pl_action 'moveid', '', [PiRemote.drag_id, pos]
+
+    return
+
+
+# Raise the playlist save dialog and save playlist as name set
+PiRemote.pl_raise_save_dialog = ->
+
+    d3.select('#smallModalLabel').html('Save Current Playlist')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+
+    cont.append('p').html('Enter name for playlist')
+
+    trsave = cont
+        .append('table').attr('id', 'savebar').attr('class', 'table')
+        .append('tr').attr('id', 'savebartr')
+    trsave
+        .append('td').attr('id', 'savebarinput')
+        .append('input').attr('type', 'text').attr('id', 'savefield').attr('placeholder', 'my playlist')
+    trsave
+        .append('td').attr('id', 'savebarbutton')
+        .append('button').attr('type', 'submit').attr('class', 'btn btn-default').attr('id', 'gosave').html('Save')
+
+    $('button#gosave').off 'click'
+    $('button#gosave').on 'click', ->
+        PiRemote.pls_action 'saveas', $('input#savefield').val(), []
+        $('#modalSmall').modal('hide')
+        return
+
+    # Raise dialog.
+    $('#modalSmall').modal()
+
+    return
+
+
+# Callback for clear button in button bar.
+# Confirm clear and perform clear.
+PiRemote.pl_raise_clear_dialog = ->
+    PiRemote.confirm_dialog
+        title: 'Clear Playlist?'
+        confirmed: ->
+            PiRemote.pl_action 'clear', '', []
+            return
+    return
+
+# Callback for plus button.
+# Seed playlist with N random songs
+PiRemote.pl_raise_seed_dialog = ->
+
+    d3.select('#smallModalLabel').html('Seed Playlist')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+
+    cont.append('p').html('Set number of random items to add')
+
+    cont.append('p').append('input')
+        .attr('type', 'number').attr('min', '10').attr('max', '100').attr('value', '20')
+        .attr('id', 'seedspin')
+
+    cont.append('p').attr('class', 'confirmbutton')
+        .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
+            .attr('id', 'confirmbutton').html('Seed')
+
+    $('button#confirmbutton').off 'click'
+    $('button#confirmbutton').on 'click', ->
+        PiRemote.pl_action 'seed', '', [$('input#seedspin').val()]
+        $('#modalSmall').modal('hide')
+        return
+
+    $('#modalSmall').modal('show')
+    return
+
+
+# Callback for AJAX receive of list of playlists.
+# Rebuild list of playlists
+PiRemote.pl_rebuild_playlist_list = (data) ->
+
+    action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
+
+    # clean table
+    tbody = d3.select('tbody#pls')
+    tbody.selectAll('tr').remove()
+
+    tbody.selectAll('tr').data(data.pls).enter()
+        .append('tr')
+            .attr('class', 'pls-item')
+            .attr('data-plname', (d)->d)
+            .selectAll('td')
+            .data((d,i)->[i+1, d, action_span])
+            .enter()
+        .append('td')
+            .attr('class', (d,i)-> 'pls-col-'+i)
+            .html((d)->d)
+
+    $('td.pls-col-2').off 'click'
+    $('td.pls-col-2').on 'click', (event) ->
+        pl = $(this).parent().data('plname')
+        console.log 'ACTION '+pl
+        PiRemote.pl_raise_playlist_list_actions pl
+        return
+
+    return
+
+# Callback for action dots pressed on item in playlists list.
+PiRemote.pl_raise_playlist_list_actions = (plname) ->
+
+    d3.select('#smallModalLabel').html('Playlist Action')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    cont.append('p').html('Playlist <strong>'+plname+'</strong> actions:')
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+
+    items = [
+        ['load', 'Load to Current'],
+        ['rename', 'Rename'],
+        ['rm', 'Remove'],
+        ]
+    for elem in items
+        navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', elem[0])
+            .html(elem[1])
+
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        action = $(this).data('action')
+        if action == 'load'
+            PiRemote.pls_action 'load', plname,
+                success: (data) ->
+                    PiRemote.load_page 'playlist', 'home'
+                    return
+        else if action == 'rm'
+            PiRemote.confirm_dialog
+                title: 'Remove Playlist '+plname+'?'
+                confirmed: ->
+                    PiRemote.pls_action 'rm', plname,
+                        success: (data) ->
+                            PiRemote.load_page 'playlist', 'pl_playlists'
+                            return
+                    return
+        else if action == 'rename'
+            return
+        # $('#modalSmall').modal('hide')
+        return
+
+    # Raise dialog.
+    $('#modalSmall').modal()
 
     return

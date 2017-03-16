@@ -257,6 +257,35 @@ table#tbpl tr.running.selected
     background: #777
 
 
+////////////////// PLAYLIST LIST //////////////////
+
+table#tbpls tbody#psl tr td
+    padding: 0
+
+// all td
+tr.pls-item td
+    font-size: $normal-font-size
+    padding: $vert-pad $horiz-pad
+    vertical-align: middle
+
+// index
+tr.pls-item td.pls-col-0
+    width: 30px
+    text-align: right
+
+// name
+tr.pls-item td.pls-col-0
+    max-width: 100%
+    text-align: left
+
+// ... vertical dots
+tr.pls-item td.pls-col-2
+    color: #888
+    text-align: center
+    width: 20px
+
+
+
 ////////////////// SEARCH BAR //////////////////
 
 #searchbardiv
@@ -339,3 +368,9 @@ table#tbsearch tr.selected
     background-color: blue
     color: white
 
+
+
+////////////////// DIALOGS //////////////////
+
+p.confirmbutton
+    text-align: center

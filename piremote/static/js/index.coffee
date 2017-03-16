@@ -6,6 +6,25 @@
 # Install actions.
 PiRemote.load_index_page = ->
 
+    # Insert buttons
+    PiRemote.add_navbar_button 'home', 'home', true
+    PiRemote.add_navbar_button 'index_volume', 'volume-up', true
+    PiRemote.add_navbar_button 'index_equalizer', 'equalizer', true
+
+
+    # build main content for current sub page.
+    if PiRemote.current_sub_page == 'index_volume'
+        PiRemote.index_build_volume()
+    else if PiRemote.current_sub_page == 'index_equalizer'
+        PiRemote.index_build_equalizer()
+    else
+        PiRemote.index_build_main()
+
+    return
+
+# index/home page -- show song information and buttons
+PiRemote.index_build_main = ->
+
     root = d3.select('.piremote-content')
 
     # TITLE, ARTIST, ALBUM
@@ -59,6 +78,27 @@ PiRemote.load_index_page = ->
     PiRemote.start_status_poll()
     return
 
+
+# index/volume page -- show volume sliders
+PiRemote.index_build_volume = ->
+
+    root = d3.select('.piremote-content')
+
+    console.log 'volume'
+
+    return
+
+
+# index/equalizer page -- show equalizer sliders
+PiRemote.index_build_equalizer = ->
+
+    root = d3.select('.piremote-content')
+
+    console.log 'eq'
+
+    return
+
+
 # Install browse menu actions.
 PiRemote.install_index_actions = ->
 
@@ -100,6 +140,9 @@ PiRemote.do_status_poll = ->
     return if PiRemote.polling
     return if PiRemote.current_page != 'index'
 
+    # Remember last poll send time
+    PiRemote.last_poll_time = new Date().getTime()
+
     PiRemote.do_ajax
             url: 'status'
             method: 'GET'
@@ -109,7 +152,10 @@ PiRemote.do_status_poll = ->
                 PiRemote.polling = true
                 window.setTimeout ( ->
                     PiRemote.polling = false
-                    PiRemote.do_status_poll()
+                    now = new Date().getTime()
+                    if (now-PiRemote.last_poll_time > 500)
+                        # Assume two polling loops if time is too short.
+                        PiRemote.do_status_poll()
                 ), 1000  # <-- short polling interval
                 return
     return

@@ -33,14 +33,16 @@ $ ->
 
 # Dynamic page loader -- pages built via d3.js.
 # For loader functions see browse.coffee, playlist.coffee, ....
-PiRemote.load_page = (page, force=false) ->
+PiRemote.load_page = (page, sub_page='home', force=false) ->
     # return if page == PiRemote.current_page && ! force
     PiRemote.current_page = page
+    PiRemote.current_sub_page = sub_page
 
     # remove page specific classes from body
     $('body').removeClass()
 
     # clean main page node
+    PiRemote.clear_navbar_buttons()
     d3.select('.piremote-content').html('')
     $('#addsign').hide()
 
