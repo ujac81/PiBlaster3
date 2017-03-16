@@ -636,19 +636,20 @@ PiRemote.pl_raise_save_dialog = (title='Save Current Playlist', action='saveas',
         .append('tr').attr('id', 'savebartr')
     trsave
         .append('td').attr('id', 'savebarinput')
-        .append('input').attr('type', 'text').attr('id', 'savefield').attr('placeholder', 'my playlist')
+        .append('input').attr('type', 'text').attr('id', 'savefield').attr('placeholder', 'my playlist').attr('pattern', '[a-zA-Z0-9_\\- ]+')
     trsave
         .append('td').attr('id', 'savebarbutton')
         .append('button').attr('type', 'submit').attr('class', 'btn btn-default').attr('id', 'gosave').html(save_button)
 
     $('button#gosave').off 'click'
     $('button#gosave').on 'click', ->
-        PiRemote.pls_action action, $('input#savefield').val(),
-            payload: [plname]
-            success: (data) ->
-                req.success(data) if req.success
-                $('#modalSmall').modal('hide')
-                return
+        if $('input#savefield').val().length > 0
+            PiRemote.pls_action action, $('input#savefield').val(),
+                payload: [plname]
+                success: (data) ->
+                    req.success(data) if req.success
+                    $('#modalSmall').modal('hide')
+                    return
         return
 
     # Raise dialog.
@@ -803,6 +804,10 @@ PiRemote.pl_action_on_playlists = (req) ->
             cont = d3.select('#smallModalMessage')
             cont.html('')
             navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+            navul.append('li').attr('role', 'presentation')
+                    .append('span').attr('class', 'browse-action-file browse-action-new')
+                    .attr('data-plname', '')
+                    .html('Create new playlist')
             for elem in data.pls
                 navul.append('li').attr('role', 'presentation')
                     .append('span').attr('class', 'browse-action-file')
@@ -813,8 +818,32 @@ PiRemote.pl_action_on_playlists = (req) ->
             $(document).off 'click', 'span.browse-action-file'
             $(document).on 'click', 'span.browse-action-file', () ->
                 plname = $(this).data('plname')
-                req.success plname if req.success
-                return
+                if plname.length > 0
+                    req.success plname if req.success
+                else
+                    d3.select('#smallModalLabel').html('Create New Playlist')
+                    cont = d3.select('#smallModalMessage')
+                    cont.html('')
+                    cont.append('p').html('Enter name for playlist')
+                    trsave = cont
+                        .append('table').attr('id', 'savebar').attr('class', 'table')
+                        .append('tr').attr('id', 'savebartr')
+                    trsave
+                        .append('td').attr('id', 'savebarinput')
+                        .append('input').attr('type', 'text').attr('id', 'savefield').attr('placeholder', 'my playlist').attr('pattern', '[a-zA-Z0-9_\\- ]+')
+                    trsave
+                        .append('td').attr('id', 'savebarbutton')
+                        .append('button').attr('type', 'submit').attr('class', 'btn btn-default').attr('id', 'gosave').html('Create')
+
+                    $('button#gosave').off 'click'
+                    $('button#gosave').on 'click', ->
+                        if $('input#savefield').val().length > 0
+                            PiRemote.pls_action 'new', $('input#savefield').val(),
+                                success: (data) ->
+                                    req.success data.plname if req.success and data.plname != ''
+                                    return
+                        return
+                return  # click on playlists list
 
             $('#modalSmall').modal('show')
             return

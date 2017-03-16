@@ -188,7 +188,7 @@ PiRemote.raise_file_actions = (element) ->
     items = [
         ['append-item', 'Append Item'],
         ['insert-item', 'Insert Item'],
-        ['append-other', 'Append Item to Playlist']
+        ['append-other', 'Append Item to another Playlist']
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -200,7 +200,6 @@ PiRemote.raise_file_actions = (element) ->
     $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         PiRemote.do_browse_action $(this).data('action'), $(this).data('item'), 'file'
-        $('#modalSmall').modal('hide')
         return
 
     # Raise dialog.
@@ -249,7 +248,6 @@ PiRemote.raise_dir_dialog = (element) ->
     $(document).off 'click', 'span.browse-action-dir'
     $(document).on 'click', 'span.browse-action-dir', () ->
         PiRemote.do_browse_action $(this).data('action'), $(this).data('item'), 'dir'
-        $('#modalSmall').modal('hide')
         return
 
 
@@ -272,7 +270,7 @@ PiRemote.browse_raise_add_dialog = ->
         ['invert', 'Invert Selection'],
         ['append', 'Append Selection'],
         ['insert', 'Insert Selection'],
-        ['append-other', 'Append Selection to another Playlist']
+        ['append-itmes-other', 'Append Selection to another Playlist']
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -284,11 +282,10 @@ PiRemote.browse_raise_add_dialog = ->
     $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         PiRemote.do_browse_action $(this).data('action')
-        $('#modalSmall').modal('hide')
         return
 
     # Raise dialog.
-    $('#modalSmall').modal()
+    $('#modalSmall').modal('show')
     return
 
 
@@ -298,24 +295,40 @@ PiRemote.do_browse_action = (action, item=null, type='file') ->
 
     if action == 'select-all'
         d3.selectAll('tr.selectable').classed('selected', 1)
+        $('#modalSmall').modal('hide')
     else if action == 'deselect-all'
         d3.selectAll('tr.selectable').classed('selected', 0)
+        $('#modalSmall').modal('hide')
     else if action == 'invert'
         d3.selectAll('tr.selectable').classed('selected', ()-> ! d3.select(this).classed('selected'))
+        $('#modalSmall').modal('hide')
     else if action == 'append-item'
         PiRemote.pl_action 'append', '', [item], type
+        $('#modalSmall').modal('hide')
     else if action == 'insert-item'
         PiRemote.pl_action 'insert', '', [item], type
+        $('#modalSmall').modal('hide')
     else if action == 'append'
         sel = d3.selectAll('tr.'+type+'-item.selected')
         items = sel.data().map((d) -> d[5])
         PiRemote.pl_action action, '', items, type
         sel.classed('selected', 0)
+        $('#modalSmall').modal('hide')
     else if action == 'insert'
         sel = d3.selectAll('tr.'+type+'-item.selected')
         items = sel.data().map((d) -> d[5])
         PiRemote.pl_action action, '', items, type
         sel.classed('selected', 0)
+        $('#modalSmall').modal('hide')
+    else if action == 'append-other'
+        PiRemote.pl_append_items_to_playlist [item]
+        d3.selectAll('tr.selectable').classed('selected', 0)
+    else if action == 'append-itmes-other'
+        sel = d3.selectAll('tr.'+type+'-item.selected')
+        items = sel.data().map((d) -> d[5])
+        PiRemote.pl_append_items_to_playlist items
+        sel.classed('selected', 0)
+
 
     return
 

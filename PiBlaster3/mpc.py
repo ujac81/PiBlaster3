@@ -588,6 +588,12 @@ class MPC:
         if cmd == 'list':
             pls = sorted([i['playlist'] for i in self.client.listplaylists() if 'playlist' in i])
             return {'pls': pls}
+        if cmd == 'new':
+            if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
+                return {'error': 'Playlist %s exists' % plname, 'plname': ''}
+            self.client.save(plname)
+            self.client.playlistclear(plname)
+            return {'status': 'Playlist %s created' % plname, 'plname': plname}
         if cmd == 'load':
             self.client.load(plname)
             return {'status': 'Playlist %s added to playlist' % plname}
