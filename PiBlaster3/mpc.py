@@ -588,6 +588,12 @@ class MPC:
         if cmd == 'list':
             pls = sorted([i['playlist'] for i in self.client.listplaylists() if 'playlist' in i])
             return {'pls': pls}
+        if cmd == 'moveend':
+            pl_len = len(self.client.listplaylist(plname))
+            positions = sorted([int(i) for i in payload], reverse=True)
+            for pos in positions:
+                self.client.playlistmove(plname, pos, pl_len-1)
+            return {'status': '%d items moved to end in playlist %s' % (len(positions), plname)}
         if cmd == 'new':
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
                 return {'error': 'Playlist %s exists' % plname, 'plname': ''}

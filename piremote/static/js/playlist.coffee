@@ -887,7 +887,7 @@ PiRemote.rebuild_edit_playlist = (data) ->
     $('td.pledit-col-2').off 'click'
     $('td.pledit-col-2').on 'click', (event) ->
         i = $(this).parent().data('index')
-        PiRemote.pl_raise_edit_action_dialog data.pl[i][0]
+        PiRemote.pl_raise_edit_action_dialog data.pl[i][0], data.pl[i][1], i
         return
 
     $('#addsign').show()
@@ -898,7 +898,52 @@ PiRemote.rebuild_edit_playlist = (data) ->
     return
 
 # Action dots clicked in playlist edit mode
-PiRemote.pl_raise_edit_action_dialog = (file) ->
+PiRemote.pl_raise_edit_action_dialog = (file, title, pos) ->
+
+    d3.select('#smallModalLabel').html('Item Action')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+
+    cont.append('h5').html(title)
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+
+    items = [
+        ['moveend', 'Move to End'],
+        ['insert', 'Insert into Current Playlist'],
+        ['append', 'Append to Current Playlist'],
+        ['selection-to-pl', 'Append to Another Playlist'],
+        ['delete', 'Delete'],
+        ]
+    for elem in items
+        navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', elem[0])
+            .html(elem[1])
+
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        action = $(this).data('action')
+        if action in ['insert', 'append']
+            PiRemote.pl_action action, '', [file]
+            $('#modalSmall').modal('hide')
+        else if action in ['delete', 'moveend']
+            PiRemote.pls_action action, PiRemote.pl_edit_name,
+                payload: [pos]
+                success: (data) ->
+                    PiRemote.get_playlist_by_name PiRemote.pl_edit_name
+                    return
+            $('#modalSmall').modal('hide')
+        else if action == 'selection-to-pl'
+            PiRemote.pl_append_items_to_playlist [file]
+        return
+
+    # Raise dialog.
+    $('#modalSmall').modal('show')
+    return
+
+
     return
 
 
@@ -914,6 +959,7 @@ PiRemote.pl_raise_edit_add_dialog = ->
         ['select-all', 'Select All'],
         ['deselect-all', 'Deselect All'],
         ['invert-selection', 'Invert Selection'],
+        ['moveend', 'Move Selection to End'],
         ['insert', 'Insert Selection to Current Playlist'],
         ['append', 'Append Selection to Current Playlist'],
         ['selection-to-pl', 'Append Selection to Another Playlist'],
@@ -945,8 +991,8 @@ PiRemote.pl_raise_edit_add_dialog = ->
             PiRemote.pl_action action, '', items
             d3.selectAll('tr.pledit-item').classed('selected', 0)
             $('#modalSmall').modal('hide')
-        else if action == 'delete'
-            PiRemote.pls_action 'delete', PiRemote.pl_edit_name,
+        else if action in ['delete', 'moveend']
+            PiRemote.pls_action action, PiRemote.pl_edit_name,
                 payload: positions
                 success: (data) ->
                     PiRemote.get_playlist_by_name PiRemote.pl_edit_name
