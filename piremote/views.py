@@ -1,6 +1,7 @@
 from django.http import HttpResponse, JsonResponse
 from django.template import loader
 
+from PiBlaster3.commands import Commands
 from PiBlaster3.mpc import MPC
 
 
@@ -102,3 +103,9 @@ def file_info_ajax(request):
     return JsonResponse({'info': mpc.file_info(file)})
 
 
+# POST /ajax/command/
+def command_ajax(request):
+    cmd = request.POST.get('cmd', None)
+    payload = request.POST.getlist('payload[]', [])
+    commands = Commands()
+    return JsonResponse(commands.perform_command(cmd, payload))

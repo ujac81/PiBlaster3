@@ -664,12 +664,14 @@ PiRemote.pl_raise_clear_dialog = ->
     if PiRemote.pl_edit_name == ''
         PiRemote.confirm_dialog
             title: 'Clear Playlist?'
+            requirepw: 1
             confirmed: ->
                 PiRemote.pl_action 'clear', '', []
                 return
     else
         PiRemote.confirm_dialog
             title: 'Clear Playlist '+PiRemote.pl_edit_name+'?'
+            requirepw: 1
             confirmed: ->
                 PiRemote.pls_action 'clear', PiRemote.pl_edit_name,
                     success: (data) ->
@@ -774,6 +776,7 @@ PiRemote.pl_raise_playlist_list_actions = (plname) ->
         else if action == 'rm'
             PiRemote.confirm_dialog
                 title: 'Remove Playlist '+plname+'?'
+                requirepw: 1
                 confirmed: ->
                     PiRemote.pls_action 'rm', plname,
                         success: (data) ->

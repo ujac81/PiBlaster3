@@ -43,6 +43,7 @@ PiRemote.setStatus = (text, error, fade) ->
 
     return
 
+
 # Fade in status bar, set text and start fade out timer.
 PiRemote.setStatusText = (text, fade=5000) ->
     PiRemote.setStatus text, false, fade
@@ -120,14 +121,38 @@ PiRemote.confirm_dialog = (req) ->
     cont = d3.select('#smallModalMessage')
     cont.html('')
 
+    need_pw = req.requirepw isnt `undefined` and req.requirepw
+    if need_pw
+        cont.append('p').attr('class', 'confirmpassword')
+            .append('input').attr('type', 'text').attr('id', 'confirmpw').attr('placeholder', 'Confirm Password')
+
+
+    cont.append('p').attr('id', 'confirminfo')
+
     cont.append('p').attr('class', 'confirmbutton')
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
             .attr('id', 'confirmbutton').html('Confirm')
 
     $('button#confirmbutton').off 'click'
     $('button#confirmbutton').on 'click', ->
-        req.confirmed()
-        $('#modalSmall').modal('hide')
+        if need_pw
+            do_confirm = false
+            PiRemote.do_ajax
+                url: 'command'
+                method: 'POST'
+                data:
+                    cmd: 'checkpw'
+                    payload: [$('input#confirmpw').val()]
+                success: (data) ->
+                    if data.ok isnt `undefined` and data.ok == 1
+                        req.confirmed()
+                        $('#modalSmall').modal('hide')
+                    else
+                        d3.select('p#confirminfo').html('Wrong confirm password!')
+                    return
+        else
+            req.confirmed()
+            $('#modalSmall').modal('hide')
         return
 
     $('#modalSmall').modal('show')
