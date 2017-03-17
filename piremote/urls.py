@@ -17,5 +17,7 @@ urlpatterns = [
     url(r'^ajax/fileinfo/$', views.file_info_ajax, name='file_info_ajax'),
     url(r'^ajax/search/$', views.search_ajax, name='search_ajax'),
     url(r'^ajax/command/$', views.command_ajax, name='command_ajax'),
+    url(r'^ajax/settings/$', views.settings_ajax, name='settings_ajax'),
+    url(r'^ajax/set/$', views.set_ajax, name='set_ajax'),
 ]
 

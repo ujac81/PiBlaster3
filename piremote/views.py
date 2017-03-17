@@ -4,6 +4,8 @@ from django.template import loader
 from PiBlaster3.commands import Commands
 from PiBlaster3.mpc import MPC
 
+from .models import Setting
+
 
 # GET /
 # We only have one get for the main page.
@@ -109,3 +111,16 @@ def command_ajax(request):
     payload = request.POST.getlist('payload[]', [])
     commands = Commands()
     return JsonResponse(commands.perform_command(cmd, payload))
+
+
+# GET /ajax/settings/
+def settings_ajax(request):
+    payload = request.GET.getlist('payload[]', [])
+    return JsonResponse(Setting.get_settings(payload))
+
+
+# POST /ajax/set/
+def set_ajax(request):
+    key = request.POST.get('key', '')
+    value = request.POST.get('value', '')
+    return JsonResponse(Setting.set_setting(key, value))

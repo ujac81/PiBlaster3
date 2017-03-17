@@ -691,7 +691,7 @@ PiRemote.pl_raise_seed_dialog = ->
 
     cont.append('p').append('input')
         .attr('type', 'number').attr('min', '10').attr('max', '100').attr('value', '20')
-        .attr('id', 'seedspin')
+        .attr('id', 'seedspin').attr('class', 'spin')
 
     cont.append('p').attr('class', 'confirmbutton')
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary')

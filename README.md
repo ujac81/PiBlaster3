@@ -113,7 +113,7 @@ Configuration will be done, when PiBlaster3 is installed.
 
 ## Required Packages
 
-    $ sudo aptitude install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git
+    $ sudo aptitude install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git libasound2-dev
     $ sudo pip3 install django==1.10.5
 
 At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might use this directly)
@@ -122,6 +122,7 @@ At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might u
     $ sudo pip3 install django_compressor
     $ sudo pip3 install uwsgi
     $ sudo pip3 install python-mpd2
+    $ sudo pip3 install pyalsaaudio
 
 ## PiBlaster3 software
 

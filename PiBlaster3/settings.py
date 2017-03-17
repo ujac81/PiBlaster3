@@ -44,6 +44,7 @@ COMPRESS_PRECOMPILERS = (
 # Application definition
 
 INSTALLED_APPS = [
+    # 'piremote.apps.PiremoteConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
