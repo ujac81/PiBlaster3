@@ -228,6 +228,11 @@ PiRemote.search_raise_info_dialog = (file) ->
                     PiRemote.load_page 'browse'
                     return
 
+
+                p = cont.append('p')
+                audio = p.append('audio').attr('controls', 'controls')
+                audio.append('source').attr('src', '/music/'+file)
+
                 $('#modalSmall').modal()
             return
     return

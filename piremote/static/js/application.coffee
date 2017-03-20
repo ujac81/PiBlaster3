@@ -27,6 +27,11 @@ $ ->
 #        PiRemote.load_page PiRemote.safe_page
 #        return
 
+    $('#modalSmall').on 'hidden.bs.modal', ->
+        d3.select('#smallModalLabel').html('')
+        d3.select('#smallModalMessage').html('')
+        return
+
     PiRemote.setStatusText 'PiRemote v3.0 loaded.'
     return
 

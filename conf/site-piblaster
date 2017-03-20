@@ -19,6 +19,11 @@ server {
                 uwsgi_pass piremote;
         }
 
+        location /music {
+            alias /var/lib/mpd/music;
+            disable_symlinks off;
+        }
+
         root /var/www/html;
         index index.html index.htm index.nginx-debian.html;
 }

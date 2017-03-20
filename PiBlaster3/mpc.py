@@ -2,8 +2,10 @@
 from mpd import MPDClient, ConnectionError, CommandError
 import os
 import random
+import re
 import time
 
+from PiBlaster3.translate_genre import translate_genre
 
 class MPC:
 
@@ -240,7 +242,13 @@ class MPC:
             'genre': 'Thrash Metal'}]
         """
         self.ensure_connected()
-        return self.client.find('file', file)
+        res = self.client.find('file', file)
+        for item in res:
+            if 'genre' in item:
+                m = re.match(r"^\((\d+)", item['genre'])
+                if m:
+                    item['genre'] = translate_genre(int(m.group(1)))
+        return res
 
     def playlist_changes(self, version):
         """Get changes in playlist since version.
