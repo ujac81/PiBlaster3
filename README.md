@@ -123,7 +123,6 @@ At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might u
     $ sudo pip3 install uwsgi
     $ sudo pip3 install python-mpd2
     $ sudo pip3 install pyalsaaudio
-    $ sudo pip3 install Celery
 
 ## PiBlaster3 software
 

@@ -1,5 +1,5 @@
 
-upstream django {
+upstream piremote {
         server unix:/tmp/piblaster3.sock fail_timeout=0;
 }
 
@@ -8,11 +8,17 @@ server {
         server_name pi.blaster;
         access_log off;
 
-        location /static {
-                alias /opt/PiBlaster3/PiBlaster3/static;
+        # Enable direct access to static files via web server if
+        # static dir is visible by nginx.
+        location /piremote/static {
+                alias /opt/PiBlaster3/piremote/static;
         }
-        location / {
+
+        location /piremote {
                 include /etc/nginx/uwsgi_params;
-                uwsgi_pass django;
+                uwsgi_pass piremote;
         }
+
+        root /var/www/html;
+        index index.html index.htm index.nginx-debian.html;
 }
