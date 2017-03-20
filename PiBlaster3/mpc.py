@@ -300,6 +300,13 @@ class MPC:
             elif cmd == 'repeat':
                 rep = self.get_status_int('repeat')
                 self.client.repeat(1 if rep == 0 else 0)
+            elif cmd.startswith('seekcur'):
+                pct = float(cmd.split()[1])
+                cur = self.get_currentsong()
+                jump = 0.0
+                if 'time' in cur:
+                    jump = float(cur['time']) * pct / 100.0
+                self.client.seekcur(jump)
             else:
                 success = False
         except CommandError:

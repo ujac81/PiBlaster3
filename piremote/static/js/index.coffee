@@ -107,6 +107,23 @@ PiRemote.install_index_actions = ->
         PiRemote.resize_index()
         return
 
+    # Position action
+    $('#idxpos').off 'click'
+    $('#idxpos').on 'click', (event) ->
+        x_off = $(this).offset().left
+        pct = (event.pageX-x_off)/$(this).width()*100.0
+        PiRemote.do_ajax
+            url: 'cmd'
+            method: 'POST'
+            data:
+                'cmd': 'seekcur '+pct
+            success: (data) ->
+                if data.success
+                    PiRemote.update_status data
+                return
+
+
+
     # Button actions
     $('.idxbuttons span').off 'click'
     $('.idxbuttons span').on 'click', (event) ->

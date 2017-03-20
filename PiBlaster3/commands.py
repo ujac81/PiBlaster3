@@ -2,6 +2,8 @@
 
 """
 
+from subprocess import Popen, PIPE, DEVNULL
+
 
 class Commands:
     """Backend for AJAX POST /piremote/ajax/command """
@@ -22,7 +24,10 @@ class Commands:
             return {'cmd': cmd, 'ok': 0}
 
         if cmd == 'poweroff':
-            # TODO sudo /sbin/poweroff
+            p = Popen('sudo /sbin/poweroff', shell=True, bufsize=1024,
+                      stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL,
+                      close_fds=True)
+            p.wait()
             return {'cmd': cmd, 'ok': 1, 'status': 'Powering off system.'}
 
         return {'cmd': cmd, 'error': 'Unknown command %s' % cmd}

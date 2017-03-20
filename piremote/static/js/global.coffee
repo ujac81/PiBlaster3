@@ -117,36 +117,6 @@ PiRemote.add_navbar_button = (sub_page, text, glyphicon=false, sub_page_event=tr
     return
 
 
-# Add a drop down menu to the menu bar.
-PiRemote.add_navbar_drop_down = (title, id) ->
-
-    line = d3.select('#button-line').append('button')
-    d = line.append('div').attr('class', 'dropdown')
-    but = d.append('button').attr('id', id).attr('type', 'button')
-            .attr('data-toggle', 'dropdown').attr('aria-haspopup', 'true')
-            .attr('aria-expanded', 'false')
-    but.html(title)
-    but.append('span').attr('class', 'caret')
-    ul = d.append('ul').attr('class', 'dropdown-menu').attr('aria-labelledby', id)
-
-    return ul
-
-    line = d3.select('#button-line')
-    ul_out = line.append('ul').attr('class', '')
-    li_out = ul_out.append('li').attr('class', 'dropdown')
-    a = li_out.append('a').attr('class', 'dropdown-toggle')
-        .attr('href', '#').attr('data-toggle', 'dropdown')
-    a.html(title)
-    a.append('span').attr('class', 'caret')
-    ul = li_out.append('ul').attr('class', 'dropdown-menu').attr('role', 'menu')
-    ul
-
-
-PiRemote.add_navbar_drop_down_item = (root, title) ->
-    li = root.append('li')
-    li.append('a').attr('href', '#').html(title)
-
-
 # Raise a dialog box including confirm button.
 # If confirm clicked, perform function.
 PiRemote.confirm_dialog = (req) ->
