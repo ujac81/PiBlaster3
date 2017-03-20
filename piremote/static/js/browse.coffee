@@ -237,6 +237,8 @@ PiRemote.raise_dir_dialog = (element) ->
     items = [
         ['append-item', 'Append Directory'],
         ['append-other', 'Append Directory to another Playlist']
+        ['seed', 'Random at Songs'],
+        ['seed-other', 'Random at Songs to another Playlist'],
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -328,7 +330,16 @@ PiRemote.do_browse_action = (action, item=null, type='file') ->
         items = sel.data().map((d) -> d[5])
         PiRemote.pl_append_items_to_playlist items
         sel.classed('selected', 0)
-
+    else if action == 'seed'
+        PiRemote.pl_edit_name = ''
+        PiRemote.pl_raise_seed_dialog item
+    else if action == 'seed-other'
+        PiRemote.pl_action_on_playlists
+            title: 'Random Add to Playlist'
+            success: (data) ->
+                PiRemote.pl_edit_name = data
+                PiRemote.pl_raise_seed_dialog item
+                return
 
     return
 

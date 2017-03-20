@@ -5,30 +5,14 @@
 PiRemote.load_playlist_page = ->
 
     # Insert buttons
-    # PiRemote.add_navbar_button 'home', 'home', true
     PiRemote.add_navbar_button 'pl_save_playlist', 'save-file', true, false
     PiRemote.add_navbar_button 'pl_playlists', 'open-file', true
     PiRemote.add_navbar_button 'pl_edit_playlists', 'list', true
-    #PiRemote.add_navbar_button 'pl_clear_playlist', 'remove', true, false
-    #PiRemote.add_navbar_button 'pl_seed_playlist', 'plus', true, false
-
-    #ul = PiRemote.add_navbar_drop_down 'Playlist', 'plmenu'
-    #PiRemote.add_navbar_drop_down_item ul, 'home'
 
     $('button#navbutton_pl_save_playlist').off 'click'
     $('button#navbutton_pl_save_playlist').on 'click', ->
         PiRemote.pl_raise_save_dialog()
         return
-
-    #$('button#navbutton_pl_clear_playlist').off 'click'
-    #$('button#navbutton_pl_clear_playlist').on 'click', ->
-    #    PiRemote.pl_raise_clear_dialog()
-    #    return
-
-    #$('button#navbutton_pl_seed_playlist').off 'click'
-    #$('button#navbutton_pl_seed_playlist').on 'click', ->
-    #    PiRemote.pl_raise_seed_dialog()
-    #    return
 
     # build main content for current sub page.
     if PiRemote.current_sub_page == 'pl_playlists'
@@ -689,7 +673,7 @@ PiRemote.pl_raise_clear_dialog = ->
 
 # Callback for plus button.
 # Seed playlist with N random songs
-PiRemote.pl_raise_seed_dialog = ->
+PiRemote.pl_raise_seed_dialog = (seed_dir='')->
 
     d3.select('#smallModalLabel').html('Seed Playlist '+PiRemote.pl_edit_name)
     cont = d3.select('#smallModalMessage')
@@ -707,7 +691,7 @@ PiRemote.pl_raise_seed_dialog = ->
 
     $('button#confirmbutton').off 'click'
     $('button#confirmbutton').on 'click', ->
-        PiRemote.pl_action 'seed', PiRemote.pl_edit_name, [$('input#seedspin').val()], 'file',
+        PiRemote.pl_action 'seed', PiRemote.pl_edit_name, [$('input#seedspin').val(), seed_dir], 'file',
             success: (data) ->
                 # Reload playlist in edit mode.
                 # No reload in playlist mode (polling will auto-update).

@@ -393,7 +393,6 @@ class MPC:
         if (cmd == 'append') or (cmd == 'insert' and 'pos' not in self.get_currentsong()):
             # append at end if command is append or insert and not playing
             for item in items:
-                print("Append: "+item)
                 try:
                     if len(plname):
                         self.client.playlistadd(plname, item)
@@ -492,6 +491,11 @@ class MPC:
             n = int(items[0])
             random.seed()
             db_files = self.client.list('file')
+            filter_dirs = items[1]
+            if filter_dirs != '':
+                db_files = [i for i in db_files if i.startswith(filter_dirs)]
+            if len(db_files) == 0:
+                return 'No items to seed in dir %s' % filter_dirs
             add = []
             for i in range(n):
                 add.append(db_files[random.randrange(0, len(db_files))])
