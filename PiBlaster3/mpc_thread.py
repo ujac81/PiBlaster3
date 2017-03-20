@@ -40,7 +40,7 @@ class MPC_Idler:
         res = self.client.idle()
         return res
 
-    def check_party_mode(self, res):
+    def check_party_mode(self, res, force=False):
         """Check if party mode is on, append items to playlist/shrink playlist if needed.
 
         Fetch settings directly from sqlite3 database of piremote App.
@@ -54,7 +54,7 @@ class MPC_Idler:
         party_high_water: 'int' when appending, append until this number of songs left.
         """
 
-        playlist_event = False
+        playlist_event = force
         for ev in res:
             if ev == 'player' or ev == 'playlist':
                 playlist_event = True
@@ -88,9 +88,11 @@ class MPC_Idler:
 
         status = self.client.status()
 
-        pos = int(status['song'])
+        pos = int(status['song']) if 'song' in status else 0
         pl_len = int(status['playlistlength'])
         pl_remain = max(pl_len - pos - 1, 0)
+
+        print([pos, pl_len, pl_remain, party_low_water, party_high_water])
 
         # Append randomly until high_water mark reached, if below low water mark.
         if pl_remain < party_low_water:
@@ -111,4 +113,10 @@ def mpc_idler():
         return
     mpc.check_party_mode(mpc.idle())
 
+
+def mpc_check_party_mode_init():
+    mpc = MPC_Idler()
+    if not mpc.connect():
+        return
+    mpc.check_party_mode(res=[], force=True)
 

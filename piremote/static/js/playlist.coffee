@@ -5,27 +5,30 @@
 PiRemote.load_playlist_page = ->
 
     # Insert buttons
-    PiRemote.add_navbar_button 'home', 'home', true
+    # PiRemote.add_navbar_button 'home', 'home', true
     PiRemote.add_navbar_button 'pl_save_playlist', 'save-file', true, false
     PiRemote.add_navbar_button 'pl_playlists', 'open-file', true
     PiRemote.add_navbar_button 'pl_edit_playlists', 'list', true
-    PiRemote.add_navbar_button 'pl_clear_playlist', 'remove', true, false
-    PiRemote.add_navbar_button 'pl_seed_playlist', 'plus', true, false
+    #PiRemote.add_navbar_button 'pl_clear_playlist', 'remove', true, false
+    #PiRemote.add_navbar_button 'pl_seed_playlist', 'plus', true, false
+
+    #ul = PiRemote.add_navbar_drop_down 'Playlist', 'plmenu'
+    #PiRemote.add_navbar_drop_down_item ul, 'home'
 
     $('button#navbutton_pl_save_playlist').off 'click'
     $('button#navbutton_pl_save_playlist').on 'click', ->
         PiRemote.pl_raise_save_dialog()
         return
 
-    $('button#navbutton_pl_clear_playlist').off 'click'
-    $('button#navbutton_pl_clear_playlist').on 'click', ->
-        PiRemote.pl_raise_clear_dialog()
-        return
+    #$('button#navbutton_pl_clear_playlist').off 'click'
+    #$('button#navbutton_pl_clear_playlist').on 'click', ->
+    #    PiRemote.pl_raise_clear_dialog()
+    #    return
 
-    $('button#navbutton_pl_seed_playlist').off 'click'
-    $('button#navbutton_pl_seed_playlist').on 'click', ->
-        PiRemote.pl_raise_seed_dialog()
-        return
+    #$('button#navbutton_pl_seed_playlist').off 'click'
+    #$('button#navbutton_pl_seed_playlist').on 'click', ->
+    #    PiRemote.pl_raise_seed_dialog()
+    #    return
 
     # build main content for current sub page.
     if PiRemote.current_sub_page == 'pl_playlists'
@@ -494,8 +497,7 @@ PiRemote.pl_raise_action_dialog = (id) ->
     return
 
 
-
-# Raise modal action dialog after click on vertical action dots.
+# Raise modal action dialog after click on plus sign.
 PiRemote.pl_raise_add_dialog = ->
 
     d3.select('#smallModalLabel').html('Playlist Action')
@@ -513,6 +515,8 @@ PiRemote.pl_raise_add_dialog = ->
         ['deleteids', 'Delete Selection'],
         ['randomize', 'Randomize Playlist'],
         ['randomize-rest', 'Randomize Playlist After Current'],
+        ['clear', 'Clear playlist'],
+        ['seed', 'Random add songs']
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -568,6 +572,10 @@ PiRemote.pl_do_action = (action, id=-1) ->
         PiRemote.last_browse = file.split('/').slice(0,-1).join('/')
         PiRemote.load_page 'browse'
         $('#modalSmall').modal('hide')
+    else if action == 'clear'
+        PiRemote.pl_raise_clear_dialog()
+    else if action == 'seed'
+        PiRemote.pl_raise_seed_dialog()
     else
         console.log 'TODO '+action
 
@@ -967,6 +975,8 @@ PiRemote.pl_raise_edit_add_dialog = ->
         ['append', 'Append Selection to Current Playlist'],
         ['selection-to-pl', 'Append Selection to Another Playlist'],
         ['delete', 'Delete Selection'],
+        ['clear', 'Clear Playlist'],
+        ['seed', 'Add random songs']
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -1003,6 +1013,10 @@ PiRemote.pl_raise_edit_add_dialog = ->
             $('#modalSmall').modal('hide')
         else if action == 'selection-to-pl'
             PiRemote.pl_append_items_to_playlist items
+        else if action == 'clear'
+            PiRemote.pl_raise_clear_dialog()
+        else if action == 'seed'
+            PiRemote.pl_raise_seed_dialog()
         return
 
     # Raise dialog.
