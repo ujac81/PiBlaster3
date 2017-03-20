@@ -27,6 +27,8 @@ $ ->
 #        PiRemote.load_page PiRemote.safe_page
 #        return
 
+    # Clear modal dialog after hide.
+    # This ensures that embedded audio player is stopped.
     $('#modalSmall').on 'hidden.bs.modal', ->
         d3.select('#smallModalLabel').html('')
         d3.select('#smallModalMessage').html('')

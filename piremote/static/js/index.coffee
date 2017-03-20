@@ -84,7 +84,35 @@ PiRemote.index_build_volume = ->
 
     root = d3.select('.piremote-content')
 
-    console.log 'volume'
+    data = {'MASTER': '34', 'AMP': '22'}
+
+    names = []
+    values = []
+    for key, value of data
+        names.push(key)
+        values.push(parseInt(value))
+
+    p = root.append('p').attr('class', 'sliders')
+    table = p.append('table').attr('class', 'table sliders')
+
+    tr1 = table.append('tr').attr('class', 'trslider1')
+    tr2 = table.append('tr').attr('class', 'trslider2')
+    tr3 = table.append('tr').attr('class', 'trslider3')
+
+    for name in names
+        tr1.append('td').attr('class', 'sliderhead').html(name)
+
+    for val, i in values
+        tr2.append('td').attr('class', 'slidermain').append('div').attr('class', 'slider').attr('data-id', i).append('div').attr('class', 'sliderfill')
+        tr3.append('td').attr('class', 'slidernum').attr('data-id', i).html(val)
+
+    PiRemote.resize_sliders()
+
+
+    # Resize sliders
+    $(window).resize ->
+        PiRemote.resize_sliders()
+        return
 
     return
 
@@ -182,6 +210,20 @@ PiRemote.do_status_poll = ->
 PiRemote.resize_index = ->
     return if PiRemote.current_page != 'index'
     $("#idxpos").width($("#idxpos").parent().outerWidth()-40)
+    return
+
+
+
+# Callback for page resize event.
+# Resize position slider.
+PiRemote.resize_sliders = ->
+    return if PiRemote.current_sub_page not in ['index_volume', 'index_equalizer']
+    w = $('.slidernum').width()
+    h = $(window).height() * 0.75
+    left = (w-20)*0.5+10
+    left = 0 if left < 0
+    d3.selectAll('td.slidermain').style("padding-left", left+"px")
+    d3.selectAll('td.slidermain > .slider').style("height", h+"px")
     return
 
 # Set position fill in position slider (percentage value required).

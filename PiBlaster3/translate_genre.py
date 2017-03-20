@@ -1,13 +1,7 @@
 
 
-def translate_genre(num):
-    """
-    Extracted from https://de.wikipedia.org/wiki/Liste_der_ID3v1-Genres
-    :param num:
-    :return:
-    """
-
-    genres = {
+def all_genres():
+    return {
         0: "Blues",
         1: "Classic Rock",
         2: "Country",
@@ -201,7 +195,17 @@ def translate_genre(num):
         190: "Garage Rock",
         191: "Psybient",
     }
+
+
+def translate_genre(num):
+    """
+    Extracted from https://de.wikipedia.org/wiki/Liste_der_ID3v1-Genres
+    :param num:
+    :return:
+    """
+    genres = all_genres()
     if num in genres:
         return genres[num]
     return 'unknown'
+
 
