@@ -34,6 +34,10 @@ PiRemote.setStatus = (text, error, fade) ->
     $('#statusbar').html(text)
     $('.footer').fadeTo('fast', 1)
 
+    if 'text' == ''
+        $('.footer').fadeTo('fast', 0)
+        return
+
     window.setTimeout ( ->
         if text == $('#statusbar').html()
             # text was not changed --> do fade out

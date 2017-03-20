@@ -29,6 +29,17 @@ PiRemote.settings_build_page = (settings) ->
     PiRemote.settings_add_spin_box p, 'party_high_water', settings.party_high_water, 'Append this many songs', 10, 1000
 
     p = root.append('p').attr('class', 'settingsgroup')
+    p.append('h4').attr('class','settingshead').html('Power')
+    PiRemote.settings_add_button p, 'poweroff', 'Power off', 'Off'
+
+
+    $('button#button_poweroff').off 'click'
+    $('button#button_poweroff').on 'click', ->
+        PiRemote.confirm_dialog
+            title: 'Power off?'
+            requirepw: 1
+            confirmed: ->
+                PiRemote.do_command 'poweroff'
 
     return
 
@@ -71,7 +82,18 @@ PiRemote.settings_add_spin_box = (root, key, value, text, min, max) ->
         val = max if val > max
         PiRemote.settings_set key, val
         return
+    return
 
+PiRemote.settings_add_button = (root, key, text, button_text) ->
+
+    d = root.append('div').attr('class', 'setting')
+
+    d.append('div').attr('class', 'slabel').html(text)
+    d.append('div').attr('class', 'svalue')
+        .append('button')
+        .attr('class', 'btn btn-default')
+        .attr('id', 'button_'+key)
+        .html(button_text)
 
     return
 

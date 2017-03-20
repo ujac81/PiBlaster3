@@ -76,3 +76,12 @@ PiRemote.pls_action = (cmd, plname, req={}) ->
             return
 
     return
+
+
+PiRemote.do_command = (cmd, payload=[]) ->
+    PiRemote.do_ajax
+        url: 'command'
+        method: 'POST'
+        data:
+            cmd: cmd
+            payload: payload

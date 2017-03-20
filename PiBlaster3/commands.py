@@ -21,4 +21,8 @@ class Commands:
                 return {'cmd': cmd, 'ok': 1}
             return {'cmd': cmd, 'ok': 0}
 
+        if cmd == 'poweroff':
+            # TODO sudo /sbin/poweroff
+            return {'cmd': cmd, 'ok': 1, 'status': 'Powering off system.'}
+
         return {'cmd': cmd, 'error': 'Unknown command %s' % cmd}
