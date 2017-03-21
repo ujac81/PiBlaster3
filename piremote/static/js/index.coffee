@@ -22,6 +22,7 @@ PiRemote.load_index_page = ->
 
     return
 
+
 # index/home page -- show song information and buttons
 PiRemote.index_build_main = ->
 
@@ -81,17 +82,41 @@ PiRemote.index_build_main = ->
 
 # index/volume page -- show volume sliders
 PiRemote.index_build_volume = ->
+    PiRemote.index_fetch_mixer 'volume'
+    return
 
-    root = d3.select('.piremote-content')
 
-    data = {'MASTER': '34', 'AMP': '22'}
+# index/equalizer page -- show equalizer sliders
+PiRemote.index_build_equalizer = ->
+    PiRemote.index_fetch_mixer 'equalizer'
+    return
+
+
+# AJAX GET for mixer status and build sliders from result.
+PiRemote.index_fetch_mixer = (slider_class) ->
+    PiRemote.do_ajax
+        url: 'mixer'
+        method: 'GET'
+        data:
+            'class': slider_class
+        success: (data) ->
+            if data.ok
+                PiRemote.index_build_sliders data.data, slider_class
+            return
+    return
+
+
+# Build sliders from AJAX GET mixer.
+# Install AJAX POST mixerset callbacks for each slider.
+PiRemote.index_build_sliders = (data, slider_class) ->
 
     names = []
     values = []
-    for key, value of data
-        names.push(key)
-        values.push(parseInt(value))
+    for item in data
+        names.push(item.name)
+        values.push(parseInt(item.value))
 
+    root = d3.select('.piremote-content')
     p = root.append('p').attr('class', 'sliders')
     table = p.append('table').attr('class', 'table sliders')
 
@@ -103,27 +128,36 @@ PiRemote.index_build_volume = ->
         tr1.append('td').attr('class', 'sliderhead').html(name)
 
     for val, i in values
-        tr2.append('td').attr('class', 'slidermain').append('div').attr('class', 'slider').attr('data-id', i).append('div').attr('class', 'sliderfill')
+        tr2.append('td').attr('class', 'slidermain')
+            .append('div').attr('class', 'slider').attr('data-id', i)
+            .append('div').attr('class', 'sliderfill').attr('data-id', i)
         tr3.append('td').attr('class', 'slidernum').attr('data-id', i).html(val)
 
     PiRemote.resize_sliders()
 
+    $('.slider').off 'click'
+    $('.slider').on 'click', (event) ->
+        y_off = $(this).offset().top
+        pct_inv = ((event.pageY-y_off)/$(this).height()*100.0)
+        pct = parseInt(100.0-pct_inv)
+        id = parseInt($(this).data('id'))
+
+        $('.slidernum[data-id='+id+']').html(pct)
+        $('.sliderfill[data-id='+id+']').css('top', pct_inv+'%')
+
+        PiRemote.do_ajax
+            url: 'mixerset'
+            method: 'POST'
+            data:
+                class: slider_class
+                channel: id
+                value: pct
+        return
 
     # Resize sliders
     $(window).resize ->
         PiRemote.resize_sliders()
         return
-
-    return
-
-
-# index/equalizer page -- show equalizer sliders
-PiRemote.index_build_equalizer = ->
-
-    root = d3.select('.piremote-content')
-
-    console.log 'eq'
-
     return
 
 
@@ -150,8 +184,6 @@ PiRemote.install_index_actions = ->
                     PiRemote.update_status data
                 return
 
-
-
     # Button actions
     $('.idxbuttons span').off 'click'
     $('.idxbuttons span').on 'click', (event) ->
@@ -176,6 +208,7 @@ PiRemote.start_status_poll = ->
     PiRemote.poll_started = true
     PiRemote.do_status_poll()
     return
+
 
 # Short polling loop.
 # Recursively receive new status.
@@ -205,6 +238,7 @@ PiRemote.do_status_poll = ->
                 return
     return
 
+
 # Callback for page resize event.
 # Resize position slider.
 PiRemote.resize_index = ->
@@ -213,18 +247,18 @@ PiRemote.resize_index = ->
     return
 
 
-
 # Callback for page resize event.
 # Resize position slider.
 PiRemote.resize_sliders = ->
     return if PiRemote.current_sub_page not in ['index_volume', 'index_equalizer']
     w = $('.slidernum').width()
-    h = $(window).height() * 0.75
+    h = ($(window).height() - $('#footer').height() - $('#navbar').height() - $('.trslider1').height() - $('.trslider3').height()) - 20
     left = (w-20)*0.5+10
     left = 0 if left < 0
     d3.selectAll('td.slidermain').style("padding-left", left+"px")
     d3.selectAll('td.slidermain > .slider').style("height", h+"px")
     return
+
 
 # Set position fill in position slider (percentage value required).
 PiRemote.set_position = (pct) ->
@@ -234,6 +268,7 @@ PiRemote.set_position = (pct) ->
 
     $('#idxposfill').css('right', pct_set+'%')
     return
+
 
 # Callback for AJAX status receive.
 # Called by short polling and button events.

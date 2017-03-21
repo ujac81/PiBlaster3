@@ -1,6 +1,7 @@
 from django.http import HttpResponse, JsonResponse
 from django.template import loader
 
+from PiBlaster3.alsa import AlsaMixer
 from PiBlaster3.commands import Commands
 from PiBlaster3.mpc import MPC
 
@@ -124,3 +125,19 @@ def set_ajax(request):
     key = request.POST.get('key', '')
     value = request.POST.get('value', '')
     return JsonResponse(Setting.set_setting(key, value))
+
+
+# GET /ajax/mixer/
+def mixer_ajax(request):
+    mixer_class = request.GET.get('class')
+    mixer = AlsaMixer()
+    return JsonResponse(mixer.get_channel_data(mixer_class))
+
+
+# POST /ajax/mixerset/
+def mixerset_ajax(request):
+    mixer_class = request.POST.get('class')
+    mixer_channel = int(request.POST.get('channel'))
+    mixer_value = int(request.POST.get('value'))
+    mixer = AlsaMixer()
+    return JsonResponse(mixer.set_channel_data(mixer_class, mixer_channel, mixer_value))

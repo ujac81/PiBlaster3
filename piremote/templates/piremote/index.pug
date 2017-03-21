@@ -37,7 +37,7 @@ html(lang="en")
         -endcompress
     body
         -csrf_token
-        nav.navbar.navbar-default.navbar-fixed-top(role='navigation')
+        nav.navbar.navbar-default.navbar-fixed-top(role='navigation', id='navbar')
             .container-fluid
                 //- non-collapsable header 'PiBlaster home button'
                 .navbar-header
@@ -89,7 +89,6 @@ html(lang="en")
         .container-fluid(id='basecont')
             .piremote-content
                 //- content here built via PiRemote.load_page()
-            p#empty
 
 
         #adddiv
@@ -98,6 +97,6 @@ html(lang="en")
         #dragdiv
             p#dragp
 
-        .footer
+        #footer
             .container-fluid
                 p#statusbar
