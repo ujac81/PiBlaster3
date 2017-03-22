@@ -16,9 +16,26 @@ class AlsaMixer:
         """
         self.sudo_prefix = ''  # TODO: to config
 
-        # use output of 'amixer controls'
-        self.volume_channels = ["numid=17,iface=MIXER"]
-        self.volume_channel_names = ["Master"]
+        # use channel names in alsamixer
+        self.volume_channels = ["Master"]
+
+    def get_amixer_volume(self, item):
+        """
+
+        :param item:
+        :return:
+        """
+        res = {'name': item}
+        cmd = ['amixer', '-M', 'get', "\"%s\"" % item]
+        if len(self.sudo_prefix):
+            cmd = [self.sudo_prefix] + cmd
+        channels = Popen(' '.join(cmd), shell=True, stdout=PIPE, stderr=PIPE). \
+            communicate()[0].decode('utf-8').split('\n')
+        for chan in channels:
+            m = re.search(r"\[(\d+)%\]", chan)
+            if m is not None:
+                res['value'] = int(m.group(1))
+        return res
 
     def get_volume_vals(self):
         """
@@ -27,18 +44,8 @@ class AlsaMixer:
         """
         mpc = MPC()
         res = [{'name': 'Player', 'value': mpc.get_status_int('volume')}]
-
         for i, item in enumerate(self.volume_channels):
-            cmd = ['amixer', 'cget', "\"%s\"" % item]
-            if len(self.sudo_prefix):
-                cmd = [self.sudo_prefix] + cmd
-            channels = Popen(' '.join(cmd), shell=True, stdout=PIPE, stderr=PIPE). \
-                communicate()[0].decode('utf-8').split('\n')
-            for chan in channels:
-                m = re.search(r": values=(\d+)", chan)
-                if m is not None:
-                    val = int(m.group(1))
-                    res.append({'name': self.volume_channel_names[i], 'value': val})
+            res.append(self.get_amixer_volume(item))
         return res
 
     def set_volume_val(self, mixer_id, val):
@@ -51,11 +58,17 @@ class AlsaMixer:
         if id == 0:
             mpc = MPC()
             mpc.set_volume(val)
+            return mpc.volume()
         else:
-            cmd = ['amixer', 'cset', "\"%s\"" % self.volume_channels[mixer_id-1], '%d' % val]
+            cmd = ['amixer', '-M', 'set', "\"%s\"" % self.volume_channels[mixer_id-1], '%d%%' % val]
             if len(self.sudo_prefix):
                 cmd = [self.sudo_prefix] + cmd
-            Popen(' '.join(cmd), shell=True, stdout=PIPE, stderr=PIPE).communicate()
+            channels = Popen(' '.join(cmd), shell=True, stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8').split('\n')
+            for chan in channels:
+                m = re.search(r"\[(\d+)%\]", chan)
+                if m is not None:
+                    return int(m.group(1))
+        return 0
 
     def get_equal_vals(self):
         """Get list of int values for equalizer channels.
@@ -96,6 +109,18 @@ class AlsaMixer:
             cmd = [self.sudo_prefix] + cmd
         Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
 
+        cmd = ['amixer', '-D', 'equal', 'cget', "numid=%d" % (chan+1)]
+        if len(self.sudo_prefix):
+            cmd = [self.sudo_prefix] + cmd
+        channels = Popen(' '.join(cmd), shell=True, stdout=PIPE, stderr=PIPE). \
+            communicate()[0].decode('utf-8').split('\n')
+        for chan in channels:
+            m = re.search(r": values=(\d+)", chan)
+            if m is not None:
+                return int(m.group(1))
+
+        return 0
+
     def get_channel_data(self, mixer_class):
         """
 
@@ -117,10 +142,11 @@ class AlsaMixer:
         :param value:
         :return:
         """
+        val = 0
         if mixer_class == 'equalizer':
-            self.set_equal_channel(chan_id, value)
+            val = self.set_equal_channel(chan_id, value)
         elif mixer_class == 'volume':
-            self.set_volume_val(chan_id, value)
+            val = self.set_volume_val(chan_id, value)
 
-        return {'status': 'Set %s channel %d to %d' % (mixer_class, chan_id, value)}
+        return {'status': 'Set %s channel %d to %d' % (mixer_class, chan_id, val), 'chan_id': chan_id, 'value': val}
 

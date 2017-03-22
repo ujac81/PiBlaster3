@@ -113,8 +113,9 @@ PiRemote.index_build_sliders = (data, slider_class) ->
     names = []
     values = []
     for item in data
-        names.push(item.name)
+        console.log item
         values.push(parseInt(item.value))
+
 
     root = d3.select('.piremote-content')
     p = root.append('p').attr('class', 'sliders')
@@ -132,18 +133,18 @@ PiRemote.index_build_sliders = (data, slider_class) ->
             .append('div').attr('class', 'slider').attr('data-id', i)
             .append('div').attr('class', 'sliderfill').attr('data-id', i)
         tr3.append('td').attr('class', 'slidernum').attr('data-id', i).html(val)
+        $('.sliderfill[data-id='+i+']').css('top', (100.0-val)+'%')
 
     PiRemote.resize_sliders()
 
     $('.slider').off 'click'
     $('.slider').on 'click', (event) ->
+        return if PiRemote.on_slider_change
+        PiRemote.on_slider_change = true
         y_off = $(this).offset().top
         pct_inv = ((event.pageY-y_off)/$(this).height()*100.0)
         pct = parseInt(100.0-pct_inv)
         id = parseInt($(this).data('id'))
-
-        $('.slidernum[data-id='+id+']').html(pct)
-        $('.sliderfill[data-id='+id+']').css('top', pct_inv+'%')
 
         PiRemote.do_ajax
             url: 'mixerset'
@@ -152,6 +153,11 @@ PiRemote.index_build_sliders = (data, slider_class) ->
                 class: slider_class
                 channel: id
                 value: pct
+            success: (data) ->
+                $('.slidernum[data-id='+data.chan_id+']').html(data.value)
+                $('.sliderfill[data-id='+data.chan_id+']').css('top', (100.0-data.value)+'%')
+                PiRemote.on_slider_change = false
+                return
         return
 
     # Resize sliders
