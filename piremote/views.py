@@ -1,11 +1,14 @@
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.template import loader
+import json
 
 from PiBlaster3.alsa import AlsaMixer
 from PiBlaster3.commands import Commands
 from PiBlaster3.mpc import MPC
+from PiBlaster3.upload import Uploader
 
 from .models import Setting
+from .forms import UploadForm
 
 
 # GET /
@@ -141,3 +144,20 @@ def mixerset_ajax(request):
     mixer_value = int(request.POST.get('value'))
     mixer = AlsaMixer()
     return JsonResponse(mixer.set_channel_data(mixer_class, mixer_channel, mixer_value))
+
+
+# POST /upload
+def upload(request):
+    if request.method == 'POST':
+        form = UploadForm(request.POST, request.FILES)
+        if form.is_valid():
+            name = form.cleaned_data["uploader"]
+            filename = form.cleaned_data["mediafile"]
+            up = Uploader()
+            res = up.upload_file(name, filename, request.FILES['mediafile'])
+        else:
+            res = {'error': 'Upload form data is invalid!'}
+        template = loader.get_template('piremote/index.pug')
+        return HttpResponse(template.render({'page': 'upload', 'upload': json.dumps(res)}, request))
+    else:
+        return HttpResponseRedirect('/piremote/pages/upload')

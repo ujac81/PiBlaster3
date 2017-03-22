@@ -113,7 +113,7 @@ PiRemote.index_build_sliders = (data, slider_class) ->
     names = []
     values = []
     for item in data
-        console.log item
+        names.push item.name
         values.push(parseInt(item.value))
 
 

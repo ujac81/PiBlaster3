@@ -63,6 +63,8 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
         PiRemote.load_search_page()
     else if page == 'settings'
         PiRemote.load_settings_page()
+    else if page == 'upload'
+        PiRemote.load_upload_page()
     else if page == 'blur'
         d3.select('.piremote-content').append('p').html('No focus on page')
     else

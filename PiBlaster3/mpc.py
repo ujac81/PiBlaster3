@@ -150,7 +150,10 @@ class MPC:
             vol = 0
         if vol > 100:
             vol = 100
-        self.client.setvol(vol)
+        try:
+            self.client.setvol(vol)
+        except CommandError:
+            pass
         return self.volume()
 
     def playlistinfo(self, start, end):

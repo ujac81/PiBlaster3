@@ -7,6 +7,7 @@ from subprocess import Popen, PIPE
 
 from .mpc import MPC
 
+
 class AlsaMixer:
     """Control alsa mixer master channel and equalizer plugin if found.
     """
@@ -55,7 +56,7 @@ class AlsaMixer:
         :param val:
         :return:
         """
-        if id == 0:
+        if mixer_id == 0:
             mpc = MPC()
             mpc.set_volume(val)
             return mpc.volume()
