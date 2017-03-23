@@ -8,12 +8,12 @@ https://docs.djangoproject.com/en/1.10/howto/deployment/wsgi/
 """
 
 import os
-from threading import Thread, current_thread
+from threading import Thread
 
 from django.core.wsgi import get_wsgi_application
 from time import sleep
 
-from PiBlaster3.mpc_thread import mpc_idler, mpc_check_party_mode_init
+from PiBlaster3.mpc_thread import mpc_idler
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "PiBlaster3.settings")
 

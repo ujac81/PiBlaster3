@@ -1,5 +1,7 @@
 from django.db import models
 
+import os
+
 # Create your models here.
 
 
@@ -47,3 +49,34 @@ class Setting(models.Model):
         return {'status': 'Set %s to %s.' %(key, value)}
 
 
+class Upload(models.Model):
+    path = models.CharField(max_length=500)
+
+    @staticmethod
+    def has_item(path):
+        return Upload.objects.filter(path__exact=path).count() != 0
+
+    @staticmethod
+    def add_item(path):
+        if Upload.has_item(path):
+            return 0
+
+        if os.path.isfile(path):
+            if path.lower().endswith(('.mp3', '.ogg', '.flac', '.wma', '.wav')):
+                u = Upload(path=path)
+                u.save()
+                return 1
+            return 0
+
+        all_files = [os.path.join(d, f)
+                     for d, subd, files in os.walk(path)
+                     for f in files if f.endswith(('.mp3', '.ogg', '.flac', '.wma', '.wav'))]
+
+        added = 0
+        for f in all_files:
+            if not Upload.has_item(f):
+                u = Upload(path=f)
+                u.save()
+                added += 1
+
+        return added

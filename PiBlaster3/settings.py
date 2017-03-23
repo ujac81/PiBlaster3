@@ -23,7 +23,7 @@ BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SECRET_KEY = 'h29k5==dbe#r-&7bnmhzkb2&ii^18q-cmf%l&!0+(b!c-q9sib'
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = bool(os.environ.get('DEBUG', False))
 
 ALLOWED_HOSTS = ['localhost', 'pi.blaster', '0.0.0.0', '*']
 
@@ -148,3 +148,10 @@ STATICFILES_FINDERS = (
 
 STATIC_URL = '/piremote/static/'
 STATIC_ROOT = 'piremote/static/'
+
+# Not too nice way to import own settings, but ok if not affect django settings
+try:
+    from .settings_piremote import *
+except ImportError:
+    pass
+

@@ -161,3 +161,23 @@ def upload(request):
         return HttpResponse(template.render({'page': 'upload', 'upload': json.dumps(res)}, request))
     else:
         return HttpResponseRedirect('/piremote/pages/upload')
+
+
+# POST /ajax/upload/
+def upload_ajax(request):
+    dirname = request.POST.get('dirname', '').replace('//', '/')
+    if dirname is not None:
+        up = Uploader()
+        data = {'dirname': dirname, 'browse': up.list_dir(dirname)}
+        return JsonResponse(data)
+    return JsonResponse({})
+
+
+# POST /ajax/doupload/
+def doupload_ajax(request):
+    paths = request.POST.getlist('paths[]', [])
+    if paths is not None:
+        up = Uploader()
+        return JsonResponse(up.add_to_uploads(paths))
+    return JsonResponse({})
+

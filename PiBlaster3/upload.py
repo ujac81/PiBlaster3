@@ -1,7 +1,9 @@
 
 import os
+from django.conf import settings
 
 from .mpc import MPC
+from piremote.models import Upload
 
 
 class Uploader:
@@ -13,7 +15,7 @@ class Uploader:
         """
 
         """
-        self.upload_dir = '/var/lib/mpd/music/Upload'  # TODO: config
+        self.upload_dir = settings.PB_UPLOAD_DIR
 
     def upload_file(self, uploader, name, f):
         """
@@ -41,4 +43,51 @@ class Uploader:
 
         return {'status': 'File %s uploaded to folder %s.' % (name, uploader)}
 
+    def list_dir(self, path):
+        """
 
+        :param path:
+        :return:
+        """
+        path = path.replace('//', '/')
+
+        if path == '':
+            res = []
+            for item in settings.PB_UPLOAD_SOURCES:
+                res.append(['dir', item, ''])
+            return res
+
+        try:
+            listing = os.listdir(path)
+        except OSError:
+            listing = []
+            pass
+
+        dirs = [d for d in listing if os.path.isdir(os.path.join(path, d))]
+        files = [f for f in listing
+                 if os.path.isfile(os.path.join(path, f))
+                 and f.endswith(('.mp3', '.flac', '.ogg', '.wma', '.wav'))]
+
+        res = []
+        for d in sorted(dirs):
+            res.append(['dir', d, path])
+        for f in sorted(files):
+            ext = os.path.splitext(f)[1][1:].lower()
+            res.append(['file', f, path, ext])
+
+        return res
+
+    def add_to_uploads(self, up_list):
+        """
+
+        :return:
+        """
+
+        if len(up_list) == 0:
+            return {'error': 'No files to upload'}
+
+        added = 0
+        for item in up_list:
+            added += Upload.add_item(item)
+
+        return {'status': '%d files added to upload queue' % added}

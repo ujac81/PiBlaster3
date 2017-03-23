@@ -23,6 +23,19 @@ PiRemote.load_upload_page = ->
         $('#modalSmall').modal('show')
         PiRemote.upload_message = `undefined`
 
+    root = d3.select('.piremote-content')
+    bl = root.append('div').attr('class', 'upload-list')
+    tb = bl.append('table').attr('id', 'tbupload').attr('class', 'table table-striped')
+    tb.append('tbody').attr('id', 'upload')
+
+    $('#addsign').show()
+    $('#addsign').off 'click'
+    $('#addsign').on 'click', ->
+        PiRemote.upload_raise_add_dialog()
+        return
+
+    PiRemote.upload_browse PiRemote.last_upload
+
     return
 
 # Callback for upload file button on top.
@@ -58,4 +71,194 @@ PiRemote.up_upload_file = ->
             .attr('type', 'submit').attr('name', 'submit').attr('value', 'Upload')
 
     $('#modalSmall').modal('show')
+    return
+
+# AJAX get of browse list.
+PiRemote.upload_browse = (dir) ->
+    PiRemote.do_ajax
+        url: 'upload'
+        method: 'POST'
+        data:
+            'dirname': dir
+        success: (data) ->
+            PiRemote.rebuild_upload data  # <-- rebuild table callback
+            return
+    return
+
+# Build dir listing on upload
+PiRemote.rebuild_upload = (data) ->
+
+    # clean table
+    tbody = d3.select('tbody#upload')
+    tbody.selectAll('tr').remove()
+
+    if data.dirname != ''
+        # First entry is folder up
+        dirname = data.dirname+'/../'
+        up_span = '<span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>'
+        updir = data.dirname.split('/').slice(0, -1).join('/').replace(/\/\//g, '/')
+        uptr = tbody.append('tr').classed('dir-item', 1).attr('data-path', updir).attr('id', 'trupdir')
+        uptr.append('td').classed('tdup-0', 1).html(up_span)
+        uptr.append('td').classed('tdup-1', 1).html(dirname.replace(/\//g, ' / '))
+        uptr.append('td').classed('tdup-2', 1)
+
+
+    dirs = data.browse.filter (d) -> d[0] == 'dir'
+    # ... vertical dots for each element
+    action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
+
+    # Append dirs
+    tbody.selectAll('tr')
+        .data(dirs, (d) -> d).enter()
+        .append('tr')
+            .attr('class', 'dir-item')
+            .attr('data-path', (d) -> d[2]+'/'+d[1])
+        .selectAll('td')
+        .data((d, i) -> ['<img src="/piremote/static/img/folder-blue.png"/>', d[1], action_span]).enter()
+        .append('td')
+            .attr('class', (d, i)-> 'tdup-'+i)
+            .html((d) -> d)
+
+    # Append files
+    files = data.browse.filter (d) -> d[0] == 'file'
+    tbody.selectAll('tr')
+        .data(files, (d) -> d).enter()
+        .append('tr')
+            .attr('class', 'file-item selectable')
+            .attr('data-path', (d) -> d[2]+'/'+d[1])
+        .selectAll('td')
+        .data((d, i) -> ['<img src="/piremote/static/img/'+d[3]+'.png"/>', d[1], action_span]).enter()
+        .append('td')
+            .attr('class', (d, i)-> 'tdup-'+i)
+            .classed('selectable', (d,i) -> i == 1)
+            .html((d) -> d)
+
+    # single-click on selectable items toggles select
+    $('div.upload-list > table > tbody > tr.selectable > td.selectable').off 'click'
+    $('div.upload-list > table > tbody > tr.selectable > td.selectable').on 'click', (event) ->
+        $(this).parent().toggleClass 'selected'
+        return
+
+    # move up by single-click
+    $('#trupdir').off
+    $('#trupdir').on 'click', (event) ->
+        PiRemote.upload_browse $(this).data('path')
+        return
+
+    # single click on folder or folder td enters folder
+    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-0').off
+    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-0').on 'click', (event) ->
+        PiRemote.upload_browse $(this).parent().data('path')
+        return
+
+    # single click on dir name enters folder
+    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-1').off
+    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-1').on 'click', (event) ->
+        PiRemote.upload_browse $(this).parent().data('path')
+        return
+
+    # dir action triggered
+    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-2').off
+    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-2').on 'click', (event) ->
+        PiRemote.up_dir_dialog $(this).parent()
+        return
+
+    # file action triggered
+    $('div.upload-list > table > tbody > tr.selectable > td.tdup-2').off
+    $('div.upload-list > table > tbody > tr.selectable > td.tdup-2').on 'click', (event) ->
+        PiRemote.up_file_dialog $(this).parent()
+        return
+
+    window.scrollTo 0, 0
+    return
+
+
+PiRemote.upload_raise_add_dialog = ->
+
+    d3.select('#smallModalLabel').html('File Actions')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+    navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', 'upload-selection')
+            .html('Upload Selection')
+
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        PiRemote.up_do_action $(this).data('action')
+        return
+
+    $('#modalSmall').modal()
+    return
+
+
+PiRemote.up_dir_dialog = (item) ->
+
+    d3.select('#smallModalLabel').html('Directory Actions')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+
+    path = item.data('path')
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+    navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', 'upload-item')
+            .html('Upload Directory')
+
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        PiRemote.up_do_action $(this).data('action'), path
+        return
+
+    $('#modalSmall').modal()
+    return
+
+
+PiRemote.up_file_dialog = (item) ->
+
+    d3.select('#smallModalLabel').html('Directory Actions')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+
+    path = item.data('path')
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+    navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', 'upload-item')
+            .html('Upload File')
+
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        PiRemote.up_do_action $(this).data('action'), path
+        return
+
+    $('#modalSmall').modal()
+
+    return
+
+
+PiRemote.up_do_action = (action, item=null) ->
+
+    items = []
+    if action == 'upload-selection'
+        sel = d3.selectAll('tr.file-item.selected')
+        items = sel.data().map((d) -> d[2]+'/'+d[1])
+    else
+        items = [item]
+
+    PiRemote.do_ajax
+        url: 'doupload'
+        method: 'POST'
+        data:
+            paths: items
+
+
+    $('#modalSmall').modal('hide')
     return

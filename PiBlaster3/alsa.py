@@ -4,6 +4,7 @@
 
 import re
 from subprocess import Popen, PIPE
+from django.conf import settings
 
 from .mpc import MPC
 
@@ -15,10 +16,8 @@ class AlsaMixer:
     def __init__(self):
         """Get names of equalizer channels if such.
         """
-        self.sudo_prefix = ''  # TODO: to config
-
-        # use channel names in alsamixer
-        self.volume_channels = ["Master"]
+        self.sudo_prefix = settings.PB_ALSA_SUDO_PREFIX
+        self.volume_channels = settings.PB_ALSA_CHANNELS
 
     def get_amixer_volume(self, item):
         """

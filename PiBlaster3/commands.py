@@ -3,6 +3,7 @@
 """
 
 from subprocess import Popen, PIPE, DEVNULL
+from django.conf import settings
 
 
 class Commands:
@@ -11,7 +12,7 @@ class Commands:
     def __init__(self):
         """load password etc.
         """
-        self.confirm_pass = 'ullipw'  # TODO: read from config
+        self.confirm_pass = settings.PB_CONFIRM_PASSWORD
 
     def perform_command(self, cmd, payload):
         """
