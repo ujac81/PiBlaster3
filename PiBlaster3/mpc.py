@@ -7,6 +7,7 @@ import time
 
 from PiBlaster3.translate_genre import translate_genre
 
+
 class MPC:
 
     def __init__(self):
@@ -155,6 +156,13 @@ class MPC:
         except CommandError:
             pass
         return self.volume()
+
+    def update_database(self):
+        """Trigger mpd update command (!= rescan).
+        Idler will get notified when scan is done.
+        """
+        self.ensure_connected()
+        self.client.update()
 
     def playlistinfo(self, start, end):
         """Get playlist items in interval [start, end)

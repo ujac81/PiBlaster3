@@ -1,6 +1,8 @@
 
 import os
 
+from .mpc import MPC
+
 
 class Uploader:
     """
@@ -28,12 +30,15 @@ class Uploader:
 
         filename = os.path.join(up_dir, name.name)
         if os.path.exists(filename):
-            return {'error': 'Upload destination %s exists'}
+            return {'error': 'Upload destination %s exists' % filename}
 
         with open(filename, 'wb+') as destination:
             for chunk in f.chunks():
                 destination.write(chunk)
 
-        return {'status': 'File %s uploaded to folder %s' % (name, uploader)}
+        mpc = MPC()
+        mpc.update_database()
+
+        return {'status': 'File %s uploaded to folder %s.' % (name, uploader)}
 
 

@@ -31,6 +31,7 @@ html(lang="en")
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/settings.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/upload.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/application.coffee')
+        -endcompress
         //- support for /piremote/pages/PAGENAME
         //- index view will set page to 'index'
         script.
@@ -39,7 +40,6 @@ html(lang="en")
             -autoescape off
                 script.
                     PiRemote.upload_message = {{upload}};
-        -endcompress
     body
         -csrf_token
         nav.navbar.navbar-default.navbar-fixed-top(role='navigation', id='navbar')
@@ -66,7 +66,6 @@ html(lang="en")
                             PiRemote.load_page() will delete the nodes below '.piremote-content'
                             and install new content viaw PiRemote.load_NAME_page() functions.
 
-
                         li
                             a(href='#', data-toggle='menu', data-action='index') Play
                         li
@@ -90,11 +89,9 @@ html(lang="en")
                 h4.modal-title(id="smallModalLabel") Message
                 .modal-body(id="smallModalMessage") Message not set!
 
-
         .container-fluid(id='basecont')
             .piremote-content
                 //- content here built via PiRemote.load_page()
-
 
         #adddiv
             span#addsign.glyphicon.glyphicon-plus-sign

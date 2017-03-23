@@ -8,6 +8,9 @@ server {
         server_name pi.blaster;
         access_log off;
 
+        # required for MP3 upload
+        client_max_body_size 50M;
+
         # Enable direct access to static files via web server if
         # static dir is visible by nginx.
         location /piremote/static {
