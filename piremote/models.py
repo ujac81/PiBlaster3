@@ -57,6 +57,14 @@ class Upload(models.Model):
         return Upload.objects.filter(path__exact=path).count() != 0
 
     @staticmethod
+    def has_uploads():
+        return Upload.objects.all().count() != 0
+
+    @staticmethod
+    def get_uploads():
+        return [i.path for i in Upload.objects.all().order_by('path')]
+
+    @staticmethod
     def add_item(path):
         if Upload.has_item(path):
             return 0

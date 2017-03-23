@@ -24,6 +24,7 @@ PiRemote.load_upload_page = ->
         PiRemote.upload_message = `undefined`
 
     root = d3.select('.piremote-content')
+    root.append('div').attr('id', 'upload-message')
     bl = root.append('div').attr('class', 'upload-list')
     tb = bl.append('table').attr('id', 'tbupload').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'upload')
@@ -75,13 +76,17 @@ PiRemote.up_upload_file = ->
 
 # AJAX get of browse list.
 PiRemote.upload_browse = (dir) ->
+    d3.select('#upload-message').html('')
     PiRemote.do_ajax
         url: 'upload'
         method: 'POST'
         data:
             'dirname': dir
         success: (data) ->
-            PiRemote.rebuild_upload data  # <-- rebuild table callback
+            if data.uploads
+                PiRemote.pending_uploads data
+            else
+                PiRemote.rebuild_upload data  # <-- rebuild table callback
             return
     return
 
@@ -261,4 +266,15 @@ PiRemote.up_do_action = (action, item=null) ->
 
 
     $('#modalSmall').modal('hide')
+    return
+
+
+PiRemote.pending_uploads = (data) ->
+
+    d3.select('#upload-message').append('p').html('There are pending uploads. Please wait until uploads are finished. Reload this page to see if uploads are finished.')
+    d3.select('#upload-message').append('p').append('strong').html('List of pending uploads:')
+    ol = d3.select('#upload-message').append('ol')
+    ol.selectAll('li').data(data.uploads).enter().append('li').html((d)->d)
+
+
     return

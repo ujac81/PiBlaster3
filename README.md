@@ -104,6 +104,19 @@ To make web interface accessible via ***pi.blaster***.
     @       IN NS   pi.blaster.
     1       IN PTR  pi.blaster.
 
+## PostgreSQL Database
+PiBlaster 3 software uses pSQL database to store settings and other things like upload queue.
+
+    sudo apt-get install libpq-dev python-dev postgresql postgresql-contrib
+
+    sudo su - postgres
+    createdb piremote
+    createuser -P piremote
+    psql
+    GRANT ALL PRIVILEGES ON DATABASE piremote TO piremote
+    \q
+
+
 ## Reverse Proxy
 Nginx will be used as revere proxy and delivery of mp3 files.
 Configuration will be done, when PiBlaster3 is installed.
@@ -122,7 +135,7 @@ At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might u
     $ sudo pip3 install django_compressor
     $ sudo pip3 install uwsgi
     $ sudo pip3 install python-mpd2
-    $ sudo pip3 install pyalsaaudio
+    $ sudo pip3 install psycopg2
 
 ## PiBlaster3 software
 

@@ -14,6 +14,7 @@ from django.core.wsgi import get_wsgi_application
 from time import sleep
 
 from PiBlaster3.mpc_thread import mpc_idler
+from PiBlaster3.upload_thread import upload_idler
 
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "PiBlaster3.settings")
 
@@ -36,6 +37,20 @@ def mpc_thread():
             pass
 
 
+def upload_thread():
+    # Note: do not call here -- uwsgi seems to freeze :/
+    # mpc_check_party_mode_init()
+    while True:
+        sleep(1)
+        upload_idler()
+
+
+
 thread = Thread(target=mpc_thread)
 thread.setDaemon(True)
 thread.start()
+
+
+thread2 = Thread(target=upload_thread)
+thread2.setDaemon(True)
+thread2.start()

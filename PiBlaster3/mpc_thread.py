@@ -3,9 +3,10 @@
 """
 
 from mpd import MPDClient, ConnectionError, CommandError
-import sqlite3
+import psycopg2
 import random
 from time import sleep
+from .settings import *
 
 
 class MPC_Idler:
@@ -69,10 +70,11 @@ class MPC_Idler:
         party_high_water = 20
         party_remain = 10
 
-        db = sqlite3.connect('db.sqlite3', uri=True)
-        cursor = db.cursor()
-        cursor.execute('''SELECT key, value FROM piremote_setting''')
-        for row in cursor:
+        db = DATABASES['default']
+        conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
+        cur = conn.cursor()
+        cur.execute('''SELECT key, value FROM piremote_setting''')
+        for row in cur.fetchall():
             if row[0] == 'party_mode':
                 party_mode = row[1] == '1'
             if row[0] == 'party_remain':
@@ -81,7 +83,8 @@ class MPC_Idler:
                 party_low_water = int(row[1])
             if row[0] == 'party_high_water':
                 party_high_water = int(row[1])
-        db.close()
+        cur.close()
+        conn.close()
 
         if not party_mode:
             return

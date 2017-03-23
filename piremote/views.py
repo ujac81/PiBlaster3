@@ -7,7 +7,7 @@ from PiBlaster3.commands import Commands
 from PiBlaster3.mpc import MPC
 from PiBlaster3.upload import Uploader
 
-from .models import Setting
+from .models import Setting, Upload
 from .forms import UploadForm
 
 
@@ -165,6 +165,9 @@ def upload(request):
 
 # POST /ajax/upload/
 def upload_ajax(request):
+    if Upload.has_uploads():
+        return JsonResponse({'uploads': Upload.get_uploads()})
+
     dirname = request.POST.get('dirname', '').replace('//', '/')
     if dirname is not None:
         up = Uploader()
