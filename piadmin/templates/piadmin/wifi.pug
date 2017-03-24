@@ -9,14 +9,15 @@
 
     h2 Change WiFi Settings
 
-    form(action='/piadmin/wifi/', method='POST')
+    form(action='/piadmin/wifi', method='POST')
+        -csrf_token
         label(for='ssid') SSID
-        input(id='ssid' type='text', name='ssid', placeholder='Enter SSID')
+        input(id='ssid' type='text', name='ssid', placeholder='Enter SSID', required, value=ssid)
         br
         label(for='wpa') WPA Passphrase
-        input(id='wpa' type='text', name='wpa', placeholder='WPA Key')
+        input(id='wpa' type='text', name='wpa', placeholder='WPA Key', required, value=passwd)
         br
         label(for='wpa_conf') Confirm WPA Passphrase
-        input(id='wpa_conf' type='text', name='wpa_conf', placeholder='WPA Key')
+        input(id='wpa_conf' type='text', name='wpa_conf', placeholder='WPA Key', required, value=passwd)
         br
         input(type='submit' value='Submit')

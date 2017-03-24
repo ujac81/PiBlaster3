@@ -24,3 +24,6 @@ PB_ALSA_CHANNELS = ['Master']
 # List of directories to use as upload source.
 # If automount is installed for raspbian, this should be like (/media/usb0, /media/usb1, ...)
 PB_UPLOAD_SOURCES = ['/mnt/usb', '/local']
+
+
+PB_HOSTAPD_FILE = '/opt/PiBlaster3/conf/hostapd.conf'

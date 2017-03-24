@@ -1,6 +1,10 @@
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.template import loader
 
+from .forms import WifiForm
+
+from PiBlaster3.wifi import get_wifi_settings
+
 
 # GET /
 def index(request):
@@ -9,8 +13,18 @@ def index(request):
 
 
 def wifi(request):
-    template = loader.get_template('piadmin/wifi.pug')
-    return HttpResponse(template.render({}, request))
+    if request.method == 'POST':
+        form = WifiForm(request.POST)
+        if form.is_valid():
+            ssid = form.cleaned_data["ssid"]
+            wpa = form.cleaned_data["wpa"]
+            wpa_conf = form.cleaned_data["wpa_conf"]
+            print([ssid, wpa, wpa_conf])
+            return HttpResponseRedirect('/piadmin/wifi')
+    else:
+        wifi = get_wifi_settings()
+        template = loader.get_template('piadmin/wifi.pug')
+        return HttpResponse(template.render(wifi, request))
 
 
 def delete(request):
