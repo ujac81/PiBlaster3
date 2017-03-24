@@ -5,6 +5,7 @@ import random
 import re
 import time
 
+from django.conf import settings
 from PiBlaster3.translate_genre import translate_genre
 
 
@@ -62,7 +63,12 @@ class MPC:
         :return:
         """
         self.ensure_connected()
-        return self.client.stats()
+        stats = self.client.stats()
+        if settings.PB_UPLOAD_DIR is not None:
+            s = os.statvfs(settings.PB_UPLOAD_DIR)
+            free = s.f_bavail * s.f_frsize
+            stats['free'] = free
+        return stats
 
     def get_status(self):
         """Get status dict from mpd.

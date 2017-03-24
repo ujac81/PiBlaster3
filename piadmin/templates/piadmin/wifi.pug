@@ -1,0 +1,22 @@
+//-
+    wifi.pug -- Change WiFi Settings
+
+
+-extends "piadmin/base.pug"
+
+-block content
+    h1 PiBlaster Admin Page
+
+    h2 Change WiFi Settings
+
+    form(action='/piadmin/wifi/', method='POST')
+        label(for='ssid') SSID
+        input(id='ssid' type='text', name='ssid', placeholder='Enter SSID')
+        br
+        label(for='wpa') WPA Passphrase
+        input(id='wpa' type='text', name='wpa', placeholder='WPA Key')
+        br
+        label(for='wpa_conf') Confirm WPA Passphrase
+        input(id='wpa_conf' type='text', name='wpa_conf', placeholder='WPA Key')
+        br
+        input(type='submit' value='Submit')

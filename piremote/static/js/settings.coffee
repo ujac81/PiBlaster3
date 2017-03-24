@@ -31,7 +31,6 @@ PiRemote.settings_build_page = (settings) ->
     p.append('h4').attr('class','settingshead').html('Power')
     PiRemote.settings_add_button p, 'poweroff', 'Power off', 'Off'
 
-
     $('button#button_poweroff').off 'click'
     $('button#button_poweroff').on 'click', ->
         PiRemote.confirm_dialog
@@ -39,6 +38,27 @@ PiRemote.settings_build_page = (settings) ->
             requirepw: 1
             confirmed: ->
                 PiRemote.do_command 'poweroff'
+
+    p = root.append('p').attr('class', 'settingsgroup')
+    p.append('h4').attr('class','settingshead').html('Database')
+    PiRemote.settings_add_button p, 'update', 'Update', 'Update'
+    PiRemote.settings_add_button p, 'rescan', 'Rescan', 'Rescan'
+
+    $('button#button_update').off 'click'
+    $('button#button_update').on 'click', ->
+        PiRemote.confirm_dialog
+            title: 'Update DB?'
+            confirmed: ->
+                PiRemote.do_command 'update'
+
+    $('button#button_rescan').off 'click'
+    $('button#button_rescan').on 'click', ->
+        PiRemote.confirm_dialog
+            title: 'Rescan DB?'
+            requirepw: 1
+            confirmed: ->
+                PiRemote.do_command 'rescan'
+
 
     p = root.append('p').attr('class', 'settingsgroup').attr('id', 'stats')
     p.append('h4').attr('class','settingshead').html('Statistics')
@@ -53,9 +73,10 @@ PiRemote.settings_build_page = (settings) ->
             PiRemote.settings_add_text p, 'Total artists', stats.artists
             PiRemote.settings_add_text p, 'Total albums', stats.albums
             PiRemote.settings_add_text p, 'Total play time', PiRemote.secToHMS(stats.db_playtime)
+            if stats.free
+                free = Math.round(parseInt(stats.free)/1024/1024)
+                PiRemote.settings_add_text p, 'Free space in upload', ''+free+' MB'
             return
-
-
     return
 
 

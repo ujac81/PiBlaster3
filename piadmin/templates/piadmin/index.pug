@@ -1,24 +1,20 @@
 //-
     index.pug -- PiBlaster 3 admin landing page
 
-!!!5
-html(lang="en")
-    head
-        meta(charset="utf-8")
-        meta(name="viewport", content="width=device-width, maximum-scale=1.0, user-scalable=yes")
-        title PiBlater3 ADMIN
-    body
-        h1 PiBlaster Admin Page
 
-        h2 WIFI Access
-        p
-            a(href='/piadmin/wifi') Change WiFi settings
+-extends "piadmin/base.pug"
 
-        h2 Delete Uploads
-        p
-            a(href='/piadmin/deleteup') Delete in Uploads
+-block content
+    h1 PiBlaster Admin Page
 
-        h2 Delete Files
-        p
-            a(href='/piadmin/deleteup') Delete in Files
+    h2 WIFI Access
+    p
+        a(href='/piadmin/wifi') Change WiFi settings
 
+    h2 Delete Uploads
+    p
+        a(href='/piadmin/deleteup') Delete in Uploads
+
+    h2 Delete Files
+    p
+        a(href='/piadmin/delete') Delete in Files

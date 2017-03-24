@@ -31,4 +31,18 @@ class Commands:
             p.wait()
             return {'cmd': cmd, 'ok': 1, 'status': 'Powering off system.'}
 
+        if cmd == 'update':
+            p = Popen('mpc update', shell=True, bufsize=1024,
+                      stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL,
+                      close_fds=True)
+            p.wait()
+            return {'cmd': cmd, 'ok': 1, 'status': 'Updating MPD database.'}
+
+        if cmd == 'rescan':
+            p = Popen('mpc rescan', shell=True, bufsize=1024,
+                      stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL,
+                      close_fds=True)
+            p.wait()
+            return {'cmd': cmd, 'ok': 1, 'status': 'Rescanning MPD database.'}
+
         return {'cmd': cmd, 'error': 'Unknown command %s' % cmd}

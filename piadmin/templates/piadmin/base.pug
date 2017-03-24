@@ -1,0 +1,13 @@
+!!!5
+html(lang="en")
+    head
+        meta(charset="utf-8")
+        meta(name="viewport", content="width=device-width, maximum-scale=1.0, user-scalable=yes")
+        title PiBlater3 ADMIN
+    body
+        -csrf_token
+        //- requires closing endblock because of empty block
+        -block content
+        -endblock
+
+
