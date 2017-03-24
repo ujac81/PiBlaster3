@@ -72,7 +72,23 @@ PiRemote.secToMin = (secs) ->
     if seconds < 10
         res += '0'
     res += seconds
+    res
 
+# Convert seconds to string like 3:02
+PiRemote.secToHMS = (secs) ->
+    res = ''
+
+    hours = Math.floor(parseInt(secs)/3600)
+    minutes = Math.floor((parseInt(secs)-3600*hours)/60)
+    seconds = parseInt(secs) % 60
+
+    res += hours + ":"
+    if minutes < 10
+        res += "0"
+    res += minutes + ':'
+    if seconds < 10
+        res += '0'
+    res += seconds
     res
 
 # Calculate font width for string element.

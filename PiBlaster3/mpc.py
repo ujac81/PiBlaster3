@@ -47,6 +47,23 @@ class MPC:
         self.error = True
         return False
 
+    def get_stats(self):
+        """
+        Displays statistics.
+
+            artists: number of artists
+            albums: number of albums
+            songs: number of songs
+            uptime: daemon uptime in seconds
+            db_playtime: sum of all song times in the db
+            db_update: last db update in UNIX time
+            playtime: time length of music played
+
+        :return:
+        """
+        self.ensure_connected()
+        return self.client.stats()
+
     def get_status(self):
         """Get status dict from mpd.
         If connection error occurred, try to reconnect max 5 times.

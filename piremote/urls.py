@@ -24,5 +24,6 @@ urlpatterns = [
     url(r'^ajax/set/$', views.set_ajax, name='set_ajax'),
     url(r'^ajax/upload/$', views.upload_ajax, name='upload_ajax'),
     url(r'^ajax/doupload/$', views.doupload_ajax, name='doupload_ajax'),
+    url(r'^ajax/stats/$', views.stats_ajax, name='stats_ajax'),
 ]
 

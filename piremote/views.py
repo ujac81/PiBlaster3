@@ -183,3 +183,9 @@ def doupload_ajax(request):
         return JsonResponse(up.add_to_uploads(paths))
     return JsonResponse({})
 
+
+# GET /ajax/stats/
+def stats_ajax(request):
+    mpc = MPC()
+    return JsonResponse({'stats': mpc.get_stats()})
+

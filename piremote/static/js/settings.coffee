@@ -12,7 +12,6 @@ PiRemote.load_settings_page = ->
             PiRemote.settings_build_page data
             return
 
-
     return
 
 
@@ -40,6 +39,22 @@ PiRemote.settings_build_page = (settings) ->
             requirepw: 1
             confirmed: ->
                 PiRemote.do_command 'poweroff'
+
+    p = root.append('p').attr('class', 'settingsgroup').attr('id', 'stats')
+    p.append('h4').attr('class','settingshead').html('Statistics')
+
+    PiRemote.do_ajax
+        url: 'stats'
+        method: 'GET'
+        success: (data) ->
+            p = d3.select('p#stats')
+            stats = data.stats
+            PiRemote.settings_add_text p, 'Total number of songs', stats.songs
+            PiRemote.settings_add_text p, 'Total artists', stats.artists
+            PiRemote.settings_add_text p, 'Total albums', stats.albums
+            PiRemote.settings_add_text p, 'Total play time', PiRemote.secToHMS(stats.db_playtime)
+            return
+
 
     return
 
@@ -94,6 +109,14 @@ PiRemote.settings_add_button = (root, key, text, button_text) ->
         .attr('class', 'btn btn-default')
         .attr('id', 'button_'+key)
         .html(button_text)
+
+    return
+
+PiRemote.settings_add_text = (root, text, value) ->
+
+    d = root.append('div').attr('class', 'setting')
+    d.append('div').attr('class', 'slabel').html(text)
+    d.append('div').attr('class', 'svalue').html(value)
 
     return
 
