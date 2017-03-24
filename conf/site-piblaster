@@ -23,6 +23,8 @@ server {
         }
 
         location /piadmin {
+                auth_basic "Restricted Content";
+                auth_basic_user_file /opt/PiBlaster3/conf/htpasswd;
                 include /etc/nginx/uwsgi_params;
                 uwsgi_pass piremote;
         }
