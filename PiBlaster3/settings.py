@@ -52,7 +52,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'compressor',
-    'piremote'
+    'piremote',
+    'piadmin'
 ]
 
 MIDDLEWARE = [
