@@ -171,8 +171,7 @@ def upload_ajax(request):
     dirname = request.POST.get('dirname', '').replace('//', '/')
     if dirname is not None:
         up = Uploader()
-        data = {'dirname': dirname, 'browse': up.list_dir(dirname)}
-        return JsonResponse(data)
+        return JsonResponse(up.list_dir(dirname))
     return JsonResponse({})
 
 

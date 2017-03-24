@@ -1,5 +1,6 @@
 
 import os
+import re
 from django.conf import settings
 
 from .mpc import MPC
@@ -49,13 +50,18 @@ class Uploader:
         :param path:
         :return:
         """
-        path = path.replace('//', '/')
+        path = re.sub(r"/$", '', path.replace('//', '/'))
 
-        if path == '':
+        path_ok = False
+        for item in settings.PB_UPLOAD_SOURCES:
+            path_ok |= path.startswith(item)
+
+        if path == '' or not path_ok:
+            # We are on top level
             res = []
             for item in settings.PB_UPLOAD_SOURCES:
                 res.append(['dir', item, ''])
-            return res
+            return dict(dirname='', browse=res)
 
         try:
             listing = os.listdir(path)
@@ -75,7 +81,7 @@ class Uploader:
             ext = os.path.splitext(f)[1][1:].lower()
             res.append(['file', f, path, ext])
 
-        return res
+        return dict(dirname=path, browse=res)
 
     def add_to_uploads(self, up_list):
         """
