@@ -3,7 +3,7 @@ from django.template import loader
 
 from .forms import WifiForm
 
-from PiBlaster3.wifi import get_wifi_settings
+from PiBlaster3.wifi import get_wifi_settings, set_wifi_settings
 
 
 # GET /
@@ -19,7 +19,7 @@ def wifi(request):
             ssid = form.cleaned_data["ssid"]
             wpa = form.cleaned_data["wpa"]
             wpa_conf = form.cleaned_data["wpa_conf"]
-            print([ssid, wpa, wpa_conf])
+            set_wifi_settings(ssid, wpa, wpa_conf)
             return HttpResponseRedirect('/piadmin/wifi')
     else:
         wifi = get_wifi_settings()
