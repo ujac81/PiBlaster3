@@ -2,6 +2,10 @@
 
 # Run on document.ready event.
 $ ->
+    # Build selection classes
+    for item in PiRemote.select_classes
+        PiRemote.selected[item] = {'All': true, 'Unknown': false}
+
     # disable caching for AJAX
     PiRemote.ajax_setup()
 
@@ -57,6 +61,8 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
         PiRemote.load_index_page()
     else if page == 'browse'
         PiRemote.load_browse_page()
+    else if page == 'files'
+        PiRemote.load_files_page()
     else if page == 'playlist'
         PiRemote.load_playlist_page()
     else if page == 'search'

@@ -24,11 +24,13 @@ SECRET_KEY = 'h29k5==dbe#r-&7bnmhzkb2&ii^18q-cmf%l&!0+(b!c-q9sib'
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = bool(os.environ.get('DEBUG', False))
+if DEBUG:
+    print('DEBUG ENABLED')
 
 ALLOWED_HOSTS = ['localhost', 'pi.blaster', '0.0.0.0', '*']
 
-# TODO Set to True for release mode
-COMPRESS_ENABLED = False
+COMPRESS_ENABLED = not DEBUG
+COMPRESS_OFFLINE = not DEBUG
 
 COMPRESS_PRECOMPILERS = (
     ('text/coffeescript', 'coffee --compile --stdio'),

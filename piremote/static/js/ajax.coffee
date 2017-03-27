@@ -59,6 +59,7 @@ PiRemote.pl_action = (cmd, plname, list, type='file', req={}) ->
 
     return
 
+
 # Perform save/load actions on playlists.
 # Invoked by dialogs in browse/search/....
 PiRemote.pls_action = (cmd, plname, req={}) ->

@@ -144,10 +144,27 @@ At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might u
     $ git clone https://github.com/ujac81/PiBlaster3.git
 
 # Configuration
+Set DATABASES in PiBlaster3/settings.py to your settings
+
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql_psycopg2',
+            'NAME': 'piremote',
+            'USER': 'piremote',
+            'PASSWORD': 'piremote',
+            'HOST': 'localhost',
+            'PORT': '',
+        }
+    }
+
+Make sure all settings in PiBlaster3/settings_local.py are correct.
+Also make sure DEBUG is not set in your environment, otherwise the DEBUG to FALSE in settings.py.
 
     $ cd /opt/PiBlaster3
     $ python3 manage.py migrate
-    $ python3 manage.py migrate static_precompiler
+    $ python3 manage.py compress --extension='pug'
+
+If any errors occur here, fix them, or nothing will work.
 
 ## NGINX
 
@@ -183,9 +200,10 @@ To see full debugging output and interact with django server:
 
     $ sudo service piblaster stop
     $ cd /opt/PiBlaster3
-    $ ./manage.py runserver 0.0.0.0:8000
+    $ export DEBUG=1
+    $ uwsgi --ini conf/piblaster.ini
 
-Connect to http://YOUR_PI_HOST:8000
+Connect to http://YOUR_PI_HOST
 
 ## PyPugJS templates
 All templates are built using the pypugjs(https://github.com/matannoam/pypugjs) interface for pugjs(https://pugjs.org/api/getting-started.html)

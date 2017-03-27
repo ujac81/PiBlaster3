@@ -6,7 +6,7 @@ import re
 import time
 
 from django.conf import settings
-from PiBlaster3.translate_genre import translate_genre
+from PiBlaster3.translate_genre import translate_genre, all_genres
 
 
 class MPC:
@@ -672,4 +672,118 @@ class MPC:
             return {'status': 'Current playlist saved to %s.' % plname}
 
         return {'error': 'No such command: %s' % cmd}
+
+    def list_by(self, what, in_dates, genres, artists, albums):
+        """
+
+        :return:
+        """
+        self.ensure_connected()
+
+        # request is date --> return all available dates
+        if what == 'date':
+            dates = self.client.list('date')
+            return dates
+
+        # Unroll special dates (decades)
+        if len(in_dates) > 0 and in_dates[0] != 'All':
+            dates = []
+            all_dates = self.client.list('date')
+            for date in in_dates:
+                if '-' in date:
+                    m = re.match(r'(\d+)-(\d+)', date.replace('today', '3000'))
+                    if m:
+                        for y in range(int(m.group(1)), int(m.group(2))+1):
+                            if '%d' % y in all_dates:
+                                dates.append('%d' % y)
+                else:
+                    dates.append(date)
+        else:
+            dates = in_dates
+
+        # request is genre --> return all genres matching date
+        if what == 'genre':
+            genres = []
+            if len(dates) == 0 or dates[0] == 'All':
+                genres = self.client.list('genre')
+            else:
+                for date in dates:
+                    genres += self.client.list('genre', 'date', date)
+
+            filt_genres = []
+            for genre in genres:
+                add = genre
+                m = re.match(r"\((\d+)\)", genre)
+                if m:
+                    add = translate_genre(int(m.group(1)))
+                if add not in filt_genres:
+                    filt_genres.append(add)
+            return sorted(filt_genres)
+
+        # request is artist --> return all arists matching date and genre
+        if what == 'artist' or what == 'album':
+            filt_years = []
+            if len(dates) > 0 and dates[0] != 'All':
+                for date in dates:
+                    filt_years += self.client.list(what, 'date', date)
+
+            inv_genres = {v: k for k, v in all_genres().items()}
+
+            filt_genres = []
+            if len(genres) > 0 and genres[0] != 'All':
+                for genre in genres:
+                    filt_genres += self.client.list(what, 'genre', genre)
+                    if genre in inv_genres:
+                        filt_genres += self.client.list(what, 'genre', '(%s)' % inv_genres[genre])
+
+            filt_artists = []
+            if what == 'album' and len(artists) > 0 and artists[0] != 'All':
+                for artist in artists:
+                    filt_artists += self.client.list(what, 'artist', artist)
+
+            if what == 'artist':
+                if len(filt_years) == 0 and len(filt_genres) == 0:
+                    return sorted(self.client.list('artist'))
+                if len(filt_years) == 0:
+                    return sorted(set(filt_genres))
+                if len(filt_genres) == 0:
+                    return sorted(set(filt_years))
+
+                res = []
+                for item in filt_years:
+                    if item in filt_genres and item not in res:
+                        res.append(item)
+                return res
+
+            if what == 'album':
+                res_years = sorted(set(filt_years))
+                res_genres = sorted(set(filt_genres))
+                res_artists = sorted(set(filt_artists))
+
+                res2 = []
+                if len(res_years):
+                    if len(res_genres):
+                        for item in res_genres:
+                            if item in res_years:
+                                res2.append(item)
+                    else:
+                        res2 = res_years
+                else:
+                    res2 = res_genres
+
+                res = []
+                if len(res2):
+                    if len(res_artists):
+                        for item in res_artists:
+                            if item in res2:
+                                res.append(item)
+                    else:
+                        res = res2
+                else:
+                    res = res_artists
+
+                return sorted(set(res))
+
+        return []
+
 

@@ -189,3 +189,13 @@ def stats_ajax(request):
     mpc = MPC()
     return JsonResponse({'stats': mpc.get_stats()})
 
+
+# GET /ajax/list
+def list_ajax(request):
+    what = request.GET.get('what', '')
+    dates = request.GET.getlist('dates[]', [])
+    genres = request.GET.getlist('genres[]', [])
+    artists = request.GET.getlist('artists[]', [])
+    albums = request.GET.getlist('albums[]', [])
+    mpc = MPC()
+    return JsonResponse({'what': what, 'browse': mpc.list_by(what, dates, genres, artists, albums)})

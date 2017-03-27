@@ -14,7 +14,7 @@ PiRemote.last_status = ''
 PiRemote.current_page = 'index'  # overwritten on load by script in index.pug
 PiRemote.current_sub_page = 'home'
 PiRemote.safe_page = 'index'  # safe last active page while blurring
-PiRemote.last_browse = ''
+PiRemote.last_files = ''
 PiRemote.last_upload = ''
 
 PiRemote.last_pl_id = '-1'
@@ -24,25 +24,30 @@ PiRemote.pl_edit_name = ''  # name of playlist in edit mode (='' if no edit)
 PiRemote.last_search = ''
 PiRemote.last_search_data = []
 
+PiRemote.select_classes = ['date', 'genre', 'artist', 'album']
+PiRemote.select_class_names = ['Year', 'Genre', 'Artist', 'Album', 'Files']
+PiRemote.selected = {}
+PiRemote.browse_current_page_index = 0
+
 PiRemote.dragging = false  # true while element is dragged in playlist
 
 
 # Fade in status bar, set text and start fade out timer.
 PiRemote.setStatus = (text, error, fade) ->
-    $('.footer').toggleClass('error', error)
-    $('.footer').toggleClass('status', ! error)
+    $('#footer').toggleClass('error', error)
+    $('#footer').toggleClass('status', ! error)
 
     $('#statusbar').html(text)
-    $('.footer').fadeTo('fast', 1)
+    $('#footer').fadeTo('fast', 1)
 
     if 'text' == ''
-        $('.footer').fadeTo('fast', 0)
+        $('#footer').fadeTo('fast', 0)
         return
 
     window.setTimeout ( ->
         if text == $('#statusbar').html()
             # text was not changed --> do fade out
-            $('.footer').fadeTo 'slow', 0
+            $('#footer').fadeTo 'slow', 0
         return
         ), fade
 
