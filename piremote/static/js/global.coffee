@@ -24,10 +24,11 @@ PiRemote.pl_edit_name = ''  # name of playlist in edit mode (='' if no edit)
 PiRemote.last_search = ''
 PiRemote.last_search_data = []
 
-PiRemote.select_classes = ['date', 'genre', 'artist', 'album']
+PiRemote.select_classes = ['date', 'genre', 'artist', 'album', 'song']
 PiRemote.select_class_names = ['Year', 'Genre', 'Artist', 'Album', 'Files']
 PiRemote.selected = {}
 PiRemote.browse_current_page_index = 0
+PiRemote.last_browse = null
 
 PiRemote.dragging = false  # true while element is dragged in playlist
 
@@ -181,5 +182,17 @@ PiRemote.confirm_dialog = (req) ->
             $('#modalSmall').modal('hide')
         return
 
+    $('#modalSmall').modal('show')
+    return
+
+
+# Raise a dialog box including confirm button.
+# If confirm clicked, perform function.
+PiRemote.error_message = (title, message) ->
+
+    d3.select('#smallModalLabel').html(title)
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    cont.append('p').html(message)
     $('#modalSmall').modal('show')
     return

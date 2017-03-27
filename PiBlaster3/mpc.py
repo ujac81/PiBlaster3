@@ -740,6 +740,8 @@ class MPC:
             if what == 'album' and len(artists) > 0 and artists[0] != 'All':
                 for artist in artists:
                     filt_artists += self.client.list(what, 'artist', artist)
+            elif what == 'album':
+                filt_artists += self.client.list(what)
 
             if what == 'artist':
                 if len(filt_years) == 0 and len(filt_genres) == 0:
@@ -783,6 +785,58 @@ class MPC:
                     res = res_artists
 
                 return sorted(set(res))
+
+        if what == 'song':
+            all_files = {k: False for k in self.client.list('file')}
+            inv_genres = {v: k for k, v in all_genres().items()}
+
+            # filter dates
+            if len(in_dates) > 0 and in_dates[0] != 'All':
+                for date in dates:
+                    files = self.client.list('file', 'date', date)
+                    for f in files:
+                        all_files[f] = True
+                all_files = {k: False for k, v in all_files.items() if v}
+
+            # filter genres
+            if len(genres) > 0 and genres[0] != 'All':
+                for genre in genres:
+                    files = self.client.list('file', 'genre', genre)
+                    if genre in inv_genres:
+                        files += self.client.list('file', 'genre', '(%s)' % inv_genres[genre])
+                    for f in files:
+                        if f in all_files:
+                            all_files[f] = True
+                all_files = {k: False for k, v in all_files.items() if v}
+
+            # filter artists
+            if len(artists) > 0 and artists[0] != 'All':
+                for artist in artists:
+                    files = self.client.list('file', 'artist', artist)
+                    for f in files:
+                        if f in all_files:
+                            all_files[f] = True
+                all_files = {k: False for k, v in all_files.items() if v}
+
+            # filter albums
+            if len(albums) > 0 and albums[0] != 'All':
+                for album in albums:
+                    files = self.client.list('file', 'album', album)
+                    for f in files:
+                        if f in all_files:
+                            all_files[f] = True
+                all_files = {k: False for k, v in all_files.items() if v}
+
+            res = sorted([k for k, v in all_files.items()])
+            res2 = []
+
+            for item in res:
+                no_ext = os.path.splitext(item)[0]
+                res2.append([item, os.path.basename(no_ext).replace('_', ' ')])
+                if len(res2) > 1000:
+                    break
+
+            return res2
 
         return []
 

@@ -36,8 +36,7 @@ PiRemote.load_browse_page = ->
         PiRemote.files_raise_add_dialog()
         return
 
-    PiRemote.last_browse = null
-    if PiRemote.last_browse
+    if PiRemote.last_browse isnt null
         PiRemote.build_browse PiRemote.last_browse
     else
         PiRemote.do_browse 'date'
@@ -52,6 +51,18 @@ PiRemote.do_browse = (what) ->
         for key, val of PiRemote.selected[mode]
             if val
                 selected_lists[mode].push key
+
+    # Prevent browsing of all files (too much or browser too slow)
+    if what == 'song'
+        all_all = 0
+        for key, val of selected_lists
+            if val.length == 1 and val[0] == 'All' and key != 'song'
+                all_all += 1
+        if all_all >= 4
+            PiRemote.error_message 'Error', "Browsing of all files prevented for performance reasons. Please select at least one category not equal to 'all'."
+            # Stay at album view
+            PiRemote.browse_current_page_index = 3
+            return
 
     PiRemote.do_ajax
         url: 'list'
@@ -79,6 +90,11 @@ PiRemote.build_browse = (data) ->
     # clean table
     tbody = d3.select('tbody#browse')
     tbody.selectAll('tr').remove()
+
+    if mode == 'song'
+        PiRemote.build_browse_song data
+        return
+
 
     # ... vertical dots for each element
     action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
@@ -139,6 +155,30 @@ PiRemote.build_browse = (data) ->
     return
 
 
+PiRemote.build_browse_song = (data) ->
+
+    # ... vertical dots for each element
+    action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
+
+    # Append dirs
+    d3.select('tbody#browse').selectAll('tr')
+        .data(data.browse, (d) -> d).enter()
+        .append('tr')
+        .attr('class', 'selectable')
+        .attr('data-index', (d, i) -> i)
+        .selectAll('td')
+        .data((d, i) -> [i+1, d[1], action_span]).enter()
+        .append('td')
+            .attr('class', (d, i)-> 'browse-td'+i)
+            .classed('browse-selectable', (d, i) -> i != 2)
+            .html((d) -> d)
+
+    # single-click on selectable items toggles select
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').off 'click'
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').on 'click', (event) ->
+        $(this).parent().toggleClass 'selected'
+        return
+    return
 
 # Callback for press on '+' sign.
 # Raise selection actions dialog.
