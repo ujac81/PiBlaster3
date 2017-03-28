@@ -288,8 +288,9 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
             url: 'seedbrowse'
             method: 'POST'
             data:
-                what: what
+                what: mode
                 count: $('input#seedspin').val()
+                plname: plname
                 dates: selected_lists['date']
                 genres: selected_lists['genre']
                 artists: selected_lists['artist']

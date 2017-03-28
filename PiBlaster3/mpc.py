@@ -699,7 +699,7 @@ class MPC:
 
         return {'error': 'No such command: %s' % cmd}
 
-    def list_by(self, what, in_dates, genres, artists, albums):
+    def list_by(self, what, in_dates, genres, artists, albums, file_mode=False):
         """Create content data for browse view.
 
         :param what: category of results [date, genre, artist, album, song]
@@ -707,16 +707,18 @@ class MPC:
         :param genres: list of genres for filter ['All'] for all
         :param artists: list of artists for filter ['All'] for all
         :param albums: list of albums for filter ['All'] for all
+        :param file_mode: return result as file-list (required for seed_by())
 
         :return: List of results for browse view for next category:
                 if what == 'genre' results will be artists and so on.
         """
         self.ensure_connected()
 
+        seek = 'file' if file_mode else what
+
         # request is date --> return all available dates
         if what == 'date':
-            dates = self.client.list('date')
-            return dates
+            return self.client.list(seek)
 
         # Unroll special dates (decades)
         if len(in_dates) > 0 and in_dates[0] != 'All':
@@ -738,10 +740,13 @@ class MPC:
         if what == 'genre':
             genres = []
             if len(dates) == 0 or dates[0] == 'All':
-                genres = self.client.list('genre')
+                genres = self.client.list(seek)
             else:
                 for date in dates:
-                    genres += self.client.list('genre', 'date', date)
+                    genres += self.client.list(seek, 'date', date)
+
+            if file_mode:
+                return genres
 
             filt_genres = []
             for genre in genres:
@@ -758,27 +763,27 @@ class MPC:
             filt_years = []
             if len(dates) > 0 and dates[0] != 'All':
                 for date in dates:
-                    filt_years += self.client.list(what, 'date', date)
+                    filt_years += self.client.list(seek, 'date', date)
 
             inv_genres = {v: k for k, v in all_genres().items()}
 
             filt_genres = []
             if len(genres) > 0 and genres[0] != 'All':
                 for genre in genres:
-                    filt_genres += self.client.list(what, 'genre', genre)
+                    filt_genres += self.client.list(seek, 'genre', genre)
                     if genre in inv_genres:
-                        filt_genres += self.client.list(what, 'genre', '(%s)' % inv_genres[genre])
+                        filt_genres += self.client.list(seek, 'genre', '(%s)' % inv_genres[genre])
 
             filt_artists = []
             if what == 'album' and len(artists) > 0 and artists[0] != 'All':
                 for artist in artists:
-                    filt_artists += self.client.list(what, 'artist', artist)
+                    filt_artists += self.client.list(seek, 'artist', artist)
             elif what == 'album':
-                filt_artists += self.client.list(what)
+                filt_artists += self.client.list(seek)
 
             if what == 'artist':
                 if len(filt_years) == 0 and len(filt_genres) == 0:
-                    return sorted(self.client.list('artist'))
+                    return sorted(self.client.list(seek))
                 if len(filt_years) == 0:
                     return sorted(set(filt_genres))
                 if len(filt_genres) == 0:
@@ -861,8 +866,10 @@ class MPC:
                 all_files = {k: False for k, v in all_files.items() if v}
 
             res = sorted([k for k, v in all_files.items()])
-            res2 = []
+            if file_mode:
+                return res
 
+            res2 = []
             for item in res:
                 info = self.client.find('file', item)[0]
                 if 'artist' in info and 'title' in info:
@@ -883,4 +890,30 @@ class MPC:
 
         return []
 
+    def seed_by(self, count, plname, what, in_dates, genres, artists, albums):
+        """Random add items to playlist from browse view.
 
+        :param count: number of items to add
+        :param plname: playlist name ('' for current)
+        :param what: [date, genre, artist, album, song]
+        :param in_dates: see list_by()
+        :param genres: see list_by()
+        :param artists: see list_by()
+        :param albums: see list_by()
+        :return: status string.
+        """
+
+        files = self.list_by(what, in_dates, genres, artists, albums, file_mode=True)
+
+        if len(files) == 0:
+            return 'Zero results, nothing added.'
+
+        if len(files) < count:
+            return self.playlist_action('append', plname, files)
+
+        random.seed()
+        add = []
+        for i in range(count):
+            add.append(files[random.randrange(0, len(files))])
+
+        return self.playlist_action('append', plname, add)

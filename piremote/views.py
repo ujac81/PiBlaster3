@@ -205,13 +205,12 @@ def list_ajax(request):
 
 # POST /ajax/seedbrowse
 def seed_browse_ajax(request):
-    what = request.GET.get('what', '')
-    count = int(request.GET.get('count', ''))
-    dates = request.GET.getlist('dates[]', [])
-    genres = request.GET.getlist('genres[]', [])
-    artists = request.GET.getlist('artists[]', [])
-    albums = request.GET.getlist('albums[]', [])
+    what = request.POST.get('what', '')
+    count = int(request.POST.get('count', ''))
+    plname = request.POST.get('plname', '')
+    dates = request.POST.getlist('dates[]', [])
+    genres = request.POST.getlist('genres[]', [])
+    artists = request.POST.getlist('artists[]', [])
+    albums = request.POST.getlist('albums[]', [])
     mpc = MPC()
-    browse = mpc.list_by(what, dates, genres, artists, albums)
-    context = dict(what=what, browse=browse, truncated=mpc.truncated)
-    return JsonResponse(context)
+    return JsonResponse({'status': mpc.seed_by(count, plname, what, dates, genres, artists, albums)})
