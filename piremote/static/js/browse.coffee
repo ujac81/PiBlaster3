@@ -33,7 +33,7 @@ PiRemote.load_browse_page = ->
     $('#addsign').show()
     $('#addsign').off 'click'
     $('#addsign').on 'click', ->
-        PiRemote.files_raise_add_dialog()
+        PiRemote.browse_raise_add_dialog()
         return
 
     if PiRemote.last_browse isnt null
@@ -112,6 +112,7 @@ PiRemote.build_browse = (data) ->
         .attr('data-index', (d, i) -> i)
         .attr('data-item', (d) -> d)
         .classed('selected', (d)->PiRemote.selected[mode][d])
+        .classed('all', (d, i)->i == 0 and d == 'All')
         .selectAll('td')
         .data((d, i) -> [i, d, action_span]).enter()
         .append('td')
@@ -178,6 +179,10 @@ PiRemote.build_browse_song = (data) ->
     $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').on 'click', (event) ->
         $(this).parent().toggleClass 'selected'
         return
+
+    if data.truncated > 0
+        PiRemote.setErrorText ''+data.truncated+' search results truncated, displaying first '+data.browse.length+' results.'
+
     return
 
 # Callback for press on '+' sign.
@@ -203,7 +208,8 @@ PiRemote.browse_raise_add_dialog = ->
     # Callback for click actions on navigation.
     $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
-        PiRemote.do_browse_action 'genre', $(this).data('action')
+        mode = PiRemote.select_classes[PiRemote.browse_current_page_index]
+        PiRemote.do_browse_action mode, $(this).data('action')
         return
 
     # Raise dialog.
@@ -211,24 +217,43 @@ PiRemote.browse_raise_add_dialog = ->
     return
 
 PiRemote.do_browse_action = (mode, action) ->
+
+    title = PiRemote.select_class_names[PiRemote.browse_current_page_index]
+
     if action == 'select-all'
-        d3.selectAll('tr.selectable').classed('selected', 0)
-        d3.selectAll('tr.selectable[data-index="0"]').classed('selected', 1)
+        if d3.selectAll('tr.all').size() == 1
+            d3.selectAll('tr.selectable').classed('selected', 0)
+            d3.selectAll('tr.selectable[data-index="0"]').classed('selected', 1)
+            PiRemote.selected[mode] = {'All': true}
+        else
+            d3.selectAll('tr.selectable').classed('selected', 1)
+            sel = d3.selectAll('tr.selectable.selected').data()
+            PiRemote.selected[mode] = {}
+            for item in sel
+                PiRemote.selected[mode][item] = true
         $('#modalSmall').modal('hide')
     else if action == 'invert'
         d3.selectAll('tr.selectable').classed('selected', ()-> ! d3.select(this).classed('selected'))
+        sel = d3.selectAll('tr.selectable.selected').data()
+        if sel.length == 0
+            d3.selectAll('tr.selectable[data-index="0"]').classed('selected', 1)
+            PiRemote.selected[mode] = {'All': true}
+        else
+            PiRemote.selected[mode] = {'All': false}
+            for item in sel
+                PiRemote.selected[mode][item] = true
         $('#modalSmall').modal('hide')
     else if action == 'seed'
         items = d3.selectAll('tr.selected').data()
         PiRemote.pl_edit_name = ''
-        PiRemote.browse_raise_seed_dialog 'genre', '', 'Seed by Genre', items
+        PiRemote.browse_raise_seed_dialog mode, '', 'Seed by '+title, items
     else if action == 'seed-other'
         items = d3.selectAll('tr.selected').data()
         PiRemote.pl_action_on_playlists
             title: 'Random Add to Playlist'
             success: (data) ->
                 PiRemote.pl_edit_name = data
-                PiRemote.browse_raise_seed_dialog 'genre', data, 'Seed by Genre', items
+                PiRemote.browse_raise_seed_dialog mode, data, 'Seed by '+title, items
                 return
 
     return
@@ -236,14 +261,14 @@ PiRemote.do_browse_action = (mode, action) ->
 
 PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
 
-    d3.select('#smallModalLabel').html('Seed Playlist '+plname)
+    d3.select('#smallModalLabel').html(title)
     cont = d3.select('#smallModalMessage')
     cont.html('')
 
     cont.append('p').html('Set number of random items to add')
 
     cont.append('p').append('input')
-        .attr('type', 'number').attr('min', '10').attr('max', '100').attr('value', '20')
+        .attr('type', 'number').attr('min', '10').attr('max', '1000').attr('value', '20')
         .attr('id', 'seedspin').attr('class', 'spin')
 
     cont.append('p').attr('class', 'confirmbutton')
@@ -252,14 +277,27 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
 
     $('button#confirmbutton').off 'click'
     $('button#confirmbutton').on 'click', ->
-        PiRemote.pl_action 'seed', PiRemote.pl_edit_name, [$('input#seedspin').val(), seed_dir], 'file',
+        selected_lists = {}
+        for mode in PiRemote.select_classes
+            selected_lists[mode] = []
+            for key, val of PiRemote.selected[mode]
+                if val
+                    selected_lists[mode].push key
+
+        PiRemote.do_ajax
+            url: 'seedbrowse'
+            method: 'POST'
+            data:
+                what: what
+                count: $('input#seedspin').val()
+                dates: selected_lists['date']
+                genres: selected_lists['genre']
+                artists: selected_lists['artist']
+                albums: selected_lists['album']
             success: (data) ->
-                # Reload playlist in edit mode.
-                # No reload in playlist mode (polling will auto-update).
-                if PiRemote.pl_edit_name != ''
-                    PiRemote.get_playlist_by_name PiRemote.pl_edit_name
                 $('#modalSmall').modal('hide')
                 return
+
         return
 
 

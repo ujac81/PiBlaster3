@@ -32,6 +32,9 @@ ALLOWED_HOSTS = ['localhost', 'pi.blaster', '0.0.0.0', '*']
 COMPRESS_ENABLED = not DEBUG
 COMPRESS_OFFLINE = not DEBUG
 
+# 1000 results might be displayed in search, so allow more
+DATA_UPLOAD_MAX_NUMBER_FIELDS = 2000
+
 COMPRESS_PRECOMPILERS = (
     ('text/coffeescript', 'coffee --compile --stdio'),
     ('text/less', 'lessc {infile} {outfile}'),

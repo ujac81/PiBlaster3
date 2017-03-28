@@ -95,8 +95,6 @@ class MPC_Idler:
         pl_len = int(status['playlistlength'])
         pl_remain = max(pl_len - pos - 1, 0)
 
-        print([pos, pl_len, pl_remain, party_low_water, party_high_water])
-
         # Append randomly until high_water mark reached, if below low water mark.
         if pl_remain < party_low_water:
             pl_add = max(party_high_water - pl_remain, 0)

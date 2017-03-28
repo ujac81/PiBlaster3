@@ -161,14 +161,14 @@ PiRemote.install_search_handlers = ->
 
 # Callback for add sign.
 PiRemote.search_raise_add_dialog = ->
-    # browse actions are identical
-    PiRemote.browse_raise_add_dialog()
+    # files actions are identical
+    PiRemote.files_raise_add_dialog()
     return
 
 
 # Callback for action dots clicked.
 PiRemote.search_raise_action_dialog = (element) ->
-    # browse actions are identical
+    # files actions are identical
     PiRemote.raise_file_actions element
     return
 
@@ -224,8 +224,8 @@ PiRemote.search_raise_info_dialog = (file) ->
                 $(document).off 'click', 'span.browse-span'
                 $(document).on 'click', 'span.browse-span', () ->
                     $('#modalSmall').modal('hide')
-                    PiRemote.last_browse = $(this).data('dirname')
-                    PiRemote.load_page 'browse'
+                    PiRemote.last_files = $(this).data('dirname')
+                    PiRemote.load_page 'files'
                     return
 
 

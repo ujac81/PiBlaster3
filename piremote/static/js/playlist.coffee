@@ -553,8 +553,8 @@ PiRemote.pl_do_action = (action, id=-1) ->
         PiRemote.pl_append_items_to_playlist items
     else if action == 'goto'
         file = d3.select('tr[data-id="'+id+'"]').data()[0][6]
-        PiRemote.last_browse = file.split('/').slice(0,-1).join('/')
-        PiRemote.load_page 'browse'
+        PiRemote.last_files = file.split('/').slice(0,-1).join('/')
+        PiRemote.load_page 'files'
         $('#modalSmall').modal('hide')
     else if action == 'clear'
         PiRemote.pl_raise_clear_dialog()
@@ -682,7 +682,7 @@ PiRemote.pl_raise_seed_dialog = (seed_dir='')->
     cont.append('p').html('Set number of random items to add')
 
     cont.append('p').append('input')
-        .attr('type', 'number').attr('min', '10').attr('max', '100').attr('value', '20')
+        .attr('type', 'number').attr('min', '10').attr('max', '1000').attr('value', '20')
         .attr('id', 'seedspin').attr('class', 'spin')
 
     cont.append('p').attr('class', 'confirmbutton')

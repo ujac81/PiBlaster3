@@ -198,4 +198,20 @@ def list_ajax(request):
     artists = request.GET.getlist('artists[]', [])
     albums = request.GET.getlist('albums[]', [])
     mpc = MPC()
-    return JsonResponse({'what': what, 'browse': mpc.list_by(what, dates, genres, artists, albums)})
+    browse = mpc.list_by(what, dates, genres, artists, albums)
+    context = dict(what=what, browse=browse, truncated=mpc.truncated)
+    return JsonResponse(context)
+
+
+# POST /ajax/seedbrowse
+def seed_browse_ajax(request):
+    what = request.GET.get('what', '')
+    count = int(request.GET.get('count', ''))
+    dates = request.GET.getlist('dates[]', [])
+    genres = request.GET.getlist('genres[]', [])
+    artists = request.GET.getlist('artists[]', [])
+    albums = request.GET.getlist('albums[]', [])
+    mpc = MPC()
+    browse = mpc.list_by(what, dates, genres, artists, albums)
+    context = dict(what=what, browse=browse, truncated=mpc.truncated)
+    return JsonResponse(context)

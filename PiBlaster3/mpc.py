@@ -10,22 +10,24 @@ from PiBlaster3.translate_genre import translate_genre, all_genres
 
 
 class MPC:
+    """MPD Client for all actions in views.py.
+
+    Connect to music player daemon and send/receive data.
+    Connects on init, so no need to call reconnect() yourself.
+    NOTE: some methods might throw, but this is not too bad for use in django, just reload page.
+    """
 
     def __init__(self):
-        """
-
-        """
+        """Create MPDClient and connect."""
         self.connected = False
         self.error = False
         self.client = MPDClient()
         self.client.timeout = 10
         self.reconnect()
+        self.truncated = 0  # set to the truncate value if truncated (search, list, ...)
 
     def reconnect(self):
-        """
-
-        :return:
-        """
+        """Try connect 5 times, if not successful self.connected will be False."""
 
         self.connected = False
         self.error = False
@@ -49,9 +51,9 @@ class MPC:
         return False
 
     def get_stats(self):
-        """
-        Displays statistics.
+        """Displays statistics.
 
+        :return: {
             artists: number of artists
             albums: number of albums
             songs: number of songs
@@ -59,8 +61,7 @@ class MPC:
             db_playtime: sum of all song times in the db
             db_update: last db update in UNIX time
             playtime: time length of music played
-
-        :return:
+            free: bytes available in upload folder (if PB_UPLOAD_DIR set)}
         """
         self.ensure_connected()
         stats = self.client.stats()
@@ -94,7 +95,7 @@ class MPC:
                  'volume': '40',
                  'xfade': '0'}
 
-        :return:
+        :return: MPDClient.status()
         """
         res = {'error': self.error}
         for i in range(5):
@@ -109,7 +110,7 @@ class MPC:
     def get_status_int(self, key, dflt=0):
         """Fetch value from mpd status dict as int,
         fallback to dflt if no such key.
-        Won't catch failed conversions.
+        NOTE: Won't catch failed conversions.
         """
         stat = self.get_status()
         if key in stat:
@@ -117,6 +118,8 @@ class MPC:
         return dflt
 
     def ensure_connected(self):
+        """Make sure we are connected."""
+        # Abuse get_status() method which tries to connect up to 5 times.
         self.get_status()
 
     def get_currentsong(self):
@@ -145,7 +148,19 @@ class MPC:
     def get_status_data(self):
         """Combined currentsong / status data for AJAX GET or POST on index page
 
-        :return:
+        :return: {title: xxx
+                  time: seconds
+                  album: xxx
+                  artist: xxx
+                  date: yyyy
+                  id: N
+                  elapsed: seconds
+                  random: bool
+                  repeat: bool
+                  volume: percentage
+                  state: ['playing', 'stopped', 'paused']
+                  playlist: VERSION-NUMBER
+                  playlistlength: N}
         """
         status = self.get_status()
         current = self.get_currentsong()
@@ -252,16 +267,16 @@ class MPC:
         return result
 
     def playlistinfo_full(self, id):
-        """Return full playlistinfo for song with id
+        """Return full playlistinfo for song with id.
 
-        :param pos:
-        :return:
+        :param id: song id from playlist
+        :return: MPDClient.playlistid(id)
         """
         self.ensure_connected()
         return self.client.playlistid(id)
 
     def file_info(self, file):
-        """Return full info for file
+        """Return full info for file.
 
         :param file
         :return: [{'last-modified': '2016-02-29T18:03:53Z',
@@ -287,8 +302,12 @@ class MPC:
     def playlist_changes(self, version):
         """Get changes in playlist since version.
 
-        :param version:
-        :return:
+        NOTE: if new playlist is shorter, use playlistlength to truncate old playlist view.
+
+        :param version: diff version of playlist.
+        :return: {version: new version
+                  changes: [[pos, title, artist, album, length, id, file]]
+                  length: new playlist length}
         """
         pl_len = self.get_status_int('playlistlength')
         pl_ver = self.get_status_int('playlist')
@@ -312,10 +331,9 @@ class MPC:
         return {'version': pl_ver, 'changes': result, 'length': pl_len}
 
     def exec_command(self, cmd):
-        """
+        """Execute command for music player daemon.
 
-        :param cmd:
-        :return:
+        :param cmd: ['back', 'playpause', 'stop', 'next', 'decvol', 'incvol', 'random', 'repeat', 'seekcur SEC']
         """
         success = True
         self.ensure_connected()
@@ -364,9 +382,9 @@ class MPC:
         return data
 
     def browse(self, path):
-        """
+        """Browse files in files view.
 
-        :param path:
+        :param path: Directory to list.
         :return: Array of ['1', title, '', '', '', directory] for dirs
                  Array of ['2', title, artist, album, length, file, ext, date] for audio files
         """
@@ -429,12 +447,12 @@ class MPC:
         return result
 
     def playlist_action(self, cmd, plname, items):
-        """
+        """Perform action on playlist.
 
-        :param cmd:
-        :param plname:
-        :param items:
-        :return:
+        :param cmd: ['append', 'insert', 'clear', 'deleteid(s)?', 'playid', 'playid(s)?next', 'moveid', 'moveid(s)?end'
+        :param plname: playlist name -- '' for current playlist
+        :param items: payload array for command
+        :return: status string
         """
 
         self.ensure_connected()
@@ -579,6 +597,10 @@ class MPC:
 
         has_files = []
 
+        self.truncated = 0
+        if len(search) > limit:
+                self.truncated = len(search) - limit
+
         for item in search[:limit]:
             if 'file' not in item:
                 continue
@@ -620,14 +642,18 @@ class MPC:
             res.append(item['file'])
             result.append(res)
 
-        return {'status': '%d items found' % len(result), 'search': result}
+        trunc_str = '(truncated)' if self.truncated else ''
+        return {'status': '%d items found %s' % (len(result), trunc_str),
+                'search': result,
+                'truncated': self.truncated}
 
     def playlists_action(self, cmd, plname, payload):
-        """
+        """Perform actions on list of playlists.
 
-        :param cmd:
-        :param plname:
-        :return:
+        :param cmd: [clear, delete, list, moveend, new, load,rename, saveas]
+        :param plname: name of playlist
+        :param payload: array of payload data for command
+        :return: dict including error or status message.
         """
         self.ensure_connected()
         if cmd == 'clear':
@@ -674,9 +700,16 @@ class MPC:
         return {'error': 'No such command: %s' % cmd}
 
     def list_by(self, what, in_dates, genres, artists, albums):
-        """
+        """Create content data for browse view.
 
-        :return:
+        :param what: category of results [date, genre, artist, album, song]
+        :param in_dates: list of dates for filter ['All'] for all dates
+        :param genres: list of genres for filter ['All'] for all
+        :param artists: list of artists for filter ['All'] for all
+        :param albums: list of albums for filter ['All'] for all
+
+        :return: List of results for browse view for next category:
+                if what == 'genre' results will be artists and so on.
         """
         self.ensure_connected()
 
@@ -720,7 +753,7 @@ class MPC:
                     filt_genres.append(add)
             return sorted(filt_genres)
 
-        # request is artist --> return all arists matching date and genre
+        # request is artist or album --> return all arists/albums matching date and genre
         if what == 'artist' or what == 'album':
             filt_years = []
             if len(dates) > 0 and dates[0] != 'All':
@@ -831,10 +864,20 @@ class MPC:
             res2 = []
 
             for item in res:
-                no_ext = os.path.splitext(item)[0]
-                res2.append([item, os.path.basename(no_ext).replace('_', ' ')])
-                if len(res2) > 1000:
+                info = self.client.find('file', item)[0]
+                if 'artist' in info and 'title' in info:
+                    res2.append([item, '%s - %s' % (info['artist'], info['title'])])
+                elif 'title' in info:
+                    res2.append([item, info['title']])
+                else:
+                    no_ext = os.path.splitext(item)[0]
+                    res2.append([item, os.path.basename(no_ext).replace('_', ' ')])
+                if len(res2) >= 1000:
                     break
+
+            self.truncated = 0
+            if len(res) > len(res2):
+                self.truncated = len(res) - len(res2)
 
             return res2
 
