@@ -30,12 +30,6 @@ PiRemote.load_browse_page = ->
     tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'browse')
 
-    $('#addsign').show()
-    $('#addsign').off 'click'
-    $('#addsign').on 'click', ->
-        PiRemote.browse_raise_add_dialog()
-        return
-
     if PiRemote.last_browse isnt null
         PiRemote.build_browse PiRemote.last_browse
     else
@@ -95,10 +89,6 @@ PiRemote.build_browse = (data) ->
         PiRemote.build_browse_song data
         return
 
-
-    # ... vertical dots for each element
-    action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
-
     if mode == 'date'
         browse_data = ['All', '0-1970', '1971-1980', '1981-1990', '1991-2000', '2001-2010', '2010-today'].concat(data.browse)
     else
@@ -114,10 +104,9 @@ PiRemote.build_browse = (data) ->
         .classed('selected', (d)->PiRemote.selected[mode][d])
         .classed('all', (d, i)->i == 0 and d == 'All')
         .selectAll('td')
-        .data((d, i) -> [i, d, action_span]).enter()
+        .data((d, i) -> [i, d]).enter()
         .append('td')
             .attr('class', (d, i)-> 'browse-td'+i)
-            .classed('browse-selectable', (d, i) -> i != 2)
             .html((d) -> d)
 
     # Set selection for mode to all if nothing selected
@@ -127,9 +116,9 @@ PiRemote.build_browse = (data) ->
         PiRemote.selected[mode] = {'All': true}
 
     # single-click on selectable items toggles select
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').off 'click'
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').on 'click', (event) ->
-        tr = $(this).parent()
+    $('div.browse-list > table > tbody > tr.selectable').off 'click'
+    $('div.browse-list > table > tbody > tr.selectable').on 'click', (event) ->
+        tr = $(this)
         if tr.data('index') == 0 and tr.data('item') == 'All'
             # deselect all if All clicked
             d3.selectAll('tr.selectable').classed('selected', 0)
@@ -153,6 +142,13 @@ PiRemote.build_browse = (data) ->
             d3.selectAll('tr.selectable[data-index="0"]').classed('selected', 0)
             PiRemote.selected[mode]['All'] = false
         return
+
+    $('#addsign').show()
+    $('#addsign').off 'click'
+    $('#addsign').on 'click', ->
+        PiRemote.browse_raise_add_dialog()
+        return
+
     return
 
 
@@ -178,6 +174,13 @@ PiRemote.build_browse_song = (data) ->
     $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').on 'click', (event) ->
         $(this).parent().toggleClass 'selected'
+        return
+
+
+    $('#addsign').show()
+    $('#addsign').off 'click'
+    $('#addsign').on 'click', ->
+        PiRemote.browse_raise_add_files_dialog()
         return
 
     if data.truncated > 0
@@ -259,6 +262,8 @@ PiRemote.do_browse_action = (mode, action) ->
     return
 
 
+# Raise seed dialog.
+# NOTE: do not raise for mode='song' (seedbrowse call will increment current mode by 1)
 PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
 
     d3.select('#smallModalLabel').html(title)
@@ -288,7 +293,7 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
             url: 'seedbrowse'
             method: 'POST'
             data:
-                what: mode
+                what: PiRemote.select_class_names[PiRemote.browse_current_page_index+1]
                 count: $('input#seedspin').val()
                 plname: plname
                 dates: selected_lists['date']
@@ -305,3 +310,6 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
     return
 
 
+PiRemote.browse_raise_add_files_dialog = ->
+
+    return
