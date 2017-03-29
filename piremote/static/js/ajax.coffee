@@ -30,8 +30,8 @@ PiRemote.do_ajax = (req) ->
         dataType: 'json'
         method: req.method
         success: (data) ->
-            PiRemote.setStatusText data.status if data.status
-            PiRemote.setErrorText data.error if data.error
+            PiRemote.setStatusText data.status_str if data.status_str
+            PiRemote.setErrorText data.error_str if data.error_str
             req.success(data) if req.success
             return
         error: (jqXHR) ->

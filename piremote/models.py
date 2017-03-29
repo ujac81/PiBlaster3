@@ -46,7 +46,7 @@ class Setting(models.Model):
         else:
             q.update(value=value)
 
-        return {'status': 'Set %s to %s.' %(key, value)}
+        return {'status_str': 'Set %s to %s.' % (key, value)}
 
 
 class Upload(models.Model):

@@ -97,14 +97,14 @@ class MPC:
 
         :return: MPDClient.status()
         """
-        res = {'error': self.error}
+        res = {'error_str': self.error}
         for i in range(5):
             try:
                 res = self.client.status()
             except (ConnectionError, CommandError):
                 self.reconnect()
                 pass
-        res['error'] = self.error
+        res['error_str'] = self.error
         return res
 
     def get_status_int(self, key, dflt=0):
@@ -570,7 +570,7 @@ class MPC:
 
         return 'Unknown command '+cmd
 
-    def search_file(self, arg, limit=1000):
+    def search_file(self, arg, limit=200):
         """ Search in MPD data base using 'any' and 'file' tag.
         :param arg: search pattern
         :param limit: max amount of results
@@ -578,7 +578,7 @@ class MPC:
                     Dummy element added at position #4 to have filename at position #5
         """
         if arg is None or len(arg) < 3:
-            return {'error': 'Search pattern must contain at least 3 characters!'}
+            return {'error_str': 'Search pattern must contain at least 3 characters!'}
 
         self.ensure_connected()
 
@@ -593,7 +593,7 @@ class MPC:
             search = self.client.search('any', first_arg)
             search += self.client.search('file', first_arg)
         except CommandError as e:
-            return {'error': 'Command error in search: %s' % e}
+            return {'error_str': 'Command error in search: %s' % e}
 
         has_files = []
 
@@ -643,7 +643,7 @@ class MPC:
             result.append(res)
 
         trunc_str = '(truncated)' if self.truncated else ''
-        return {'status': '%d items found %s' % (len(result), trunc_str),
+        return {'status_str': '%d items found %s' % (len(result), trunc_str),
                 'search': result,
                 'truncated': self.truncated}
 
@@ -658,12 +658,12 @@ class MPC:
         self.ensure_connected()
         if cmd == 'clear':
             self.client.playlistclear(plname)
-            return {'status': 'Playlist %s cleared' % plname}
+            return {'status_str': 'Playlist %s cleared' % plname}
         if cmd == 'delete':
             positions = sorted([int(i) for i in payload], reverse=True)
             for pos in positions:
                 self.client.playlistdelete(plname, pos)
-            return {'status': '%d items removed from playlist %s' % (len(positions), plname)}
+            return {'status_str': '%d items removed from playlist %s' % (len(positions), plname)}
         if cmd == 'list':
             pls = sorted([i['playlist'] for i in self.client.listplaylists() if 'playlist' in i])
             return {'pls': pls}
@@ -672,41 +672,41 @@ class MPC:
             positions = sorted([int(i) for i in payload], reverse=True)
             for pos in positions:
                 self.client.playlistmove(plname, pos, pl_len-1)
-            return {'status': '%d items moved to end in playlist %s' % (len(positions), plname)}
+            return {'status_str': '%d items moved to end in playlist %s' % (len(positions), plname)}
         if cmd == 'new':
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
-                return {'error': 'Playlist %s exists' % plname, 'plname': ''}
+                return {'error_str': 'Playlist %s exists' % plname, 'plname': ''}
             self.client.save(plname)
             self.client.playlistclear(plname)
-            return {'status': 'Playlist %s created' % plname, 'plname': plname}
+            return {'status_str': 'Playlist %s created' % plname, 'plname': plname}
         if cmd == 'load':
             self.client.load(plname)
-            return {'status': 'Playlist %s added to playlist' % plname}
+            return {'status_str': 'Playlist %s added to playlist' % plname}
         if cmd == 'rename':
             plname_old = payload[0]
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
-                return {'error': 'Playlist %s already exists.' % plname}
+                return {'error_str': 'Playlist %s already exists.' % plname}
             self.client.rename(plname_old, plname)
-            return {'status': 'Playlist %s renamed to %s' % (plname_old, plname)}
+            return {'status_str': 'Playlist %s renamed to %s' % (plname_old, plname)}
         if cmd == 'rm':
             self.client.rm(plname)
-            return {'status': 'Playlist %s removed' % plname}
+            return {'status_str': 'Playlist %s removed' % plname}
         if cmd == 'saveas':
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
-                return {'error': 'Playlist %s already exists.' % plname}
+                return {'error_str': 'Playlist %s already exists.' % plname}
             self.client.save(plname)
-            return {'status': 'Current playlist saved to %s.' % plname}
+            return {'status_str': 'Current playlist saved to %s.' % plname}
 
-        return {'error': 'No such command: %s' % cmd}
+        return {'error_str': 'No such command: %s' % cmd}
 
-    def list_by(self, what, in_dates, genres, artists, albums, file_mode=False):
+    def list_by(self, what, in_dates, in_genres, in_artists, in_albums, file_mode=False):
         """Create content data for browse view.
 
         :param what: category of results [date, genre, artist, album, song]
         :param in_dates: list of dates for filter ['All'] for all dates
-        :param genres: list of genres for filter ['All'] for all
-        :param artists: list of artists for filter ['All'] for all
-        :param albums: list of albums for filter ['All'] for all
+        :param in_genres: list of genres for filter ['All'] for all
+        :param in_artists: list of artists for filter ['All'] for all
+        :param in_albums: list of albums for filter ['All'] for all
         :param file_mode: return result as file-list (required for seed_by())
 
         :return: List of results for browse view for next category:
@@ -714,15 +714,15 @@ class MPC:
         """
         self.ensure_connected()
 
-        seek = 'file' if file_mode else what
+        seek = 'file' if file_mode or what == 'song' else what
 
         # request is date --> return all available dates
         if what == 'date':
             return self.client.list(seek)
 
-        # Unroll special dates (decades)
+        # Unroll special dates (decades like '1971-1980' or '2010-today')
+        dates = []
         if len(in_dates) > 0 and in_dates[0] != 'All':
-            dates = []
             all_dates = self.client.list('date')
             for date in in_dates:
                 if '-' in date:
@@ -733,144 +733,93 @@ class MPC:
                                 dates.append('%d' % y)
                 else:
                     dates.append(date)
-        else:
-            dates = in_dates
 
-        # request is genre --> return all genres matching date
+        # Unroll genres (some genres have number instead of string)
+        genres = []
+        if len(in_genres) > 0 and in_genres[0] != 'All':
+            inv_genres = {v: k for k, v in all_genres().items()}
+            for genre in in_genres:
+                genres.append(genre)
+                if genre in inv_genres:
+                    genres.append('(%s)' % inv_genres[genre])
+
+        artists = [] if len(in_artists) == 1 and in_artists[0] == 'All' else in_artists
+        albums = [] if len(in_albums) == 1 and in_albums[0] == 'All' else in_albums
+
+        filters = {}
+        if what in ['genre', 'artist', 'album', 'song'] and len(dates) > 0:
+            filters['date'] = dates
+        if what in ['artist', 'album', 'song'] and len(genres) > 0:
+            filters['genre'] = genres
+        if what in ['album', 'song'] and len(artists) > 0:
+            filters['artist'] = artists
+        if what in ['song'] and len(albums) > 0:
+            filters['album'] = albums
+        filter_keys = list(filters.keys())
+
+        res = []
+        if len(filter_keys) == 0:
+            res = self.client.list(seek)
+        elif len(filter_keys) == 1:
+            key = filter_keys[0]
+            vals = filters[key]
+            for val in vals:
+                res += self.client.list(seek, key, val)
+        elif len(filter_keys) == 2:
+            key1 = filter_keys[0]
+            vals1 = filters[key1]
+            key2 = filter_keys[1]
+            vals2 = filters[key2]
+            for val1 in vals1:
+                for val2 in vals2:
+                    res += self.client.list(seek, key1, val1, key2, val2)
+        elif len(filter_keys) == 3:
+            key1 = filter_keys[0]
+            vals1 = filters[key1]
+            key2 = filter_keys[1]
+            vals2 = filters[key2]
+            key3 = filter_keys[2]
+            vals3 = filters[key3]
+            for val1 in vals1:
+                for val2 in vals2:
+                    for val3 in vals3:
+                        res += self.client.list(seek, key1, val1, key2, val2, key3, val3)
+        elif len(filter_keys) == 4:
+            key1 = filter_keys[0]
+            vals1 = filters[key1]
+            key2 = filter_keys[1]
+            vals2 = filters[key2]
+            key3 = filter_keys[2]
+            vals3 = filters[key3]
+            key4 = filter_keys[3]
+            vals4 = filters[key4]
+            for val1 in vals1:
+                for val2 in vals2:
+                    for val3 in vals3:
+                        for val4 in vals4:
+                            res += self.client.list(seek, key1, val1, key2, val2, key3, val3, key4, val4)
+
+        # If we are in file_mode (used by seed_by), return result directly.
+        if file_mode:
+            return sorted(set(res))
+
+        # Translate back numeric to string genres.
         if what == 'genre':
-            genres = []
-            if len(dates) == 0 or dates[0] == 'All':
-                genres = self.client.list(seek)
-            else:
-                for date in dates:
-                    genres += self.client.list(seek, 'date', date)
-
-            if file_mode:
-                return genres
-
-            filt_genres = []
-            for genre in genres:
+            res2 = []
+            for genre in res:
                 add = genre
                 m = re.match(r"\((\d+)\)", genre)
                 if m:
                     add = translate_genre(int(m.group(1)))
-                if add not in filt_genres:
-                    filt_genres.append(add)
-            return sorted(filt_genres)
+                if add not in res2:
+                    res2.append(add)
+            return sorted(res2)
 
-        # request is artist or album --> return all arists/albums matching date and genre
-        if what == 'artist' or what == 'album':
-            filt_years = []
-            if len(dates) > 0 and dates[0] != 'All':
-                for date in dates:
-                    filt_years += self.client.list(seek, 'date', date)
-
-            inv_genres = {v: k for k, v in all_genres().items()}
-
-            filt_genres = []
-            if len(genres) > 0 and genres[0] != 'All':
-                for genre in genres:
-                    filt_genres += self.client.list(seek, 'genre', genre)
-                    if genre in inv_genres:
-                        filt_genres += self.client.list(seek, 'genre', '(%s)' % inv_genres[genre])
-
-            filt_artists = []
-            if what == 'album' and len(artists) > 0 and artists[0] != 'All':
-                for artist in artists:
-                    filt_artists += self.client.list(seek, 'artist', artist)
-            elif what == 'album':
-                filt_artists += self.client.list(seek)
-
-            if what == 'artist':
-                if len(filt_years) == 0 and len(filt_genres) == 0:
-                    return sorted(self.client.list(seek))
-                if len(filt_years) == 0:
-                    return sorted(set(filt_genres))
-                if len(filt_genres) == 0:
-                    return sorted(set(filt_years))
-
-                res = []
-                for item in filt_years:
-                    if item in filt_genres and item not in res:
-                        res.append(item)
-                return res
-
-            if what == 'album':
-                res_years = sorted(set(filt_years))
-                res_genres = sorted(set(filt_genres))
-                res_artists = sorted(set(filt_artists))
-
-                res2 = []
-                if len(res_years):
-                    if len(res_genres):
-                        for item in res_genres:
-                            if item in res_years:
-                                res2.append(item)
-                    else:
-                        res2 = res_years
-                else:
-                    res2 = res_genres
-
-                res = []
-                if len(res2):
-                    if len(res_artists):
-                        for item in res_artists:
-                            if item in res2:
-                                res.append(item)
-                    else:
-                        res = res2
-                else:
-                    res = res_artists
-
-                return sorted(set(res))
-
+        # If we are in song mode, truncate result and expand title and artist information.
         if what == 'song':
-            all_files = {k: False for k in self.client.list('file')}
-            inv_genres = {v: k for k, v in all_genres().items()}
-
-            # filter dates
-            if len(in_dates) > 0 and in_dates[0] != 'All':
-                for date in dates:
-                    files = self.client.list('file', 'date', date)
-                    for f in files:
-                        all_files[f] = True
-                all_files = {k: False for k, v in all_files.items() if v}
-
-            # filter genres
-            if len(genres) > 0 and genres[0] != 'All':
-                for genre in genres:
-                    files = self.client.list('file', 'genre', genre)
-                    if genre in inv_genres:
-                        files += self.client.list('file', 'genre', '(%s)' % inv_genres[genre])
-                    for f in files:
-                        if f in all_files:
-                            all_files[f] = True
-                all_files = {k: False for k, v in all_files.items() if v}
-
-            # filter artists
-            if len(artists) > 0 and artists[0] != 'All':
-                for artist in artists:
-                    files = self.client.list('file', 'artist', artist)
-                    for f in files:
-                        if f in all_files:
-                            all_files[f] = True
-                all_files = {k: False for k, v in all_files.items() if v}
-
-            # filter albums
-            if len(albums) > 0 and albums[0] != 'All':
-                for album in albums:
-                    files = self.client.list('file', 'album', album)
-                    for f in files:
-                        if f in all_files:
-                            all_files[f] = True
-                all_files = {k: False for k, v in all_files.items() if v}
-
-            res = sorted([k for k, v in all_files.items()])
-            if file_mode:
-                return res
-
             res2 = []
-            for item in res:
+            res_in = sorted(set(res))
+            for item in res_in:
                 info = self.client.find('file', item)[0]
                 if 'artist' in info and 'title' in info:
                     res2.append([item, '%s - %s' % (info['artist'], info['title'])])
@@ -879,31 +828,32 @@ class MPC:
                 else:
                     no_ext = os.path.splitext(item)[0]
                     res2.append([item, os.path.basename(no_ext).replace('_', ' ')])
-                if len(res2) >= 1000:
+                if len(res2) >= 200:
                     break
 
             self.truncated = 0
-            if len(res) > len(res2):
-                self.truncated = len(res) - len(res2)
+            if len(res_in) > len(res2):
+                self.truncated = len(res_in) - len(res2)
 
             return res2
 
-        return []
+        # Return all other results directly as sorted unique array.
+        return sorted(set(res))
 
-    def seed_by(self, count, plname, what, in_dates, genres, artists, albums):
+    def seed_by(self, count, plname, what, dates, genres, artists, albums):
         """Random add items to playlist from browse view.
 
         :param count: number of items to add
         :param plname: playlist name ('' for current)
         :param what: [date, genre, artist, album, song]
-        :param in_dates: see list_by()
+        :param dates: see list_by()
         :param genres: see list_by()
         :param artists: see list_by()
         :param albums: see list_by()
         :return: status string.
         """
 
-        files = self.list_by(what, in_dates, genres, artists, albums, file_mode=True)
+        files = self.list_by(what, dates, genres, artists, albums, file_mode=True)
 
         if len(files) == 0:
             return 'Zero results, nothing added.'

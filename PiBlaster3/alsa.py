@@ -132,7 +132,7 @@ class AlsaMixer:
         elif mixer_class == 'equalizer':
             return {'ok': 1, 'data': self.get_equal_vals()}
 
-        return {'error': 'No such mixer class %s' % mixer_class}
+        return {'error_str': 'No such mixer class %s' % mixer_class}
 
     def set_channel_data(self, mixer_class, chan_id, value):
         """
@@ -148,5 +148,5 @@ class AlsaMixer:
         elif mixer_class == 'volume':
             val = self.set_volume_val(chan_id, value)
 
-        return {'status': 'Set %s channel %d to %d' % (mixer_class, chan_id, val), 'chan_id': chan_id, 'value': val}
+        return {'status_str': 'Set %s channel %d to %d' % (mixer_class, chan_id, val), 'chan_id': chan_id, 'value': val}
 

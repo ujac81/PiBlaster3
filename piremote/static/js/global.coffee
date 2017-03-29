@@ -34,6 +34,8 @@ PiRemote.dragging = false  # true while element is dragged in playlist
 
 
 # Fade in status bar, set text and start fade out timer.
+# NOTE: If you are using differing fade times, the fade-out might not work
+# if you send differing messages in short time.
 PiRemote.setStatus = (text, error, fade) ->
     $('#footer').toggleClass('error', error)
     $('#footer').toggleClass('status', ! error)
@@ -52,6 +54,7 @@ PiRemote.setStatus = (text, error, fade) ->
                 console.log 'OFF TIMER'
             else
                 console.log 'OFF SKIP'
+                console.log [text, $('#statusbar').html()]
             return
             ), fade
 
@@ -65,7 +68,7 @@ PiRemote.setStatusText = (text, fade=5000) ->
 
 
 # Fade in status red bar, set text and start fade out timer.
-PiRemote.setErrorText = (text, fade=10000) ->
+PiRemote.setErrorText = (text, fade=5000) ->
     PiRemote.setStatus text, true, fade
     return
 

@@ -149,6 +149,7 @@ PiRemote.build_browse = (data) ->
         PiRemote.browse_raise_add_dialog()
         return
 
+    window.scrollTo 0, 0
     return
 
 # Build table result for category 'song'
@@ -202,6 +203,7 @@ PiRemote.build_browse_song = (data) ->
     if data.truncated > 0
         PiRemote.setErrorText ''+data.truncated+' search results truncated, displaying first '+data.browse.length+' results.'
 
+    window.scrollTo 0, 0
     return
 
 # Callback for press on '+' sign.
@@ -309,7 +311,7 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
             url: 'seedbrowse'
             method: 'POST'
             data:
-                what: PiRemote.select_class_names[PiRemote.browse_current_page_index+1]
+                what: PiRemote.select_classes[PiRemote.browse_current_page_index+1]
                 count: $('input#seedspin').val()
                 plname: plname
                 dates: selected_lists['date']

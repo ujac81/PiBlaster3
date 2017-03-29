@@ -57,7 +57,7 @@ def plaction_ajax(request):
     plname = request.POST.get('plname', '')
     items = request.POST.getlist('list[]', [])
     mpc = MPC()
-    return JsonResponse({'status': mpc.playlist_action(cmd, plname, items)})
+    return JsonResponse({'status_str': mpc.playlist_action(cmd, plname, items)})
 
 
 # POST /ajax/plsaction/
@@ -156,7 +156,7 @@ def upload(request):
             up = Uploader()
             res = up.upload_file(name, filename, request.FILES['mediafile'])
         else:
-            res = {'error': 'Upload form data is invalid!'}
+            res = {'error_str': 'Upload form data is invalid!'}
         template = loader.get_template('piremote/index.pug')
         return HttpResponse(template.render({'page': 'upload', 'upload': json.dumps(res)}, request))
     else:
@@ -213,4 +213,4 @@ def seed_browse_ajax(request):
     artists = request.POST.getlist('artists[]', [])
     albums = request.POST.getlist('albums[]', [])
     mpc = MPC()
-    return JsonResponse({'status': mpc.seed_by(count, plname, what, dates, genres, artists, albums)})
+    return JsonResponse({'status_str': mpc.seed_by(count, plname, what, dates, genres, artists, albums)})

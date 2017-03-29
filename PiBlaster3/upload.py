@@ -27,13 +27,13 @@ class Uploader:
         """
         up_dir = os.path.join(self.upload_dir, uploader)
         if os.path.exists(up_dir) and not os.path.isdir(up_dir):
-            return {'error': 'Upload destination %s exists and is not a directory' % uploader}
+            return {'error_str': 'Upload destination %s exists and is not a directory' % uploader}
         elif not os.path.exists(up_dir):
             os.mkdir(up_dir)
 
         filename = os.path.join(up_dir, name.name)
         if os.path.exists(filename):
-            return {'error': 'Upload destination %s exists' % filename}
+            return {'error_str': 'Upload destination %s exists' % filename}
 
         with open(filename, 'wb+') as destination:
             for chunk in f.chunks():
@@ -42,7 +42,7 @@ class Uploader:
         mpc = MPC()
         mpc.update_database()
 
-        return {'status': 'File %s uploaded to folder %s.' % (name, uploader)}
+        return {'status_str': 'File %s uploaded to folder %s.' % (name, uploader)}
 
     def list_dir(self, path):
         """
@@ -90,10 +90,10 @@ class Uploader:
         """
 
         if len(up_list) == 0:
-            return {'error': 'No files to upload'}
+            return {'error_str': 'No files to upload'}
 
         added = 0
         for item in up_list:
             added += Upload.add_item(item)
 
-        return {'status': '%d files added to upload queue' % added}
+        return {'status_str': '%d files added to upload queue' % added}
