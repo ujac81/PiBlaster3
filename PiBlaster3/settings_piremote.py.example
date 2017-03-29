@@ -27,3 +27,4 @@ PB_UPLOAD_SOURCES = ['/mnt/usb', '/local']
 
 
 PB_HOSTAPD_FILE = '/opt/PiBlaster3/conf/hostapd.conf'
+
