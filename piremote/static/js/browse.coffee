@@ -36,7 +36,7 @@ PiRemote.load_browse_page = ->
         PiRemote.do_browse 'date'
     return
 
-# AJAX GET of mpd.list(....)
+# AJAX GET of mpd.list(....) filtered by preceding categories
 PiRemote.do_browse = (what) ->
 
     selected_lists = {}
@@ -74,7 +74,7 @@ PiRemote.do_browse = (what) ->
 
     return
 
-# Build table result from
+# Build table result from all categories except 'song'
 PiRemote.build_browse = (data) ->
 
     mode = data.what
@@ -151,7 +151,8 @@ PiRemote.build_browse = (data) ->
 
     return
 
-
+# Build table result for category 'song'
+# Per element actions enabled for song display and menu options differ for song display.
 PiRemote.build_browse_song = (data) ->
 
     # ... vertical dots for each element
@@ -167,13 +168,28 @@ PiRemote.build_browse_song = (data) ->
         .data((d, i) -> [i+1, d[1], action_span]).enter()
         .append('td')
             .attr('class', (d, i)-> 'browse-td'+i)
-            .classed('browse-selectable', (d, i) -> i != 2)
             .html((d) -> d)
 
+    # single-click on index raises file info dialog
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-td0').off 'click'
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-td0').on 'click', (event) ->
+        i = $(this).parent().data('index')
+        file = PiRemote.last_browse.browse[i][0]
+        PiRemote.search_raise_info_dialog file
+        return
+
     # single-click on selectable items toggles select
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').off 'click'
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').on 'click', (event) ->
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').off 'click'
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').on 'click', (event) ->
         $(this).parent().toggleClass 'selected'
+        return
+
+    # single-click on action span toggles action dialog
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-td2').off 'click'
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-td2').on 'click', (event) ->
+        i = $(this).parent().data('index')
+        d = PiRemote.last_browse.browse[i]
+        PiRemote.raise_file_actions d[1], d[0]
         return
 
 
@@ -309,7 +325,3 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
 
     return
 
-
-PiRemote.browse_raise_add_files_dialog = ->
-
-    return

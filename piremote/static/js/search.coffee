@@ -144,9 +144,9 @@ PiRemote.install_search_handlers = ->
     # single click on action raises action dialog
     $('td.search-action').off 'click'
     $('td.search-action').on 'click', (event) ->
-        PiRemote.search_raise_action_dialog $(this).parent().parent().parent().parent()
+        e =  $(this).parent().parent().parent().parent()
+        PiRemote.raise_file_actions e.data('title'), e.data('filename')
         return
-
 
     # single click on index column raises info dialog
     $('td.searchtd-0').off 'click'
@@ -155,21 +155,13 @@ PiRemote.install_search_handlers = ->
         PiRemote.search_raise_info_dialog file
         return
 
-
     return
 
 
 # Callback for add sign.
 PiRemote.search_raise_add_dialog = ->
-    # files actions are identical
-    PiRemote.files_raise_add_dialog()
-    return
-
-
-# Callback for action dots clicked.
-PiRemote.search_raise_action_dialog = (element) ->
-    # files actions are identical
-    PiRemote.raise_file_actions element
+    # browse actions are identical
+    PiRemote.browse_raise_add_dialog()
     return
 
 
@@ -224,8 +216,8 @@ PiRemote.search_raise_info_dialog = (file) ->
                 $(document).off 'click', 'span.browse-span'
                 $(document).on 'click', 'span.browse-span', () ->
                     $('#modalSmall').modal('hide')
-                    PiRemote.last_files = $(this).data('dirname')
-                    PiRemote.load_page 'files'
+                    PiRemote.last_browse = $(this).data('dirname')
+                    PiRemote.load_page 'browse'
                     return
 
 

@@ -48,7 +48,7 @@ PiRemote.rebuild_files = (data) ->
     if data.dirname != ''
         up_span = '<span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>'
         updir = data.dirname.split('/').slice(0, -1).join('/')
-        uptr = tbody.append('tr').classed('dir-item', 1).attr('data-dirname', updir).attr('id', 'trupdir')
+        uptr = tbody.append('tr').attr('class', 'dir-item file-view').attr('data-dirname', updir).attr('id', 'trupdir')
         uptr.append('td').classed('browse-head', 1).html(up_span)
         dirname = '/'+data.dirname+'/../'
         uptr.append('td').classed('browse-file', 1).html(dirname.replace(/\//g, ' / '))
@@ -63,11 +63,12 @@ PiRemote.rebuild_files = (data) ->
     tbody.selectAll('tr')
         .data(dirs, (d) -> d).enter()
         .append('tr')
-            .attr('class', 'dir-item')
+            .attr('class', 'dir-item file-view')
             .attr('data-dirname', (d) -> d[5])
         .selectAll('td')
         .data((d, i) -> ['<img src="/piremote/static/img/folder-blue.png"/>', d[1], action_span]).enter()
         .append('td')
+            .attr('class', (d, i)-> 'browse-td'+i)
             .classed('browse-head', (d, i) -> i == 0)
             .classed('browse-head-dir', (d, i) -> i == 0)
             .classed('browse-dir', (d, i) -> i == 1)
@@ -80,7 +81,7 @@ PiRemote.rebuild_files = (data) ->
     tbody.selectAll('tr')
         .data(files, (d) -> d).enter()
         .append('tr')
-            .attr('class', 'file-item selectable')
+            .attr('class', 'file-item selectable file-view')
             .attr('data-title', (d) -> d[1])
             .attr('data-artist', (d) -> d[2])
             .attr('data-album', (d) -> d[3])
@@ -90,6 +91,7 @@ PiRemote.rebuild_files = (data) ->
         .selectAll('td')
         .data((d, i) -> ['<img src="/piremote/static/img/'+d[6]+'.png"/>', d[1], action_span]).enter()
         .append('td')
+            .attr('class', (d, i)-> 'browse-td'+i)
             .classed('browse-head', (d, i) -> i == 0)
             .classed('browse-head-file', (d, i) -> i == 0)
             .classed('browse-action', (d, i) -> i == 0)
@@ -146,7 +148,7 @@ PiRemote.install_files_handlers = ->
     # file action triggered
     $('div.browse-list > table > tbody > tr.selectable > td.browse-action').off
     $('div.browse-list > table > tbody > tr.selectable > td.browse-action').on 'click', (event) ->
-        PiRemote.raise_file_actions $(this).parent()
+        PiRemote.raise_file_actions $(this).parent().data('title'), $(this).parent().data('filename')
         return
     return
 
@@ -176,13 +178,11 @@ PiRemote.raise_file_dialog = (element) ->
 
 
 # Action glyph pressed on file item.
-PiRemote.raise_file_actions = (element) ->
+PiRemote.raise_file_actions = (title, filename) ->
     d3.select('#smallModalLabel').html('File Actions')
     cont = d3.select('#smallModalMessage')
     cont.html('')
-    cont.append('h5').html(element.data('title'))
-
-    filename = element.data('filename')
+    cont.append('h5').html(title)
 
     navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
     items = [
