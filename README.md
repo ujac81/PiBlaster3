@@ -206,6 +206,9 @@ Link directories to scan to mpd library and update it.
 
 ## Restart service
 
+    $ sudo service piblaster restart
+    $ sudo servie piblaster.worker restart
+
 ## Run piblaster3 server from command line
 To see full debugging output and interact with django server:
 
@@ -213,6 +216,17 @@ To see full debugging output and interact with django server:
     $ cd /opt/PiBlaster3
     $ export DEBUG=1
     $ uwsgi --ini conf/piblaster.ini
+
+Run workers:
+
+    $ sudo servie piblaster.worker stop
+    $ cd /opt/PiBlaster3
+    $ export DEBUG=1
+    $ sudo workers/piblater_worker.py
+
+Note: running the workers as root might be necessary if GPIOs activated.
+You may also run the web application piremote via uwsgi without workers,
+however features implemented in the workers like party mode (auto append items to playlist) or file upload via usb won't work.
 
 Connect to http://YOUR_PI_HOST
 

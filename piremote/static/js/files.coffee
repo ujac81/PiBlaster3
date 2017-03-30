@@ -272,7 +272,7 @@ PiRemote.files_raise_add_dialog = ->
         ['invert', 'Invert Selection'],
         ['append', 'Append Selection'],
         ['insert', 'Insert Selection'],
-        ['append-itmes-other', 'Append Selection to another Playlist']
+        ['append-items-other', 'Append Selection to another Playlist']
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -325,7 +325,7 @@ PiRemote.do_files_action = (action, item=null, type='file') ->
     else if action == 'append-other'
         PiRemote.pl_append_items_to_playlist [item]
         d3.selectAll('tr.selectable').classed('selected', 0)
-    else if action == 'append-itmes-other'
+    else if action == 'append-items-other'
         sel = d3.selectAll('tr.'+type+'-item.selected')
         items = sel.data().map((d) -> d[5])
         PiRemote.pl_append_items_to_playlist items

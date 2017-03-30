@@ -183,6 +183,7 @@ PiRemote.build_browse_song = (data) ->
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').on 'click', (event) ->
         $(this).parent().toggleClass 'selected'
+
         return
 
     # single-click on action span toggles action dialog
@@ -327,3 +328,51 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
 
     return
 
+# Plus sign pressed in song browse mode.
+PiRemote.browse_raise_add_files_dialog = ->
+    d3.select('#smallModalLabel').html('File Actions')
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+    items = [
+        ['select-all', 'Select all'],
+        ['deselect-all', 'Deselect all'],
+        ['invert', 'Invert Selection'],
+        ['append', 'Append Selection'],
+        ['insert', 'Insert Selection'],
+        ['append-items-other', 'Append Selection to another Playlist']
+        ]
+    for elem in items
+        navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', elem[0])
+            .html(elem[1])
+
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        action =  $(this).data('action')
+        sel = d3.selectAll('tr.selectable.selected')
+        files = (x[0] for x in sel.data())
+        if action == 'select-all'
+            d3.selectAll('tr.selectable').classed('selected', 1)
+            $('#modalSmall').modal('hide')
+        else if action == 'deselect-all'
+            d3.selectAll('tr.selectable').classed('selected', 0)
+            $('#modalSmall').modal('hide')
+        else if action == 'invert-all'
+            d3.selectAll('tr.selectable').classed('selected', ()-> ! d3.select(this).classed('selected'))
+            $('#modalSmall').modal('hide')
+        else if action in ['append', 'insert']
+            PiRemote.pl_action action, '', files
+            sel.classed('selected', 0)
+            $('#modalSmall').modal('hide')
+        else if action == 'append-items-other'
+            PiRemote.pl_append_items_to_playlist files
+            sel.classed('selected', 0)
+        return
+
+    # Raise dialog.
+    $('#modalSmall').modal('show')
+    return

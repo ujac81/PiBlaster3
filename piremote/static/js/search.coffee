@@ -161,7 +161,7 @@ PiRemote.install_search_handlers = ->
 # Callback for add sign.
 PiRemote.search_raise_add_dialog = ->
     # browse actions are identical
-    PiRemote.browse_raise_add_dialog()
+    PiRemote.files_raise_add_dialog()
     return
 
 

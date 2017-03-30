@@ -41,20 +41,14 @@ PiRemote.setStatus = (text, error, fade) ->
     $('#footer').toggleClass('status', ! error)
 
     if text == ''
-        console.log 'OFF ZERO TEXT'
         $('#footer').fadeTo('fast', 0)
     else
-        console.log 'ON TEXT'
         $('#statusbar').html(text)
         $('#footer').fadeTo('fast', 1)
         window.setTimeout ( ->
             if text == $('#statusbar').html()
                 # text was not changed --> do fade out
                 $('#footer').fadeTo 'slow', 0
-                console.log 'OFF TIMER'
-            else
-                console.log 'OFF SKIP'
-                console.log [text, $('#statusbar').html()]
             return
             ), fade
 
