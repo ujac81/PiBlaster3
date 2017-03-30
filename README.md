@@ -157,8 +157,13 @@ Set DATABASES in PiBlaster3/settings.py to your settings
         }
     }
 
-Make sure all settings in PiBlaster3/settings_local.py are correct.
-Also make sure DEBUG is not set in your environment, otherwise the DEBUG to FALSE in settings.py.
+Create local settings
+
+    $ cp PiBlaster3/settings_piremote.py.example PiBlaster3/settings_piremote.py
+
+And update settings inside this file.
+
+Make sure DEBUG is not set in your environment, otherwise set DEBUG to FALSE in settings.py.
 
     $ cd /opt/PiBlaster3
     $ python3 manage.py migrate
@@ -173,9 +178,15 @@ If any errors occur here, fix them, or nothing will work.
     $ sudo ln -s /opt/PiBlaster3/conf/site-piblaster
     $ sudo service nginx restart
 
-## UWSGI
+## UWSGI and Worker
 
     $ sudo cp /opt/PiBlaster3/conf/piblaster.service /etc/systemd/system
+    $ sudo cp /opt/PiBlaster3/conf/piblaster.worker.service /etc/systemd/system
+
+    $ sudo systemctl daemon-reload
+
+    $ systemctl enable piblaster.service
+    $ systemctl enable piblaster.worker.service
 
 ## MPD
 Link directories to scan to mpd library and update it.

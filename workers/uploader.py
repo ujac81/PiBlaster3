@@ -1,19 +1,20 @@
-"""mpc_thread.py -- threaded upload worker
-
-"""
+"""uploader.py -- threaded upload worker or piremote"""
 
 import psycopg2
 import os
 import shutil
+import threading
 from time import sleep
 from mpd import MPDClient, ConnectionError, CommandError
 
-from .settings import *
+
+from PiBlaster3.settings import *
 
 
 class UploadIdler:
 
-    def __init__(self):
+    def __init__(self, main):
+        self.main = main
         self.upload_path = PB_UPLOAD_DIR
         self.upload_sources = PB_UPLOAD_SOURCES
         self.space_avail = None
@@ -31,7 +32,7 @@ class UploadIdler:
 
         got_file = True
         did_upload = False
-        while got_file:
+        while got_file and self.main.keep_run:
             cur.execute('''SELECT * FROM piremote_upload ORDER_BY(path) LIMIT 1''')
             res = cur.fetchone()
             if res is None:
@@ -132,6 +133,26 @@ class UploadIdler:
         self.client.update()
 
 
-def upload_idler():
-    ui = UploadIdler()
-    ui.check_for_uploads()
+class Uploader(threading.Thread):
+    """
+
+    """
+
+    def __init__(self, parent):
+        """
+
+        :param parent:
+        """
+        threading.Thread.__init__(self)
+        self.parent = parent
+
+    def run(self):
+        """
+
+        :return:
+        """
+        while self.parent.keep_run:
+            ui = UploadIdler(self.parent)
+            ui.check_for_uploads()
+            sleep(1)
+

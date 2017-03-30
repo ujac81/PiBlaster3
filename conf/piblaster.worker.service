@@ -1,0 +1,19 @@
+[Unit]
+Description=PiBlaster Worker Services
+After=syslog.target
+
+[Service]
+Type=simple
+User=pi
+Group=pi
+WorkingDirectory=/opt/PiBlaster3
+ExecStart=python3 workers/piblaster_worker.py
+SyslogIdentifier=PiWorker
+StandardOutput=syslog
+StandardError=syslog
+Restart=always
+RestartSec=3
+KillSignal=SIGTERM
+
+[Install]
+WantedBy=multi-user.target

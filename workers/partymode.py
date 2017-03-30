@@ -1,12 +1,11 @@
-"""mpc_thread.py -- threaded actions on playlist (like party mode).
-
-"""
+"""partymode.py -- threaded actions on playlist (like party mode)."""
 
 from mpd import MPDClient, ConnectionError, CommandError
 import psycopg2
 import random
+import threading
 from time import sleep
-from .settings import *
+from PiBlaster3.settings import *
 
 
 class MPC_Idler:
@@ -18,7 +17,7 @@ class MPC_Idler:
         self.connected = False
         random.seed()
 
-    def connect(self):
+    def reconnect(self):
         """Try to connect 5 times."""
         try:
             self.client.disconnect()
@@ -35,6 +34,15 @@ class MPC_Idler:
                 sleep(0.1)
                 pass
         return self.connected
+
+    def ensure_connected(self):
+        """make sure we are connected"""
+        for i in range(5):
+            try:
+                self.client.status()
+            except (ConnectionError, CommandError):
+                self.reconnect()
+                pass
 
     def idle(self):
         """Loop until mpd triggers an event (play, playlist, ...)"""
@@ -107,17 +115,54 @@ class MPC_Idler:
             for i in range(pos - party_remain):
                 self.client.delete(0)
 
+    def mpc_idle(self):
+        self.ensure_connected()
+        if self.connected:
+            res = self.client.idle()
+            self.check_party_mode(res)
 
-def mpc_idler():
-    mpc = MPC_Idler()
-    if not mpc.connect():
-        return
-    mpc.check_party_mode(mpc.idle())
+    def check_party_mode_init(self):
+        """
+
+        :return:
+        """
+        self.ensure_connected()
+        if self.connected:
+            self.check_party_mode(res=[], force=True)
 
 
-def mpc_check_party_mode_init():
-    mpc = MPC_Idler()
-    if not mpc.connect():
-        return
-    mpc.check_party_mode(res=[], force=True)
+class MPDService(threading.Thread):
+    """
+
+    """
+    def __init__(self, parent):
+        """
+
+        :param parent:
+        """
+        threading.Thread.__init__(self)
+        self.parent = parent
+        self.idler = MPC_Idler()
+
+    def run(self):
+        """
+
+        :return:
+        """
+        self.idler.check_party_mode_init()
+        while self.parent.keep_run:
+            self.idler.mpc_idle()
+
+    @staticmethod
+    def stop_idler():
+        """Connect to MPD and switch on/off repeat once to create an idler
+        event to give the idler loop the opportunity to exit normally.
+        """
+        client = MPDClient()
+        client.timeout = 10
+        client.connect('localhost', 6600)
+        rep = int(client.status()['repeat'])
+        client.repeat(1 if rep == 0 else 0)
+        sleep(0.1)
+        client.repeat(0 if rep == 0 else 1)
 

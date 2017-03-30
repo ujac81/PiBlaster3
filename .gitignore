@@ -97,3 +97,6 @@ piblaster3/static/COMPILED/
 static/CACHE/
 .sass-cache/
 piremote/static/CACHE/
+PiBlaster3/settings_piremote.py
+conf/hostapd.conf.new
+
