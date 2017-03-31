@@ -1,6 +1,6 @@
 """uploader.py -- threaded upload worker or piremote"""
 
-import psycopg2
+import sqlite3
 import os
 import shutil
 import threading
@@ -27,13 +27,13 @@ class UploadIdler:
         :return:
         """
         db = DATABASES['default']
-        conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
+        conn = sqlite3.connect(database=db['NAME'], timeout=15)
         cur = conn.cursor()
 
         got_file = True
         did_upload = False
         while got_file and self.main.keep_run:
-            cur.execute('''SELECT * FROM piremote_upload ORDER_BY(path) LIMIT 1''')
+            cur.execute('''SELECT * FROM piremote_upload ORDER BY path ASC LIMIT 1''')
             res = cur.fetchone()
             if res is None:
                 got_file = False
@@ -41,7 +41,7 @@ class UploadIdler:
                 remove = res[1]
                 if self.do_upload(remove):
                     did_upload = True
-                cur.execute("DELETE FROM piremote_upload WHERE \"path\" = %s", (remove,))
+                cur.execute("DELETE FROM piremote_upload WHERE path=(?)", (remove,))
                 conn.commit()
 
             sleep(0.1)  # don't block CPU too much if this thread goes insane here.
@@ -91,15 +91,17 @@ class UploadIdler:
         if not os.path.isdir(dirname):
             try:
                 os.makedirs(dirname)
-            except OSError:
+            except OSError as e:
                 print('MKDIR FAILED: '+dirname)
+                print("OSError: {0}".format(e))
                 return False
 
         # perform copy
         try:
             shutil.copy(filename, dest)
-        except IOError:
+        except IOError as e:
             print('COPY FAILED: ' + dest)
+            print("IOError: {0}".format(e))
             return False
 
         return True
@@ -153,6 +155,10 @@ class Uploader(threading.Thread):
         """
         while self.parent.keep_run:
             ui = UploadIdler(self.parent)
-            ui.check_for_uploads()
+            try:
+                ui.check_for_uploads()
+            except sqlite3.OperationalError as e:
+                print('SQLITE ERROR {0}'.format(e))
+                pass
             sleep(1)
 

@@ -79,6 +79,7 @@ PiRemote.pls_action = (cmd, plname, req={}) ->
     return
 
 
+# POST ajax/command like 'poweroff', 'update' or 'rescan'
 PiRemote.do_command = (cmd, payload=[]) ->
     PiRemote.do_ajax
         url: 'command'

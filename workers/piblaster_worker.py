@@ -49,6 +49,8 @@ class PiBlasterWorker:
 
             time.sleep(50. / 1000.)  # 50ms
 
+        print('LEAVING')
+
     def term_handler(self, *args):
         """ Signal handler to stop daemon loop"""
         self.keep_run = False

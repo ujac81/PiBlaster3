@@ -1,7 +1,7 @@
 """partymode.py -- threaded actions on playlist (like party mode)."""
 
 from mpd import MPDClient, ConnectionError, CommandError
-import psycopg2
+import sqlite3
 import random
 import threading
 from time import sleep
@@ -79,7 +79,7 @@ class MPC_Idler:
         party_remain = 10
 
         db = DATABASES['default']
-        conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
+        conn = sqlite3.connect(database=db['NAME'], timeout=15)
         cur = conn.cursor()
         cur.execute('''SELECT key, value FROM piremote_setting''')
         for row in cur.fetchall():
