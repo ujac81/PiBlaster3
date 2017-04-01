@@ -38,11 +38,12 @@ class Commands:
             p.wait()
             return {'cmd': cmd, 'ok': 1, 'status_str': 'Updating MPD database.'}
 
-        if cmd == 'rescan':
-            p = Popen('mpc rescan', shell=True, bufsize=1024,
-                      stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL,
-                      close_fds=True)
-            p.wait()
-            return {'cmd': cmd, 'ok': 1, 'status_str': 'Rescanning MPD database.'}
+        # Rescan no longer exists -- manually stop mpd, delete database and restart.
+        #if cmd == 'rescan':
+        #    p = Popen('mpc rescan', shell=True, bufsize=1024,
+        #              stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL,
+        #              close_fds=True)
+        #   p.wait()
+        #   return {'cmd': cmd, 'ok': 1, 'status_str': 'Rescanning MPD database.'}
 
         return {'cmd': cmd, 'error_str': 'Unknown command %s' % cmd}

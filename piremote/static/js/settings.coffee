@@ -42,7 +42,6 @@ PiRemote.settings_build_page = (settings) ->
     p = root.append('p').attr('class', 'settingsgroup')
     p.append('h4').attr('class','settingshead').html('Database')
     PiRemote.settings_add_button p, 'update', 'Update', 'Update'
-    PiRemote.settings_add_button p, 'rescan', 'Rescan', 'Rescan'
 
     $('button#button_update').off 'click'
     $('button#button_update').on 'click', ->
@@ -50,15 +49,6 @@ PiRemote.settings_build_page = (settings) ->
             title: 'Update DB?'
             confirmed: ->
                 PiRemote.do_command 'update'
-
-    $('button#button_rescan').off 'click'
-    $('button#button_rescan').on 'click', ->
-        PiRemote.confirm_dialog
-            title: 'Rescan DB?'
-            requirepw: 1
-            confirmed: ->
-                PiRemote.do_command 'rescan'
-
 
     p = root.append('p').attr('class', 'settingsgroup').attr('id', 'stats')
     p.append('h4').attr('class','settingshead').html('Statistics')

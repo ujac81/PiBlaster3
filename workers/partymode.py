@@ -149,9 +149,23 @@ class MPDService(threading.Thread):
 
         :return:
         """
-        self.idler.check_party_mode_init()
+        try:
+            self.idler.check_party_mode_init()
+        except (ConnectionError, CommandError) as e:
+            print('MPD INIT ERROR')
+            print(e)
+        except sqlite3.OperationalError as e:
+            print('SQLITE ERROR {0}'.format(e))
+
         while self.parent.keep_run:
-            self.idler.mpc_idle()
+            try:
+                self.idler.mpc_idle()
+            except (ConnectionError, CommandError) as e:
+                print('MPD ERROR')
+                print(e)
+                sleep(1)
+            except sqlite3.OperationalError as e:
+                print('SQLITE ERROR {0}'.format(e))
 
     @staticmethod
     def stop_idler():
