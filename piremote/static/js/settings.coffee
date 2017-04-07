@@ -1,6 +1,6 @@
 # settings.coffee -- build settings page
 
-
+# AJAX receive settings from SQL and invoke build page callback.
 PiRemote.load_settings_page = ->
 
     PiRemote.do_ajax
@@ -15,6 +15,7 @@ PiRemote.load_settings_page = ->
     return
 
 
+# Callback for AJAX GET /piremote/ajax/settings --> build settings page.
 PiRemote.settings_build_page = (settings) ->
 
     root = d3.select('.piremote-content')
@@ -70,6 +71,7 @@ PiRemote.settings_build_page = (settings) ->
     return
 
 
+# Add checkbox to settings view.
 PiRemote.settings_add_check_box = (root, key, value, text) ->
 
     d = root.append('div').attr('class', 'setting')
@@ -89,6 +91,7 @@ PiRemote.settings_add_check_box = (root, key, value, text) ->
     return
 
 
+# Add spin box to settings view.
 PiRemote.settings_add_spin_box = (root, key, value, text, min, max) ->
 
     d = root.append('div').attr('class', 'setting')
@@ -110,6 +113,8 @@ PiRemote.settings_add_spin_box = (root, key, value, text, min, max) ->
         return
     return
 
+
+# Add button to settings view.
 PiRemote.settings_add_button = (root, key, text, button_text) ->
 
     d = root.append('div').attr('class', 'setting')
@@ -123,14 +128,16 @@ PiRemote.settings_add_button = (root, key, text, button_text) ->
 
     return
 
-PiRemote.settings_add_text = (root, text, value) ->
 
+# Add text label to settings view.
+PiRemote.settings_add_text = (root, text, value) ->
     d = root.append('div').attr('class', 'setting')
     d.append('div').attr('class', 'slabel').html(text)
     d.append('div').attr('class', 'svalue').html(value)
-
     return
 
+
+# Setter callback.
 PiRemote.settings_set = (key, value) ->
     PiRemote.do_ajax
         url: 'set'

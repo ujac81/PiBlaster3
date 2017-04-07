@@ -216,8 +216,8 @@ PiRemote.search_raise_info_dialog = (file) ->
                 $(document).off 'click', 'span.browse-span'
                 $(document).on 'click', 'span.browse-span', () ->
                     $('#modalSmall').modal('hide')
-                    PiRemote.last_browse = $(this).data('dirname')
-                    PiRemote.load_page 'browse'
+                    PiRemote.last_files = $(this).data('dirname')
+                    PiRemote.load_page 'files'
                     return
 
 

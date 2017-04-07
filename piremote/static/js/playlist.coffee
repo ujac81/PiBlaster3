@@ -1,5 +1,6 @@
 # playlist.coffee -- install callbacks for playlist view
 
+
 # Build playlist page.
 # Loaded via PiRemote.load_page('playlist') every time 'Playlist' is selected in menu
 PiRemote.load_playlist_page = ->
@@ -47,6 +48,7 @@ PiRemote.pl_build_home = ->
 
     PiRemote.get_playlist()
     return
+
 
 # Load list of playlists
 PiRemote.pl_build_load_playlist = ->
@@ -321,7 +323,6 @@ PiRemote.install_pl_handlers = ->
         setTimeout ( ->
             if $this.data('mousedown') == true  # prevent too short hold time
                 PiRemote.pl_raise_drag_element event, $this
-                # TODO: invert selection state of the element
             return
         ), 1000  # <-- click and hold timeout
         return
@@ -434,12 +435,12 @@ PiRemote.resize_pl_position_indicator = ->
             $('#plpos').width w - 2
     return
 
+
 # Set position fill in position slider (percentage value required).
 PiRemote.pl_set_position_indicator = (pct) ->
     pct_set = 100-pct
     pct_set = 0 if pct_set < 0
     pct_set = 100 if pct_set > 100
-
     $('#plposfill').css('right', pct_set+'%')
     return
 
@@ -734,6 +735,7 @@ PiRemote.pl_rebuild_playlist_list = (data) ->
 
     return
 
+
 # Callback for action dots pressed on item in playlists list.
 PiRemote.pl_raise_playlist_list_actions = (plname) ->
 
@@ -891,6 +893,7 @@ PiRemote.rebuild_edit_playlist = (data) ->
         PiRemote.pl_raise_edit_add_dialog()
         return
     return
+
 
 # Action dots clicked in playlist edit mode
 PiRemote.pl_raise_edit_action_dialog = (file, title, pos) ->

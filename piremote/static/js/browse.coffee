@@ -8,7 +8,6 @@ PiRemote.load_browse_page = ->
     PiRemote.add_navbar_button 'browse_left', 'chevron-left', true, false
     PiRemote.add_navbar_button 'browse_right', 'chevron-right', true, false
 
-
     $('button#navbutton_browse_left').off 'click'
     $('button#navbutton_browse_left').on 'click', ->
         if PiRemote.browse_current_page_index > 0
@@ -23,7 +22,6 @@ PiRemote.load_browse_page = ->
         PiRemote.do_browse PiRemote.select_classes[PiRemote.browse_current_page_index]
         return
 
-
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'browse-list')
     bl.append('h3').attr('id', 'browse-head')
@@ -35,6 +33,7 @@ PiRemote.load_browse_page = ->
     else
         PiRemote.do_browse 'date'
     return
+
 
 # AJAX GET of mpd.list(....) filtered by preceding categories
 PiRemote.do_browse = (what) ->
@@ -73,6 +72,7 @@ PiRemote.do_browse = (what) ->
             return
 
     return
+
 
 # Build table result from all categories except 'song'
 PiRemote.build_browse = (data) ->
@@ -126,7 +126,6 @@ PiRemote.build_browse = (data) ->
             PiRemote.selected[mode] = {'All': true}
             return
 
-
         # any other item clicked -- check if deselect all or select all if selection empty
 
         tr.toggleClass 'selected'
@@ -151,6 +150,7 @@ PiRemote.build_browse = (data) ->
 
     window.scrollTo 0, 0
     return
+
 
 # Build table result for category 'song'
 # Per element actions enabled for song display and menu options differ for song display.
@@ -183,7 +183,6 @@ PiRemote.build_browse_song = (data) ->
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').on 'click', (event) ->
         $(this).parent().toggleClass 'selected'
-
         return
 
     # single-click on action span toggles action dialog
@@ -193,7 +192,6 @@ PiRemote.build_browse_song = (data) ->
         d = PiRemote.last_browse.browse[i]
         PiRemote.raise_file_actions d[1], d[0]
         return
-
 
     $('#addsign').show()
     $('#addsign').off 'click'
@@ -206,6 +204,7 @@ PiRemote.build_browse_song = (data) ->
 
     window.scrollTo 0, 0
     return
+
 
 # Callback for press on '+' sign.
 # Raise selection actions dialog.
@@ -238,6 +237,8 @@ PiRemote.browse_raise_add_dialog = ->
     $('#modalSmall').modal('show')
     return
 
+
+# Callback for action dialog in browse.
 PiRemote.do_browse_action = (mode, action) ->
 
     title = PiRemote.select_class_names[PiRemote.browse_current_page_index]
@@ -305,8 +306,7 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
         for mode in PiRemote.select_classes
             selected_lists[mode] = []
             for key, val of PiRemote.selected[mode]
-                if val
-                    selected_lists[mode].push key
+                selected_lists[mode].push key if val
 
         PiRemote.do_ajax
             url: 'seedbrowse'
@@ -325,8 +325,8 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
 
         return
 
-
     return
+
 
 # Plus sign pressed in song browse mode.
 PiRemote.browse_raise_add_files_dialog = ->
