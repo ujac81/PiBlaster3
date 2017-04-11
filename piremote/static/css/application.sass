@@ -1,11 +1,15 @@
+// application.sass -- CSS settings for piremote app.
+// Sass file compressed by compressor.
 
-
+// paddings in tables.
 $horiz-pad: 5px
 $vert-pad: 3px
 
+// font sizes in tables.
 $normal-font-size: small
 $small-font-size: smaller
 
+////////////////// GLOBAL //////////////////
 
 html
     position: relative
@@ -14,15 +18,12 @@ html
 body
     // navbar height
     padding-top: 55px
-    // footer height
-    // margin-bottom: 40px
 
 body.search
     padding-top: 100px
 
 #basecont
     padding: 0px
-
 
 p.error
     color: red
@@ -86,9 +87,6 @@ audio
     top: 50%
     display: none
     font-size: $normal-font-size
-
-
-
 
 ////////////////// INDEX //////////////////
 
@@ -296,7 +294,6 @@ tr.pls-item td.pls-col-2
 
 ////////////////// PLAYLIST EDIT //////////////////
 
-
 // all td
 tr.pledit-item td
     padding: $vert-pad $horiz-pad
@@ -337,7 +334,6 @@ table#tbpledit tr.selected
     margin: 0
     padding: 0
     vertical-align: middle
-
 
 table#searchbar tr td
     font-size: medium
@@ -407,7 +403,6 @@ table#tbsearch tr.selected
     color: white
 
 
-
 ////////////////// DIALOGS //////////////////
 
 p.confirmpassword
@@ -466,8 +461,6 @@ p.sliders
     text-align: center
     vertical-align: middle
     min-width: 100%
-
-
 
 table.sliders
     padding: 20px
@@ -532,7 +525,6 @@ table.uptable td.upsubmit
 
 table.uptable td.upsubmit input
     display: block
-
 
 table#tbupload
     table-layout: fixed

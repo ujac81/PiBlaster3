@@ -22,14 +22,15 @@ $ ->
 
     # Disable polling while focus is lost.
     # Load blur page on focus loss and reload page on focus return.
-# TODO renable for release
-#    $(window).blur ->
-#        PiRemote.safe_page = PiRemote.current_page
-#        PiRemote.load_page 'blur'
-#        return
-#    $(window).focus ->
-#        PiRemote.load_page PiRemote.safe_page
-#        return
+    unless PiRemote.debug
+        $(window).blur ->
+            PiRemote.safe_page = PiRemote.current_page
+            PiRemote.safe_sub_page = PiRemote.current_sub_page
+            PiRemote.load_page 'blur'
+            return
+        $(window).focus ->
+            PiRemote.load_page PiRemote.safe_page, PiRemote.safe_sub_page
+            return
 
     # Clear modal dialog after hide.
     # This ensures that embedded audio player is stopped.

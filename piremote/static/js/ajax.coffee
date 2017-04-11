@@ -4,6 +4,7 @@
 # Loaded via base.pug
 
 # Disable caching for AJAX -- required for safari browser
+# TODO: safari still not working....
 PiRemote.ajax_setup = ->
 
     $.ajaxSetup

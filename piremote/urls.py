@@ -1,3 +1,9 @@
+"""urls.py -- routes for piremote application.
+
+Routes beginning with ajax/ should be accessed via AJAX only.
+Response will be JSON for all ajax methods.
+"""
+
 from django.conf.urls import url
 
 from . import views

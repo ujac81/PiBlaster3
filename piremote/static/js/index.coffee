@@ -11,7 +11,6 @@ PiRemote.load_index_page = ->
     PiRemote.add_navbar_button 'index_volume', 'volume-up', true
     PiRemote.add_navbar_button 'index_equalizer', 'equalizer', true
 
-
     # build main content for current sub page.
     if PiRemote.current_sub_page == 'index_volume'
         PiRemote.index_build_volume()
@@ -204,6 +203,13 @@ PiRemote.install_index_actions = ->
                 return
 
         return
+
+    $('#idxshow').off 'click'
+    $('#idxshow').on 'click', ->
+        if PiRemote.last_index_data isnt null and PiRemote.last_index_data.file and PiRemote.last_index_data.file isnt ''
+            PiRemote.search_raise_info_dialog PiRemote.last_index_data.file
+        return
+
     return
 
 
@@ -281,22 +287,25 @@ PiRemote.set_position = (pct) ->
 # Set content (album, artist, ...) of all elements, set position slider and update buttons.
 PiRemote.update_status = (data) ->
 
+    PiRemote.last_index_data = data
+
     # TITLE, ARTIST, ALBUM
-    if (data.title)
-        $('h2#idxtitle').html(data.title)
-    if (data.artist)
-        $('h3#idxartist').html(data.artist)
+    $('h2#idxtitle').html(if (data.title) then data.title else '&nbsp;')
+    $('h3#idxartist').html(if (data.artist) then data.artist else 'Unknown Artist')
+    album = '&nbsp;'
     if (data.album)
         album = data.album
         if (data.date) and (data.date != '')
             album += ' ('+data.date+')'
-        $('h4#idxalbum').html(album)
+    $('h4#idxalbum').html(album)
 
     # TIME
     if (data.time) and (data.elapsed)
         pct = 100.0 * parseFloat(data.elapsed) / parseFloat(data.time)
         PiRemote.set_position pct
         $('h5#idxtime').html(PiRemote.secToMin(data.elapsed)+' / '+PiRemote.secToMin(data.time))
+    else
+        PiRemote.set_position 0
 
     # BUTTONS
     d3.select('span#playpause').classed('glyphicon-play', data.state != 'play')

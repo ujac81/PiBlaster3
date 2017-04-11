@@ -1,5 +1,10 @@
+"""views.py -- process GET and POST requests via django.
+
+Invoked via urls.py
+"""
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.template import loader
+from django.conf import settings
 import json
 
 from PiBlaster3.alsa import AlsaMixer
@@ -11,24 +16,31 @@ from .models import Setting, Upload
 from .forms import UploadForm
 
 
-# GET /
-# We only have one get for the main page.
-# Sub pages are dynamical loaded via AJAX and inner page content is rebuilt by d3.js.
 def index(request):
+    """GET /
+    We only have one get for the main page.
+    Sub pages are dynamical loaded via AJAX and inner page content is rebuilt by d3.js.
+    """
     template = loader.get_template('piremote/index.pug')
-    return HttpResponse(template.render({'page': 'index'}, request))
+    context = dict(page='index', debug=1 if settings.DEBUG else 0)
+    return HttpResponse(template.render(context, request))
 
 
-# GET /pages/(PAGE)
-# We only have one get for the main page.
-# Sub pages are dynamical loaded via AJAX and inner page content is rebuilt by d3.js.
 def pages(request, page):
+    """GET /pages/(PAGE)
+    We only have one get for the main page.
+    Sub pages are dynamical loaded via AJAX and inner page content is rebuilt by d3.js.
+    """
     template = loader.get_template('piremote/index.pug')
-    return HttpResponse(template.render({'page': page}, request))
+    context = dict(page=page, debug=1 if settings.DEBUG else 0)
+    return HttpResponse(template.render(context, request))
 
 
-# POST /ajax/browse/
 def browse_ajax(request):
+    """POST /ajax/browse/
+    List directories from MPD lsinfo.
+    :return: JSON only -- use with ajax!
+    """
     dirname = request.POST.get('dirname', None)
     if dirname is not None:
         mpc = MPC()
@@ -38,21 +50,30 @@ def browse_ajax(request):
     return JsonResponse({})
 
 
-# GET /ajax/status/
 def status_ajax(request):
+    """GET /ajax/status/
+    Status data from MPD (status + currentsong)
+    :return: JSON only -- use with ajax!
+    """
     mpc = MPC()
     return JsonResponse(mpc.get_status_data())
 
 
-# POST /ajax/cmd/
 def cmd_ajax(request):
+    """POST /ajax/cmd/
+    Perform command for MPD (playpause, next, volinc, ....)
+    :return: JSON only -- use with ajax!
+    """
     cmd = request.POST.get('cmd', None)
     mpc = MPC()
     return JsonResponse(mpc.exec_command(cmd))
 
 
-# POST /ajax/plaction/
 def plaction_ajax(request):
+    """POST /ajax/plaction/
+    Perform action on one playlist.
+    :return: JSON only -- use with ajax!
+    """
     cmd = request.POST.get('cmd', None)
     plname = request.POST.get('plname', '')
     items = request.POST.getlist('list[]', [])
@@ -60,8 +81,11 @@ def plaction_ajax(request):
     return JsonResponse({'status_str': mpc.playlist_action(cmd, plname, items)})
 
 
-# POST /ajax/plsaction/
 def plsaction_ajax(request):
+    """POST /ajax/plsaction/
+    Perform action on list of playlists.
+    :return: JSON only -- use with ajax!
+    """
     cmd = request.POST.get('cmd', None)
     plname = request.POST.get('plname', '')
     payload = request.POST.getlist('payload[]', [])
@@ -69,76 +93,109 @@ def plsaction_ajax(request):
     return JsonResponse(mpc.playlists_action(cmd, plname, payload))
 
 
-# GET /ajax/plinfo/
 def plinfo_ajax(request):
+    """GET /ajax/plinfo/
+    Get current playlist (detailed list).
+    :return: JSON only -- use with ajax!
+    """
     mpc = MPC()
     return JsonResponse({'pl': mpc.playlistinfo(0, -1), 'status': mpc.get_status_data()})
 
 
-# GET /ajax/plshortinfo/
 def plshortinfo_ajax(request):
+    """GET /ajax/plshortinfo/
+    Get items of stored playlist (fewer data than current playlist)
+    :return: JSON only -- use with ajax!
+    """
     plname = request.GET.get('plname', '')
     mpc = MPC()
     return JsonResponse({'pl': mpc.playlistinfo_by_name(plname), 'plname': plname})
 
 
-# GET /ajax/plinfo/POSITION
 def plinfo_id_ajax(request, id):
+    """GET /ajax/plinfo/POSITION
+    Get detailed information about specific playlist item.
+    :return: JSON only -- use with ajax!
+    """
     mpc = MPC()
     return JsonResponse({'result': mpc.playlistinfo_full(id)})
 
 
-# GET /ajax/plchanges/
 def plchanges_ajax(request):
+    """GET /ajax/plchanges/
+    Get list of changes in playlist since version N.
+    :return: JSON only -- use with ajax!
+    """
     version = request.GET.get('version', None)
     mpc = MPC()
     return JsonResponse({'pl': mpc.playlist_changes(version), 'status': mpc.get_status_data()})
 
 
-# POST /ajax/search/
 def search_ajax(request):
+    """POST /ajax/search/
+    Perform search for pattern.
+    :return: JSON only -- use with ajax!
+    """
     search = request.POST.get('pattern', None)
     mpc = MPC()
     return JsonResponse(mpc.search_file(search))
 
 
-# POST /ajax/fileinfo/
 def file_info_ajax(request):
+    """POST /ajax/fileinfo/
+    Get detailed info by filename.
+    :return: JSON only -- use with ajax!
+    """
     file = request.GET.get('file', None)
     mpc = MPC()
     return JsonResponse({'info': mpc.file_info(file)})
 
 
-# POST /ajax/command/
 def command_ajax(request):
+    """POST /ajax/command/
+    Perform command like 'shutdown' or 'updatedb'
+    :return: JSON only -- use with ajax!
+    """
     cmd = request.POST.get('cmd', None)
     payload = request.POST.getlist('payload[]', [])
     commands = Commands()
     return JsonResponse(commands.perform_command(cmd, payload))
 
 
-# GET /ajax/settings/
 def settings_ajax(request):
+    """GET /ajax/settings/
+    Get settings list from database.
+    :return: JSON only -- use with ajax!
+    """
     payload = request.GET.getlist('payload[]', [])
     return JsonResponse(Setting.get_settings(payload))
 
 
-# POST /ajax/set/
 def set_ajax(request):
+    """POST /ajax/set/
+    Set settings value in database.
+    :return: JSON only -- use with ajax!
+    """
     key = request.POST.get('key', '')
     value = request.POST.get('value', '')
     return JsonResponse(Setting.set_setting(key, value))
 
 
-# GET /ajax/mixer/
 def mixer_ajax(request):
+    """GET /ajax/mixer/
+    Get mixer channels and values for specific class.
+    :return: JSON only -- use with ajax!
+    """
     mixer_class = request.GET.get('class')
     mixer = AlsaMixer()
     return JsonResponse(mixer.get_channel_data(mixer_class))
 
 
-# POST /ajax/mixerset/
 def mixerset_ajax(request):
+    """POST /ajax/mixerset/
+    Set specific mixer value.
+    :return: JSON only -- use with ajax!
+    """
     mixer_class = request.POST.get('class')
     mixer_channel = int(request.POST.get('channel'))
     mixer_value = int(request.POST.get('value'))
@@ -146,8 +203,11 @@ def mixerset_ajax(request):
     return JsonResponse(mixer.set_channel_data(mixer_class, mixer_channel, mixer_value))
 
 
-# POST /upload
 def upload(request):
+    """POST /upload
+    Handle file upload form.
+    :return: upload page including status message about successful upload.
+    """
     if request.method == 'POST':
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
@@ -163,8 +223,11 @@ def upload(request):
         return HttpResponseRedirect('/piremote/pages/upload')
 
 
-# POST /ajax/upload/
 def upload_ajax(request):
+    """POST /ajax/upload/
+    Browse USB flash drives for uploadable content.
+    :return: JSON only -- use with ajax!
+    """
     if Upload.has_uploads():
         return JsonResponse({'uploads': Upload.get_uploads()})
 
@@ -175,8 +238,11 @@ def upload_ajax(request):
     return JsonResponse({})
 
 
-# POST /ajax/doupload/
 def doupload_ajax(request):
+    """POST /ajax/doupload/
+    Enqueue file/dir uploads from USB flash drive to database.
+    :return: JSON only -- use with ajax!
+    """
     paths = request.POST.getlist('paths[]', [])
     if paths is not None:
         up = Uploader()
@@ -184,14 +250,20 @@ def doupload_ajax(request):
     return JsonResponse({})
 
 
-# GET /ajax/stats/
 def stats_ajax(request):
+    """POST /ajax/stats/
+    Get statistics for settings view.
+    :return: JSON only -- use with ajax!
+    """
     mpc = MPC()
     return JsonResponse({'stats': mpc.get_stats()})
 
 
-# GET /ajax/list
 def list_ajax(request):
+    """GET /ajax/list
+    List items for browse by tags
+    :return: JSON only -- use with ajax!
+    """
     what = request.GET.get('what', '')
     dates = request.GET.getlist('dates[]', [])
     genres = request.GET.getlist('genres[]', [])
@@ -203,8 +275,11 @@ def list_ajax(request):
     return JsonResponse(context)
 
 
-# POST /ajax/seedbrowse
 def seed_browse_ajax(request):
+    """POST /ajax/seedbrowse
+    Perform seed to playlist by selection from browse by tags.
+    :return: JSON only -- use with ajax!
+    """
     what = request.POST.get('what', '')
     count = int(request.POST.get('count', ''))
     plname = request.POST.get('plname', '')

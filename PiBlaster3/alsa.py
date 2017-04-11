@@ -1,5 +1,6 @@
 """alsa.py -- access to volume mixers and equalizer
 
+Communicate with alsa audio mixer and equalizer via amixer command.
 """
 
 import re
@@ -10,8 +11,7 @@ from .mpc import MPC
 
 
 class AlsaMixer:
-    """Control alsa mixer master channel and equalizer plugin if found.
-    """
+    """Control alsa mixer master channel and equalizer plugin if found."""
 
     def __init__(self):
         """Get names of equalizer channels if such.
@@ -20,10 +20,10 @@ class AlsaMixer:
         self.volume_channels = settings.PB_ALSA_CHANNELS
 
     def get_amixer_volume(self, item):
-        """
+        """Return volume retrieved from amixer -M get ITEM output.
 
-        :param item:
-        :return:
+        :param item: channel string like 'Master' or 'Channel'. See `alsamixer'
+        :return: {name: item, value: Volume int in [0, 100]}
         """
         res = {'name': item}
         cmd = ['amixer', '-M', 'get', "\"%s\"" % item]
@@ -38,9 +38,9 @@ class AlsaMixer:
         return res
 
     def get_volume_vals(self):
-        """
+        """Return all volume values for all channels in PB_ALSA_CHANNELS list.
 
-        :return:
+        :return: [{name: item1, value: volume1}, ....]
         """
         mpc = MPC()
         res = [{'name': 'Player', 'value': mpc.get_status_int('volume')}]
@@ -49,11 +49,11 @@ class AlsaMixer:
         return res
 
     def set_volume_val(self, mixer_id, val):
-        """
+        """Set mapped volume value for mixer item
 
-        :param id:
-        :param val:
-        :return:
+        :param mixer_id: index in PB_ALSA_CHANNELS from settings (+1 for mpd client)
+        :param val: integer value in [0, 100]
+        :return: set volume value in [0, 100]
         """
         if mixer_id == 0:
             mpc = MPC()
@@ -122,10 +122,10 @@ class AlsaMixer:
         return 0
 
     def get_channel_data(self, mixer_class):
-        """
+        """Get full data for all volumes or all equalizer values.
 
-        :param mixer_class:
-        :return:
+        :param mixer_class: 'volume' or 'equalizer'
+        :return: {data: [{name: mixer, value: 100}, ...]}
         """
         if mixer_class == 'volume':
             return {'ok': 1, 'data': self.get_volume_vals()}
@@ -135,12 +135,12 @@ class AlsaMixer:
         return {'error_str': 'No such mixer class %s' % mixer_class}
 
     def set_channel_data(self, mixer_class, chan_id, value):
-        """
+        """Set volume value for equalizer or mixer.
 
-        :param mixer_class:
-        :param chan_id:
-        :param value:
-        :return:
+        :param mixer_class: 'equalizer' or 'volume'
+        :param chan_id: index in channel name list.
+        :param value: Integer value in [0, 100]
+        :return: {status_str='some text', channel_index=N, value=M}
         """
         val = 0
         if mixer_class == 'equalizer':

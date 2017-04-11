@@ -67,7 +67,6 @@ PiRemote.do_browse = (what) ->
             artists: selected_lists['artist']
             albums: selected_lists['album']
         success: (data) ->
-            PiRemote.last_browse = data
             PiRemote.build_browse data
             return
 
@@ -76,6 +75,8 @@ PiRemote.do_browse = (what) ->
 
 # Build table result from all categories except 'song'
 PiRemote.build_browse = (data) ->
+
+    PiRemote.last_browse = data
 
     mode = data.what
     title = PiRemote.select_class_names[PiRemote.browse_current_page_index]

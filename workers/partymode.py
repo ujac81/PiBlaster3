@@ -116,38 +116,37 @@ class MPC_Idler:
                 self.client.delete(0)
 
     def mpc_idle(self):
+        """Idle until event received from MPD.
+        Note: this is blocking. To break this loop, toggle some switch on MPD.
+        """
         self.ensure_connected()
         if self.connected:
             res = self.client.idle()
             self.check_party_mode(res)
 
     def check_party_mode_init(self):
-        """
-
-        :return:
-        """
+        """Check if seed playlist uppon start."""
         self.ensure_connected()
         if self.connected:
             self.check_party_mode(res=[], force=True)
 
 
 class MPDService(threading.Thread):
-    """
+    """Threaded mpd communicator service.
 
+    Idle until something happens and check if random add songs (party mode)
     """
     def __init__(self, parent):
-        """
-
-        :param parent:
-        """
+        """Keep reference to PiBlasterWorker to know when to leave."""
         threading.Thread.__init__(self)
         self.parent = parent
         self.idler = MPC_Idler()
 
     def run(self):
-        """
+        """Daemon loop for MPD service.
+        Idle until any MPD event occurs and check if to do anything.
 
-        :return:
+        NOTE: You should be sure to catch all exceptions or the MPD service thread will be dead forever.
         """
         try:
             self.idler.check_party_mode_init()

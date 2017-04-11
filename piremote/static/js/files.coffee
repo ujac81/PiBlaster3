@@ -4,7 +4,6 @@
 # Loaded via PiRemote.load_page('files') every time 'Files' is selected in menu
 PiRemote.load_files_page = ->
 
-
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'browse-list')
     tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')
@@ -17,7 +16,6 @@ PiRemote.load_files_page = ->
         return
 
     PiRemote.do_files PiRemote.last_files
-
     return
 
 
@@ -232,7 +230,6 @@ PiRemote.raise_dir_dialog = (element) ->
         $('#modalSmall').modal('hide')
         return
 
-
     navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
     items = [
         ['append-item', 'Append Directory'],
@@ -251,7 +248,6 @@ PiRemote.raise_dir_dialog = (element) ->
     $(document).on 'click', 'span.browse-action-dir', () ->
         PiRemote.do_files_action $(this).data('action'), $(this).data('item'), 'dir'
         return
-
 
     # Raise dialog.
     $('#modalSmall').modal()
@@ -340,7 +336,4 @@ PiRemote.do_files_action = (action, item=null, type='file') ->
                 PiRemote.pl_edit_name = data
                 PiRemote.pl_raise_seed_dialog item
                 return
-
     return
-
-

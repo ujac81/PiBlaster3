@@ -2,33 +2,33 @@
 
 window.PiRemote = {}
 
+PiRemote.poll_started = false  # true while polling in main view
+PiRemote.polling = 0  # current poll index in main view (>0, do not poll again)
 
-PiRemote.poll_started = false
-PiRemote.polling = 0
+PiRemote.playlist_poll_started = false  # true while polling in playlist view
+PiRemote.playlist_polling = false  # true if active poll in playlist view
 
+PiRemote.last_index_data = null  # store received data in index view.
 
-PiRemote.playlist_poll_started = false
-PiRemote.playlist_polling = false
-
-PiRemote.last_status = ''
-PiRemote.current_page = 'index'  # overwritten on load by script in index.pug
-PiRemote.current_sub_page = 'home'
+PiRemote.last_status = ''  # store status bar text for fade-out
+PiRemote.current_page = 'index'  # selected view from menu (PiRemote.load_page)
+PiRemote.current_sub_page = 'home'  # selected sub-view from buttons
 PiRemote.safe_page = 'index'  # safe last active page while blurring
-PiRemote.last_files = ''
-PiRemote.last_upload = ''
+PiRemote.last_files = ''  # remember path in browse files view
+PiRemote.last_upload = ''  # remember path in upload view
 
-PiRemote.last_pl_id = '-1'
-PiRemote.last_pl_version = '-1'
+PiRemote.last_pl_id = '-1'  # id of last played song (move position indicator if changed)
+PiRemote.last_pl_version = '-1'  # version id of last transmitted playlist (req. update if changed)
 PiRemote.pl_edit_name = ''  # name of playlist in edit mode (='' if no edit)
 
-PiRemote.last_search = ''
-PiRemote.last_search_data = []
+PiRemote.last_search = ''  # remember last search pattern
+PiRemote.last_search_data = []  # keep data of last search
 
 PiRemote.select_classes = ['date', 'genre', 'artist', 'album', 'song']
 PiRemote.select_class_names = ['Year', 'Genre', 'Artist', 'Album', 'Files']
-PiRemote.selected = {}
-PiRemote.browse_current_page_index = 0
-PiRemote.last_browse = null
+PiRemote.selected = {}  # per class array of selected items
+PiRemote.browse_current_page_index = 0  # current class index in browse by tag
+PiRemote.last_browse = null  # last received data in browse by tag
 
 PiRemote.dragging = false  # true while element is dragged in playlist
 
@@ -69,33 +69,25 @@ PiRemote.setErrorText = (text, fade=5000) ->
 
 # Convert seconds to string like 3:02
 PiRemote.secToMin = (secs) ->
-    res = ''
-
-    minutes = Math.floor(parseInt(secs)/60)
     seconds = parseInt(secs) % 60
+    res = '' + Math.floor(parseInt(secs)/60) + ':'
+    res += '0' if seconds < 10
+    res + seconds
 
-    res += minutes + ':'
-    if seconds < 10
-        res += '0'
-    res += seconds
-    res
 
-# Convert seconds to string like 3:02
+# Convert seconds to string like 1:03:02
 PiRemote.secToHMS = (secs) ->
-    res = ''
 
     hours = Math.floor(parseInt(secs)/3600)
     minutes = Math.floor((parseInt(secs)-3600*hours)/60)
     seconds = parseInt(secs) % 60
 
-    res += hours + ":"
-    if minutes < 10
-        res += "0"
+    res = '' + hours + ":"
+    res += "0" if minutes < 10
     res += minutes + ':'
-    if seconds < 10
-        res += '0'
-    res += seconds
-    res
+    res += '0' if seconds < 10
+    res = seconds
+
 
 # Calculate font width for string element.
 String::width = (font_size) ->
@@ -152,7 +144,6 @@ PiRemote.confirm_dialog = (req) ->
     if need_pw
         cont.append('p').attr('class', 'confirmpassword')
             .append('input').attr('type', 'text').attr('id', 'confirmpw').attr('placeholder', 'Confirm Password')
-
 
     cont.append('p').attr('id', 'confirminfo')
 

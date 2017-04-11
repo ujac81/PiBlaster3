@@ -1,3 +1,6 @@
+"""mpc.py -- interface between AJAX request in views and MPDClient.
+
+"""
 
 from mpd import MPDClient, ConnectionError, CommandError
 import os
@@ -160,14 +163,20 @@ class MPC:
                   volume: percentage
                   state: ['playing', 'stopped', 'paused']
                   playlist: VERSION-NUMBER
-                  playlistlength: N}
+                  playlistlength: N
+                  file: local/Mp3/...../file.mp3
+                  }
         """
         status = self.get_status()
         current = self.get_currentsong()
         data = {}
-        data['title'] = current['title'] if 'title' in current else current['file']
+        if 'title' in current:
+            data['title'] = current['title']
+        else:
+            no_ext = os.path.splitext(current['file'])[0]
+            data['title'] = os.path.basename(no_ext).replace('_', ' ')
         data['time'] = current['time'] if 'time' in current else 0
-        for key in ['album', 'artist', 'date', 'id']:
+        for key in ['album', 'artist', 'date', 'id', 'file']:
             data[key] = current[key] if key in current else ''
         for key in ['elapsed', 'random', 'repeat', 'volume', 'state', 'playlist', 'playlistlength']:
             data[key] = status[key] if key in status else '0'
@@ -746,6 +755,10 @@ class MPC:
         artists = [] if len(in_artists) == 1 and in_artists[0] == 'All' else in_artists
         albums = [] if len(in_albums) == 1 and in_albums[0] == 'All' else in_albums
 
+        # Build hierarchical filter classes.
+        # Hierarchy is date->genre->artist->album->song
+        # Only add filter if what category is above itself.
+        # E.g. artist filter will only apply for album and song listings.
         filters = {}
         if what in ['genre', 'artist', 'album', 'song'] and len(dates) > 0:
             filters['date'] = dates
@@ -759,13 +772,16 @@ class MPC:
 
         res = []
         if len(filter_keys) == 0:
+            # Zero filters installed -- return full database.
             res = self.client.list(seek)
         elif len(filter_keys) == 1:
+            # One filter type installed, collect all results for one filter.
             key = filter_keys[0]
             vals = filters[key]
             for val in vals:
                 res += self.client.list(seek, key, val)
         elif len(filter_keys) == 2:
+            # 2 filter types installed, collect all combinations of results for 2 filters.
             key1 = filter_keys[0]
             vals1 = filters[key1]
             key2 = filter_keys[1]
@@ -774,6 +790,7 @@ class MPC:
                 for val2 in vals2:
                     res += self.client.list(seek, key1, val1, key2, val2)
         elif len(filter_keys) == 3:
+            # 3 filter types installed, collect all combinations of results for 3 filters.
             key1 = filter_keys[0]
             vals1 = filters[key1]
             key2 = filter_keys[1]
@@ -785,6 +802,9 @@ class MPC:
                     for val3 in vals3:
                         res += self.client.list(seek, key1, val1, key2, val2, key3, val3)
         elif len(filter_keys) == 4:
+            # 4 filter types installed, collect all combinations of results for 4 filters.
+            # NOTE: this might be slow, but no better idea so far.
+            # Possible solution: cache possible combinations in database.
             key1 = filter_keys[0]
             vals1 = filters[key1]
             key2 = filter_keys[1]

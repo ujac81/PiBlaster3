@@ -942,9 +942,6 @@ PiRemote.pl_raise_edit_action_dialog = (file, title, pos) ->
     return
 
 
-    return
-
-
 # Plus sign pressed in edit mode
 PiRemote.pl_raise_edit_add_dialog = ->
 

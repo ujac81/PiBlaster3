@@ -39,6 +39,7 @@ PiRemote.load_upload_page = ->
 
     return
 
+
 # Callback for upload file button on top.
 PiRemote.up_upload_file = ->
 
@@ -73,6 +74,7 @@ PiRemote.up_upload_file = ->
 
     $('#modalSmall').modal('show')
     return
+
 
 # AJAX get of browse list.
 PiRemote.upload_browse = (dir) ->
@@ -178,6 +180,7 @@ PiRemote.rebuild_upload = (data) ->
     return
 
 
+# Raise modal dialog by click add sign.
 PiRemote.upload_raise_add_dialog = ->
 
     d3.select('#smallModalLabel').html('File Actions')
@@ -200,6 +203,7 @@ PiRemote.upload_raise_add_dialog = ->
     return
 
 
+# Raise modal dialog by click on dir item actions.
 PiRemote.up_dir_dialog = (item) ->
 
     d3.select('#smallModalLabel').html('Directory Actions')
@@ -224,6 +228,7 @@ PiRemote.up_dir_dialog = (item) ->
     return
 
 
+# Raise modal dialog by click on file item actions.
 PiRemote.up_file_dialog = (item) ->
 
     d3.select('#smallModalLabel').html('Directory Actions')
@@ -249,6 +254,7 @@ PiRemote.up_file_dialog = (item) ->
     return
 
 
+# Callback for any action in upload view (dots clicked or else).
 PiRemote.up_do_action = (action, item=null) ->
 
     items = []
@@ -264,17 +270,16 @@ PiRemote.up_do_action = (action, item=null) ->
         data:
             paths: items
 
-
     $('#modalSmall').modal('hide')
     return
 
 
+# Display pending uploads if found in database.
+# No interaction, user has to wait until uploads finished.
+# Uploads performed by uploader thread.
 PiRemote.pending_uploads = (data) ->
-
     d3.select('#upload-message').append('p').html('There are pending uploads. Please wait until uploads are finished. Reload this page to see if uploads are finished.')
     d3.select('#upload-message').append('p').append('strong').html('List of pending uploads:')
     ol = d3.select('#upload-message').append('ol')
     ol.selectAll('li').data(data.uploads).enter().append('li').html((d)->d)
-
-
     return

@@ -3,7 +3,7 @@
 
 Enable party mode for music player daemon, perform uploads, read/write GPIOs.
 
-Communication to piremote app via PostgreSQL database
+Communication to piremote app via SQL database
 
 @Author Ulrich Jansen <ulrich.jansen@rwth-aachen.de>
 """
@@ -21,19 +21,13 @@ class PiBlasterWorker:
     """Worker daemon for piremote"""
 
     def __init__(self):
-        """
-
-        :return:
-        """
+        """Create uploader and mpd service threads."""
         self.keep_run = True  # run daemon as long as True
         self.uploader = Uploader(self)
         self.idler = MPDService(self)
 
     def run(self):
-        """
-
-        :return:
-        """
+        """daemonize, start threads and enter daemon loop."""
         self.daemonize()
         self.uploader.start()
         self.idler.start()
@@ -41,10 +35,7 @@ class PiBlasterWorker:
         MPDService.stop_idler()
 
     def daemon_loop(self):
-        """
-
-        :return:
-        """
+        """Empty loop, idle until terminated."""
         while self.keep_run:
 
             time.sleep(50. / 1000.)  # 50ms

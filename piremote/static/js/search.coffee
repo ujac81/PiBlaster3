@@ -32,9 +32,7 @@ PiRemote.load_search_page = ->
         PiRemote.do_search $('input#searchfield').val()
         return
 
-
     PiRemote.search_rebuild PiRemote.last_search_data
-
     return
 
 
@@ -121,19 +119,12 @@ PiRemote.search_rebuild = (data) ->
         .classed('selectable', (d, i) -> i != 3 and i != 0)
         .html((d)->d)
 
-
     $('#addsign').show()
     $('#addsign').off 'click'
     $('#addsign').on 'click', ->
-        PiRemote.search_raise_add_dialog()
+        # browse actions are identical
+        PiRemote.files_raise_add_dialog()
         return
-
-    PiRemote.install_search_handlers()
-
-    return
-
-# (Re)install event handlers for items in search list
-PiRemote.install_search_handlers = ->
 
     # single-click on selectable items toggles select
     $('table#tbsearch > tbody > tr.selectable > td > table > tr > td.selectable').off 'click'
@@ -155,13 +146,6 @@ PiRemote.install_search_handlers = ->
         PiRemote.search_raise_info_dialog file
         return
 
-    return
-
-
-# Callback for add sign.
-PiRemote.search_raise_add_dialog = ->
-    # browse actions are identical
-    PiRemote.files_raise_add_dialog()
     return
 
 

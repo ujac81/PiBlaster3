@@ -1,3 +1,7 @@
+"""translate_genre.py -- Keep all_genres dict for numeric genre entries.
+
+Information gathered somewhere from wikipedia or else -- search for IDEv1 and genres.
+"""
 
 
 def all_genres():

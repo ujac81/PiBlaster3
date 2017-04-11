@@ -1,6 +1,16 @@
 //-
     index.pug -- PiBlaster 3 Remote landing page
 
+    Whole content is built dynamically inside div.piremote-content via javascript using
+    data from AJAX GET/POST.
+
+    If everything works correctly this page has only be loaded once.
+    Page needs to be reloaded if AJAX errors occur.
+
+    For release mode, all javascript/css files have to be compressed. Call
+    $ ./manage.py compress --extension=pug
+    to compress files for offline mode (release mode, no recompile on every page call).
+
 -load compress
 !!!5
 html(lang="en")
@@ -31,12 +41,17 @@ html(lang="en")
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/search.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/settings.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/upload.coffee')
+        //-
+            Load last
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/application.coffee')
         -endcompress
-        //- support for /piremote/pages/PAGENAME
-        //- index view will set page to 'index'
+        //-
+            Dynamic content via python
+            - support for /piremote/pages/PAGENAME
+            - index view will set page to 'index'
         script.
             PiRemote.current_page = "{{page}}";
+            PiRemote.debug = {{debug}};
         -if upload
             -autoescape off
                 script.
@@ -52,7 +67,8 @@ html(lang="en")
                         span.icon-bar
                         span.icon-bar
                         span.icon-bar
-                    a.navbar-brand(href='/piremote') PiBlaster
+                    //- a.navbar-brand(href='/piremote') PiBlaster
+                    a.navbar-brand(href='#', data-toggle='menu', data-action='index') PiBlaster
                     #button-line
 
                 //-
@@ -82,6 +98,9 @@ html(lang="en")
                         li
                             a(href='#', data-toggle='menu', data-action='settings') Settings
 
+        //-
+            modal dialog overlay from bootstrap.
+            Content set dynamically via javascript.
         #modalSmall.modal.fade.bs-example-modal-sm(tabindex="-1", role="dialog", aria-labelledby="smallModalLabel", aria-hidden="true")
           .modal-dialog.modal-sm
             .modal-content
@@ -96,12 +115,18 @@ html(lang="en")
             .piremote-content
                 //- content here built via PiRemote.load_page()
 
+        //-
+            hidden by default, raised for pages with add action.
         #adddiv
             span#addsign.glyphicon.glyphicon-plus-sign
 
+        //-
+            draggable item in playlist view.
         #dragdiv
             p#dragp
 
+        //-
+            Status bar -- fade in/out via javascipt.
         #footer
             .container-fluid
                 p#statusbar

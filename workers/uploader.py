@@ -7,13 +7,20 @@ import threading
 from time import sleep
 from mpd import MPDClient, ConnectionError, CommandError
 
-
 from PiBlaster3.settings import *
 
 
 class UploadIdler:
+    """Worker for Uploader thread.
+
+     Includes check_for_uploads() routine which performs all the work if any uploads to be performed.
+    """
 
     def __init__(self, main):
+        """Keep reference to main object to leave uploader loop.
+
+        :param main: PiBlasterWorker instance.
+        """
         self.main = main
         self.upload_path = PB_UPLOAD_DIR
         self.upload_sources = PB_UPLOAD_SOURCES
@@ -22,9 +29,14 @@ class UploadIdler:
         self.connected = False
 
     def check_for_uploads(self):
-        """
+        """Check if any uploadable files added to database.
+        Upload them if such, return if not.
+        Leave check loop if keep_run set to False in PiBlasterWorker.
+        Remove uploaded files from database.
+        Invoke MPD update if any uploads performed.
 
-        :return:
+        Note: Concurrent access to sqlite3 database is safe if database is stored on local device.
+        (file locks might fail on network file systems).
         """
         db = DATABASES['default']
         conn = sqlite3.connect(database=db['NAME'], timeout=15)
@@ -54,9 +66,12 @@ class UploadIdler:
         return
 
     def do_upload(self, filename):
-        """
+        """Check if file can be uploaded and perform upload.
 
-        :param filename:
+        Remove leading entry from PB_UPLOAD_SOURCES settings from filename.
+        Add PB_UPLOAD_DIR to destination file name.
+
+        :param filename: full path of file to be uploaded.
         :return: True if file uploaded
         """
 
@@ -125,10 +140,7 @@ class UploadIdler:
         return self.connected
 
     def mpd_update(self):
-        """
-
-        :return:
-        """
+        """Invoke mpd update if any file uploaded."""
         self.client = MPDClient()
         if not self.mpd_connect():
             return
@@ -136,22 +148,24 @@ class UploadIdler:
 
 
 class Uploader(threading.Thread):
-    """
+    """Threaded worker for uploads.
 
+    Performs file uploads if filenames added to upload table in database.
     """
 
     def __init__(self, parent):
-        """
-
-        :param parent:
+        """Keep reference to PiBlasterWorker to know when to leave.
+        :param parent: PiBlasterWorker
         """
         threading.Thread.__init__(self)
         self.parent = parent
 
     def run(self):
-        """
+        """Endless thread loop until PiBlasterWorker leaves.
 
-        :return:
+        Create UploadIdler() and check if it wants to upload anything.
+
+        Note: make sure this thread does not throw uncaught exceptions, or upload thread will be dead.
         """
         while self.parent.keep_run:
             ui = UploadIdler(self.parent)
@@ -161,4 +175,3 @@ class Uploader(threading.Thread):
                 print('SQLITE ERROR {0}'.format(e))
                 pass
             sleep(1)
-

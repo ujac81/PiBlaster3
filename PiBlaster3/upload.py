@@ -1,4 +1,6 @@
+"""upload.py -- backend for upload from USB flash drive or direct file upload via browser.
 
+"""
 import os
 import re
 from django.conf import settings
@@ -8,22 +10,20 @@ from piremote.models import Upload
 
 
 class Uploader:
-    """
-
+    """Perform upload files, list USB flash drive and queue uploads.
     """
 
     def __init__(self):
-        """
-
-        """
+        """Fetch settings."""
         self.upload_dir = settings.PB_UPLOAD_DIR
 
     def upload_file(self, uploader, name, f):
-        """
+        """File upload posted to /upload
 
-        :param uploader:
-        :param f:
-        :return:
+        :param uploader: some name for the upload directory (might be user name or whatever)
+        :param name: filename
+        :param f: file data
+        :return: {status_str: 'some status string'}
         """
         up_dir = os.path.join(self.upload_dir, uploader)
         if os.path.exists(up_dir) and not os.path.isdir(up_dir):
@@ -42,13 +42,15 @@ class Uploader:
         mpc = MPC()
         mpc.update_database()
 
-        return {'status_str': 'File %s uploaded to folder %s.' % (name, uploader)}
+        return {'status_str': 'File %s uploaded to folder %s.' % (name.name, uploader)}
 
     def list_dir(self, path):
-        """
+        """Browse directories in PB_UPLOAD_SOURCES for uploadable files.
 
-        :param path:
-        :return:
+        :param path: directory to list.
+        :return: {dirname=path,
+                  res=[['dir', dirname, path],  ...., ['file', filename, path, extension]]
+                 }
         """
         path = re.sub(r"/$", '', path.replace('//', '/'))
 
@@ -72,7 +74,7 @@ class Uploader:
         dirs = [d for d in listing if os.path.isdir(os.path.join(path, d))]
         files = [f for f in listing
                  if os.path.isfile(os.path.join(path, f))
-                 and f.endswith(('.mp3', '.flac', '.ogg', '.wma', '.wav'))]
+                 and f.endswith(('.mp3', '.flac', '.ogg', '.wma', '.wav', '.mp4', '.m4a', '.mpc'))]
 
         res = []
         for d in sorted(dirs):
@@ -84,9 +86,11 @@ class Uploader:
         return dict(dirname=path, browse=res)
 
     def add_to_uploads(self, up_list):
-        """
+        """Queue items into upload table.
 
-        :return:
+        Upload worker will retrieve items from this table and perform the upload.
+
+        :return: some status string about the amount of files added for upload.
         """
 
         if len(up_list) == 0:

@@ -1,5 +1,4 @@
 """commands.py -- perform commands like shutdown, check password, etc.
-
 """
 
 from subprocess import Popen, PIPE, DEVNULL
