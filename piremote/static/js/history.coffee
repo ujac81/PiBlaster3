@@ -60,6 +60,7 @@ PiRemote.hist_update_table = (data) ->
             PiRemote.do_history $(this).data('mode')
             return
 
+        $('#addsign').hide()
     else
         # Build history data for specific date.
 
@@ -68,27 +69,39 @@ PiRemote.hist_update_table = (data) ->
         d3.select('tbody#hist').selectAll('tr')
             .data(data.history, (d) -> d).enter()
             .append('tr')
-            .attr('class', 'histitem')
+            .attr('class', 'file-item selectable histitem')
             .attr('data-title', (d) -> d[1])
-            .attr('data-file', (d) -> d[2])
+            .attr('data-file', (d) -> d[5])
             .selectAll('td')
             .data((d) -> [d[0], d[1], action_span]).enter()
             .append('td')
                 .attr('class', (d, i) -> 'hist-td'+i)
-                .classed('histinfo', (d, i) -> i < 2)
-                .classed('histaction', (d, i) -> i == 2)
                 .html((d) -> d)
 
         # click on first to columns should raise file info
-        $('div.hist-list > table > tbody > tr.histitem > td.histinfo').off 'click'
-        $('div.hist-list > table > tbody > tr.histitem > td.histinfo').on 'click', (event) ->
+        $('div.hist-list > table > tbody > tr.histitem > td.hist-td0').off 'click'
+        $('div.hist-list > table > tbody > tr.histitem > td.hist-td0').on 'click', (event) ->
             PiRemote.search_raise_info_dialog $(this).parent().data('file')
             return
 
+        # click on title should select
+        $('div.hist-list > table > tbody > tr.histitem > td.hist-td1').off 'click'
+        $('div.hist-list > table > tbody > tr.histitem > td.hist-td1').on 'click', (event) ->
+            $(this).parent().toggleClass 'selected'
+            return
+
         # click on action column should raise add/insert dialog
-        $('div.hist-list > table > tbody > tr.histitem > td.histaction').off 'click'
-        $('div.hist-list > table > tbody > tr.histitem > td.histaction').on 'click', (event) ->
+        $('div.hist-list > table > tbody > tr.histitem > td.hist-td2').off 'click'
+        $('div.hist-list > table > tbody > tr.histitem > td.hist-td2').on 'click', (event) ->
             PiRemote.raise_file_actions $(this).parent().data('title'), $(this).parent().data('file')
             return
 
+        $('#addsign').show()
+        $('#addsign').off 'click'
+        $('#addsign').on 'click', ->
+            # browse actions are identical
+            PiRemote.files_raise_add_dialog()
+            return
+
     return
+

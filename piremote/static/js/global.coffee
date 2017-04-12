@@ -32,6 +32,9 @@ PiRemote.last_browse = null  # last received data in browse by tag
 
 PiRemote.dragging = false  # true while element is dragged in playlist
 
+PiRemote.tot_poll_count = 0  # enforce reload if polled too much
+PiRemote.enforce_reload_poll_count = 1000  # if polled this much, reload
+
 
 # Fade in status bar, set text and start fade out timer.
 # NOTE: If you are using differing fade times, the fade-out might not work

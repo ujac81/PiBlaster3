@@ -142,7 +142,8 @@ class History(models.Model):
 
         date = datetime.datetime.strptime(mode, '%Y-%m-%d').date()
         q = History.objects.filter(time__year=date.year).filter(time__month=date.month).filter(time__day=date.day).order_by('time')
-        return [[i.time.strftime('%H:%M'), i.title, i.path] for i in q]
+        # put dummies on position 3 and 4 to have file item at position 5.
+        return [[i.time.strftime('%H:%M'), i.title, None, None, None, i.path] for i in q]
 
     @staticmethod
     def update_history_times(diff):
