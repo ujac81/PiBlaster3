@@ -2,6 +2,8 @@
 
 # Run on document.ready event.
 $ ->
+    PiRemote.init_variables()
+
     # Build selection classes
     for item in PiRemote.select_classes
         PiRemote.selected[item] = {'All': true, 'Unknown': false}
@@ -58,6 +60,9 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
     # return if page == PiRemote.current_page && ! force
     PiRemote.current_page = page
     PiRemote.current_sub_page = sub_page
+
+    # Reset max poll counter for enforced page reloads.
+    PiRemote.tot_poll_count = 0
 
     # remove page specific classes from body
     $('body').removeClass()

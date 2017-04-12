@@ -230,6 +230,14 @@ PiRemote.do_status_poll = ->
     return if PiRemote.polling
     return if PiRemote.current_page != 'index'
 
+    PiRemote.tot_poll_count += 1
+    if PiRemote.tot_poll_count > PiRemote.enforce_reload_poll_count
+        console.log PiRemote.tot_poll_count
+        PiRemote.setErrorText 'Reached max poll count, reload enforced!'
+        PiRemote.init_variables()
+        location.reload true
+        return
+
     # Remember last poll send time
     PiRemote.last_poll_time = new Date().getTime()
 
@@ -243,10 +251,10 @@ PiRemote.do_status_poll = ->
                 window.setTimeout ( ->
                     PiRemote.polling = false
                     now = new Date().getTime()
-                    if (now-PiRemote.last_poll_time > 500)
+                    if (now-PiRemote.last_poll_time > PiRemote.poll_interval_min)
                         # Assume two polling loops if time is too short.
                         PiRemote.do_status_poll()
-                ), 1000  # <-- short polling interval
+                ), PiRemote.poll_interval  # <-- short polling interval
                 return
     return
 

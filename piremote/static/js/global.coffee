@@ -2,38 +2,45 @@
 
 window.PiRemote = {}
 
-PiRemote.poll_started = false  # true while polling in main view
-PiRemote.polling = 0  # current poll index in main view (>0, do not poll again)
+PiRemote.init_variables = ->
 
-PiRemote.playlist_poll_started = false  # true while polling in playlist view
-PiRemote.playlist_polling = false  # true if active poll in playlist view
+    PiRemote.poll_started = false  # true while polling in main view
+    PiRemote.polling = 0  # current poll index in main view (>0, do not poll again)
 
-PiRemote.last_index_data = null  # store received data in index view.
+    PiRemote.playlist_poll_started = false  # true while polling in playlist view
+    PiRemote.playlist_polling = false  # true if active poll in playlist view
 
-PiRemote.last_status = ''  # store status bar text for fade-out
-PiRemote.current_page = 'index'  # selected view from menu (PiRemote.load_page)
-PiRemote.current_sub_page = 'home'  # selected sub-view from buttons
-PiRemote.safe_page = 'index'  # safe last active page while blurring
-PiRemote.last_files = ''  # remember path in browse files view
-PiRemote.last_upload = ''  # remember path in upload view
+    PiRemote.last_index_data = null  # store received data in index view.
 
-PiRemote.last_pl_id = '-1'  # id of last played song (move position indicator if changed)
-PiRemote.last_pl_version = '-1'  # version id of last transmitted playlist (req. update if changed)
-PiRemote.pl_edit_name = ''  # name of playlist in edit mode (='' if no edit)
+    PiRemote.last_status = ''  # store status bar text for fade-out
+    PiRemote.current_page = 'index'  # selected view from menu (PiRemote.load_page)
+    PiRemote.current_sub_page = 'home'  # selected sub-view from buttons
+    PiRemote.safe_page = 'index'  # safe last active page while blurring
+    PiRemote.last_files = ''  # remember path in browse files view
+    PiRemote.last_upload = ''  # remember path in upload view
 
-PiRemote.last_search = ''  # remember last search pattern
-PiRemote.last_search_data = []  # keep data of last search
+    PiRemote.last_pl_id = '-1'  # id of last played song (move position indicator if changed)
+    PiRemote.last_pl_version = '-1'  # version id of last transmitted playlist (req. update if changed)
+    PiRemote.pl_edit_name = ''  # name of playlist in edit mode (='' if no edit)
 
-PiRemote.select_classes = ['date', 'genre', 'artist', 'album', 'song']
-PiRemote.select_class_names = ['Year', 'Genre', 'Artist', 'Album', 'Files']
-PiRemote.selected = {}  # per class array of selected items
-PiRemote.browse_current_page_index = 0  # current class index in browse by tag
-PiRemote.last_browse = null  # last received data in browse by tag
+    PiRemote.last_search = ''  # remember last search pattern
+    PiRemote.last_search_data = []  # keep data of last search
 
-PiRemote.dragging = false  # true while element is dragged in playlist
+    PiRemote.select_classes = ['date', 'genre', 'artist', 'album', 'song']
+    PiRemote.select_class_names = ['Year', 'Genre', 'Artist', 'Album', 'Files']
+    PiRemote.selected = {}  # per class array of selected items
+    PiRemote.browse_current_page_index = 0  # current class index in browse by tag
+    PiRemote.last_browse = null  # last received data in browse by tag
 
-PiRemote.tot_poll_count = 0  # enforce reload if polled too much
-PiRemote.enforce_reload_poll_count = 1000  # if polled this much, reload
+    PiRemote.dragging = false  # true while element is dragged in playlist
+
+    PiRemote.tot_poll_count = 0  # enforce reload if polled too much
+    PiRemote.enforce_reload_poll_count = 2000  # if polled this much, reload
+
+    PiRemote.poll_interval = 1000  # poll interval in ms
+    PiRemote.poll_interval_min = 500  # prevent polling if last poll time smaller than this
+
+    return
 
 
 # Fade in status bar, set text and start fade out timer.
