@@ -6,7 +6,7 @@ DO NOT OVERWRITE DJANGO SETTINGS HERE
 """
 
 # input required for confirm dialogs (delete playlist, etc)
-PB_CONFIRM_PASSWORD = 'ullipw'
+PB_CONFIRM_PASSWORD = 'ulli'
 
 # Directory to store uploaded files inside.
 # Make sure this one is scanned by MPD or songs won't appear in player.
@@ -20,11 +20,15 @@ PB_ALSA_SUDO_PREFIX = ''
 # use channel names in alsamixer
 PB_ALSA_CHANNELS = ['Master']
 
-
 # List of directories to use as upload source.
 # If automount is installed for raspbian, this should be like (/media/usb0, /media/usb1, ...)
 PB_UPLOAD_SOURCES = ['/mnt/usb', '/local']
 
-
+# Config file for WiFi access point -- WPA passphrase and SSID changed here.
 PB_HOSTAPD_FILE = '/opt/PiBlaster3/conf/hostapd.conf'
 
+# Valid extensions for upload browser.
+PB_MEDIA_EXT = ('.mp3', '.flac', '.ogg', '.wma', '.wav', '.mp4', '.m4a', '.mpc')
+
+# Set this to true if you want to set the system time via client time
+PB_SET_TIME = False

@@ -6,7 +6,6 @@ If changes applied here, run
 """
 
 from django.db import models
-from django.db.models import Q
 from django.conf import settings
 
 import datetime
@@ -145,8 +144,19 @@ class History(models.Model):
         q = History.objects.filter(time__year=date.year).filter(time__month=date.month).filter(time__day=date.day).order_by('time')
         return [[i.time.strftime('%H:%M'), i.title, i.path] for i in q]
 
+    @staticmethod
+    def update_history_times(diff):
+        """Apply time diff to history item and flag as updated.
 
+        This is necessary if the player device is started with an unknown clock state.
+        The history will start recording with unset local hardware clock and updated=False flag.
+        Upon first load of the main page the system time will be set to the time transmitted by the client.
 
-
-
-
+        :param diff: client time - localtime
+        """
+        q = History.objects.filter(updated=False)
+        for item in q:
+            delta = datetime.timedelta(seconds=diff)
+            item.time += delta
+            item.updated = True
+            item.save()

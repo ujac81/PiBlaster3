@@ -38,14 +38,12 @@ PiRemote.load_search_page = ->
 
 # Perform search via AJAX POST
 PiRemote.do_search = (pattern) ->
-
     PiRemote.last_search = pattern
-
     PiRemote.do_ajax
         url: 'search'
         method: 'POST'
         data:
-            'pattern': pattern
+            pattern: pattern
         success: (data) ->
             PiRemote.search_rebuild data  # <-- rebuild table callback
             return
@@ -204,7 +202,6 @@ PiRemote.search_raise_info_dialog = (file) ->
                     PiRemote.last_files = $(this).data('dirname')
                     PiRemote.load_page 'files'
                     return
-
 
                 p = cont.append('p')
                 audio = p.append('audio').attr('controls', 'controls')
