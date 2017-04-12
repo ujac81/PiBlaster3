@@ -28,7 +28,8 @@ class PiBlasterWorker:
 
     def run(self):
         """daemonize, start threads and enter daemon loop."""
-        self.daemonize()
+        if not DEBUG:
+            self.daemonize()
         self.uploader.start()
         self.idler.start()
         self.daemon_loop()

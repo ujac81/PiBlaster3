@@ -561,8 +561,6 @@ PiRemote.pl_do_action = (action, id=-1) ->
         PiRemote.pl_raise_clear_dialog()
     else if action == 'seed'
         PiRemote.pl_raise_seed_dialog()
-    else
-        console.log 'TODO '+action
 
     return
 

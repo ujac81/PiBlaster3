@@ -1,6 +1,7 @@
 """partymode.py -- threaded actions on playlist (like party mode)."""
 
 from mpd import MPDClient, ConnectionError, CommandError
+import datetime
 import sqlite3
 import random
 import threading
@@ -15,6 +16,7 @@ class MPC_Idler:
         self.client = MPDClient()
         self.client.timeout = 10
         self.connected = False
+        self.last_file = None
         random.seed()
 
     def reconnect(self):
@@ -120,15 +122,59 @@ class MPC_Idler:
         Note: this is blocking. To break this loop, toggle some switch on MPD.
         """
         self.ensure_connected()
+        res = ['']
         if self.connected:
             res = self.client.idle()
             self.check_party_mode(res)
+
+        if 'player' not in res:
+            return
+
+        # Check if playing and file changed --> insert into history if so.
+        state = self.client.status()
+        cur = self.client.currentsong()
+        if 'state' in state and state['state'] == 'play':
+            file = cur['file']
+            if file != self.last_file:
+                self.last_file = file
+                if 'artist' in cur and 'title' in cur:
+                    title = '%s - %s' % (cur['artist'], cur['title'])
+                elif 'title' in cur:
+                    title = cur['title']
+                else:
+                    no_ext = os.path.splitext(file)[0]
+                    title = os.path.basename(no_ext).replace('_', ' ')
+                self.insert_into_history(file, title)
 
     def check_party_mode_init(self):
         """Check if seed playlist uppon start."""
         self.ensure_connected()
         if self.connected:
             self.check_party_mode(res=[], force=True)
+
+    def insert_into_history(self, file, title):
+        """Insert song into history for current time.
+
+        :param file: file information from MPD
+        :param title: artist - title or filename without extension
+        """
+        db = DATABASES['default']
+        conn = sqlite3.connect(database=db['NAME'], timeout=15)
+        cur = conn.cursor()
+        # 1st read updated status from settings table.
+        # Non-updated rows need to be fixed if clock is not set correctly.
+        # Fixing is done via piremote/commands when time is set via client.
+        cur.execute('''SELECT value FROM piremote_setting WHERE key=?''', ('time_updated', ))
+        updated = False
+        row = cur.fetchone()
+        if row is not None:
+            updated = row[0] == '1'
+        now = datetime.datetime.now()
+        cur.execute('''INSERT INTO piremote_history (title, path, time, updated) VALUES (?,?,?,?)''',
+                    (title, file, now, updated,))
+        conn.commit()
+        cur.close()
+        conn.close()
 
 
 class MPDService(threading.Thread):

@@ -51,6 +51,7 @@ PiRemote.do_search = (pattern) ->
             return
     return
 
+
 # Callback for AJAX POST on /piremote/ajax/search.
 # Rebuild results table
 PiRemote.search_rebuild = (data) ->

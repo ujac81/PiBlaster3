@@ -1,6 +1,8 @@
 """commands.py -- perform commands like shutdown, check password, etc.
 """
 
+import time
+
 from subprocess import Popen, PIPE, DEVNULL
 from django.conf import settings
 
@@ -36,6 +38,22 @@ class Commands:
                       close_fds=True)
             p.wait()
             return {'cmd': cmd, 'ok': 1, 'status_str': 'Updating MPD database.'}
+
+        if cmd == 'settime':
+            t = int(int(payload[0])/1000)
+            local = time.mktime(time.localtime())
+            diff = t - local
+
+            if abs(diff) > 60:
+                # adjust clock time
+                date = time.strftime('%d %b %Y %H:%M:%S', time.localtime(1491985767))
+                p = Popen('sudo /bin/date -s "%s"' % date, shell=True, bufsize=1024,
+                          stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL,
+                          close_fds=True)
+                p.wait()
+                return {'cmd': cmd, 'ok': 1, 'status_str': 'Internal clock adjusted by %d seconds' % diff}
+
+            return {'cmd': cmd, 'ok': 1}
 
         # Rescan no longer exists -- manually stop mpd, delete database and restart.
         #if cmd == 'rescan':

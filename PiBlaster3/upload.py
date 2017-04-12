@@ -74,7 +74,7 @@ class Uploader:
         dirs = [d for d in listing if os.path.isdir(os.path.join(path, d))]
         files = [f for f in listing
                  if os.path.isfile(os.path.join(path, f))
-                 and f.endswith(('.mp3', '.flac', '.ogg', '.wma', '.wav', '.mp4', '.m4a', '.mpc'))]
+                 and f.lower().endswith(settings.PB_MEDIA_EXT)]
 
         res = []
         for d in sorted(dirs):

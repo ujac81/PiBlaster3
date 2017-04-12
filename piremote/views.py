@@ -5,6 +5,7 @@ Invoked via urls.py
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.template import loader
 from django.conf import settings
+import datetime
 import json
 
 from PiBlaster3.alsa import AlsaMixer
@@ -12,7 +13,7 @@ from PiBlaster3.commands import Commands
 from PiBlaster3.mpc import MPC
 from PiBlaster3.upload import Uploader
 
-from .models import Setting, Upload
+from .models import Setting, Upload, History
 from .forms import UploadForm
 
 
@@ -159,6 +160,8 @@ def command_ajax(request):
     cmd = request.POST.get('cmd', None)
     payload = request.POST.getlist('payload[]', [])
     commands = Commands()
+    if cmd == 'settime':
+        Setting.set_setting('time_updated', '1')
     return JsonResponse(commands.perform_command(cmd, payload))
 
 
@@ -289,3 +292,16 @@ def seed_browse_ajax(request):
     albums = request.POST.getlist('albums[]', [])
     mpc = MPC()
     return JsonResponse({'status_str': mpc.seed_by(count, plname, what, dates, genres, artists, albums)})
+
+
+def history_ajax(request):
+    """GET /ajax/history
+
+    :param request:
+    :return:
+    """
+    mode = request.GET.get('mode')
+    title = 'Player History'
+    if mode != 'dates':
+        title = datetime.datetime.strptime(mode, '%Y-%m-%d').strftime('%A %d %B %Y')
+    return JsonResponse({'history': History.get_history(mode), 'mode': mode, 'title': title})

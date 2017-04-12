@@ -33,5 +33,6 @@ urlpatterns = [
     url(r'^ajax/stats/$', views.stats_ajax, name='stats_ajax'),
     url(r'^ajax/list/$', views.list_ajax, name='list_ajax'),
     url(r'^ajax/seedbrowse/$', views.seed_browse_ajax, name='seed_browse_ajax'),
+    url(r'^ajax/history/$', views.history_ajax, name='history_ajax'),
 ]
 

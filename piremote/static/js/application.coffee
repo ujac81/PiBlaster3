@@ -9,6 +9,15 @@ $ ->
     # disable caching for AJAX
     PiRemote.ajax_setup()
 
+    # Send current system time to backend.
+    # Raspberry PI might need a time signal to set its internal clock.
+    PiRemote.do_ajax
+        url: 'command'
+        method: 'POST'
+        data:
+            cmd: 'settime'
+            payload: [new Date().getTime()]
+
     # Top menu action -- invoke load_page() on data-action value.
     $(document).off 'click', 'a[data-toggle="menu"]'
     $(document).on 'click', 'a[data-toggle="menu"]', (event) ->
@@ -68,6 +77,8 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
         PiRemote.load_playlist_page()
     else if page == 'search'
         PiRemote.load_search_page()
+    else if page == 'history'
+        PiRemote.load_history_page()
     else if page == 'settings'
         PiRemote.load_settings_page()
     else if page == 'upload'
