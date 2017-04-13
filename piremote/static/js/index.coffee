@@ -342,7 +342,6 @@ PiRemote.index_update_time = ->
             PiRemote.index_update_time()
         return
     ), 1000
-
     return
 
 

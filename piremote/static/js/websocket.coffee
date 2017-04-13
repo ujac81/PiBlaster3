@@ -12,6 +12,8 @@ PiRemote.install_websocket = ->
         PiRemote.use_short_polling = false
         if PiRemote.current_page == 'index' and PiRemote.current_sub_page == 'home'
             PiRemote.index_refresh_status()
+        else if PiRemote.current_page == 'playlist' and PiRemote.current_sub_page == 'home'
+            PiRemote.pl_refresh_status()
         return
 
     # Send data to index or playlist page -- ignore otherwise.
@@ -19,6 +21,9 @@ PiRemote.install_websocket = ->
         if PiRemote.current_page == 'index' and PiRemote.current_sub_page == 'home'
             data = JSON.parse e.data
             PiRemote.update_status data
+        else if PiRemote.current_page == 'playlist' and PiRemote.current_sub_page == 'home'
+            data = JSON.parse e.data
+            PiRemote.update_pl_status data
         return
 
     # On any websocket error switch back to short polling.

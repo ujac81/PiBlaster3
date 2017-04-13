@@ -345,6 +345,7 @@ PiRemote.install_pl_handlers = ->
 
 # Initiate short polling for current playlist position and song position indicator
 PiRemote.start_pl_poll = ->
+    return unless PiRemote.use_short_polling
     return if PiRemote.playlist_poll_started
     PiRemote.playlist_poll_started = true
     PiRemote.do_pl_poll()
@@ -353,6 +354,7 @@ PiRemote.start_pl_poll = ->
 
 # Short polling for play status
 PiRemote.do_pl_poll = ->
+    return unless PiRemote.use_short_polling
     return if PiRemote.playlist_polling > 1
     return unless PiRemote.playlist_poll_started
     return if PiRemote.current_page != 'playlist'
@@ -385,6 +387,8 @@ PiRemote.do_pl_poll = ->
 # Callback for status polling loop.
 # Update currently played song and position indicator
 PiRemote.update_pl_status = (data) ->
+
+    PiRemote.last_pl_data = data
 
     # Check if playlist version changed
     if PiRemote.last_pl_version != parseInt(data.playlist)
@@ -422,13 +426,40 @@ PiRemote.update_pl_status = (data) ->
         # turn off all indicators
         d3.selectAll('table#tbpl tr.selectable').classed('running', 0)
 
-    # position indicator
-    if (data.time) and (data.elapsed)
-        pct = 100.0 * parseFloat(data.elapsed) / parseFloat(data.time)
+    # time bar
+    PiRemote.pl_set_time data.elapsed, data.time
+    PiRemote.last_pl_data['last_update'] = new Date().getTime()
+    PiRemote.pl_update_time()
+    return
+
+
+# Internal infinite time loop to progress time bar in websocket mode.
+# In websocket mode status is only updated if song changed or play/pause pressed or else.
+PiRemote.pl_update_time = ->
+    return if PiRemote.use_short_polling
+    return if PiRemote.last_pl_data['state'] != 'play'
+    window.setTimeout ( ->
+        return if PiRemote.last_pl_data['state'] != 'play'
+        t_new = new Date().getTime()
+        delta = t_new - PiRemote.last_pl_data['last_update']
+        PiRemote.last_pl_data['last_update'] = t_new
+        PiRemote.last_pl_data['elapsed'] = parseFloat(PiRemote.last_pl_data['elapsed'])+delta/1000
+        PiRemote.pl_set_time PiRemote.last_pl_data['elapsed'], PiRemote.last_pl_data['time']
+        if delta > 300
+            # if delta is too small, we assume that multiple loops are running.
+            PiRemote.pl_update_time()
+        return
+    ), 1000
+    return
+
+
+# Set position indicator for current song
+PiRemote.pl_set_time = (elapsed, time) ->
+    if (time) and (elapsed)
+        pct = 100.0 * parseFloat(elapsed) / parseFloat(time)
         PiRemote.pl_set_position_indicator pct
     else
         PiRemote.pl_set_position_indicator 0
-
     return
 
 
@@ -1021,5 +1052,17 @@ PiRemote.pl_append_items_to_playlist = (items) ->
         success: (data) ->
             PiRemote.pl_action 'append', data, items
             $('#modalSmall').modal('hide')
+            return
+    return
+
+
+# Force refresh of current status (requ
+PiRemote.pl_refresh_status =  ->
+    PiRemote.do_ajax
+        url: 'status'
+        method: 'GET'
+        data: {}
+        success: (data) ->
+            PiRemote.update_pl_status data
             return
     return
