@@ -134,6 +134,11 @@ class MPC_Idler:
             res = self.client.idle()
             self.check_party_mode(res)
 
+        if 'playlist' in res:
+            # Tell playlist view to update its status.
+            redis_publisher = RedisPublisher(facility='piremote', broadcast=True)
+            redis_publisher.publish_message(RedisMessage('playlist'))
+
         if 'player' not in res:
             return
 

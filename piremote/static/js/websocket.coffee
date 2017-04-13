@@ -18,6 +18,12 @@ PiRemote.install_websocket = ->
 
     # Send data to index or playlist page -- ignore otherwise.
     PiRemote.socket.onmessage = (e) ->
+        if e.data == 'playlist'
+            # Not full status data about current song transmitted, but tag that playlist has changed.
+            if PiRemote.current_page == 'playlist' and PiRemote.current_sub_page == 'home'
+                PiRemote.pl_refresh_status()
+            return
+
         if PiRemote.current_page == 'index' and PiRemote.current_sub_page == 'home'
             data = JSON.parse e.data
             PiRemote.update_status data
