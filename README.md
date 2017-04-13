@@ -67,7 +67,7 @@ Configuration will be done, when PiBlaster3 is installed.
 
 ## Required Packages
 
-    $ sudo aptitude install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git libasound2-dev
+    $ sudo aptitude install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git libasound2-dev redis-server
     $ sudo pip3 install django==1.10.5
 
 At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might use this directly)
@@ -76,7 +76,7 @@ At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might u
     $ sudo pip3 install django_compressor
     $ sudo pip3 install uwsgi
     $ sudo pip3 install python-mpd2
-    $ sudo pip3 install psycopg2
+    $ sudo pip3 install django-websocket-redis
 
 ## PiBlaster3 software
 
@@ -108,11 +108,13 @@ If any errors occur here, fix them, or nothing will work.
 ## UWSGI and Worker
 
     $ sudo cp /opt/PiBlaster3/conf/piblaster.service /etc/systemd/system
+    $ sudo cp /opt/PiBlaster3/conf/piblaster.websocket.service /etc/systemd/system
     $ sudo cp /opt/PiBlaster3/conf/piblaster.worker.service /etc/systemd/system
 
     $ sudo systemctl daemon-reload
 
     $ systemctl enable piblaster.service
+    $ systemctl enable piblaster.websocket.service
     $ systemctl enable piblaster.worker.service
 
 ## MPD
@@ -140,6 +142,7 @@ No need for elaborate SQL server for this app.
 
     $ sudo service piblaster restart
     $ sudo servie piblaster.worker restart
+    $ sudo servie piblaster.websocket restart
 
 ## Run piblaster3 server from command line
 To see full debugging output and interact with django server:
@@ -148,6 +151,13 @@ To see full debugging output and interact with django server:
     $ cd /opt/PiBlaster3
     $ export DEBUG=1
     $ uwsgi --ini conf/piblaster.ini
+
+Run websockets:
+
+    $ sudo service piblaster.websocket stop
+    $ cd /opt/PiBlaster3
+    $ export DEBUG=1
+    $ uwsgi --ini conf/piblaster_websocket.ini
 
 Run workers:
 

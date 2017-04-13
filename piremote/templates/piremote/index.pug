@@ -30,6 +30,7 @@ html(lang="en")
         script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/jquery.min.js')
         script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/bootstrap.min.js')
         script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/d3.v4.min.js')
+        script(type='text/javascript', charset='utf-8', src='/piremote/static/vendor/js/ws4redis.js')
         //-
             Project javascript -- loaded after vendor requirements.
             global.coffee needs to be loaded 1st, application.coffee last.
@@ -43,6 +44,7 @@ html(lang="en")
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/playlist.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/search.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/settings.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/websocket.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/upload.coffee')
         //-
             Load last

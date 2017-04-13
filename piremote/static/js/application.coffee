@@ -51,6 +51,9 @@ $ ->
         return
 
     PiRemote.setStatusText 'PiRemote v3.0 loaded.'
+
+    # Open websocket for updates from MPD idle worker via redis.
+    PiRemote.install_websocket()
     return
 
 

@@ -151,6 +151,16 @@ class MPC:
     def get_status_data(self):
         """Combined currentsong / status data for AJAX GET or POST on index page
 
+        :return: see generate_status_data()
+        """
+        status = self.get_status()
+        current = self.get_currentsong()
+        return self.generate_status_data(status, current)
+
+    @staticmethod
+    def generate_status_data(status, current):
+        """Combined currentsong / status data
+
         :return: {title: xxx
                   time: seconds
                   album: xxx
@@ -167,8 +177,6 @@ class MPC:
                   file: local/Mp3/...../file.mp3
                   }
         """
-        status = self.get_status()
-        current = self.get_currentsong()
         data = {}
         if 'title' in current:
             data['title'] = current['title']

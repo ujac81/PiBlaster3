@@ -13,12 +13,13 @@ PiRemote.load_index_page = ->
 
     # build main content for current sub page.
     if PiRemote.current_sub_page == 'index_volume'
-        PiRemote.index_build_volume()
+        PiRemote.index_fetch_mixer 'volume'
     else if PiRemote.current_sub_page == 'index_equalizer'
-        PiRemote.index_build_equalizer()
+        PiRemote.index_fetch_mixer 'equalizer'
     else
         PiRemote.index_build_main()
 
+    PiRemote.index_refresh_status()
     return
 
 
@@ -68,26 +69,12 @@ PiRemote.index_build_main = ->
     row3.append('span').attr('data-action', 'repeat').attr('id', 'repeat')
                        .attr('class', 'glyphicon glyphicon-repeat')
 
-    # infinite short polling loop
     PiRemote.install_index_actions()
-
     PiRemote.poll_started = false
     PiRemote.polling = false
     PiRemote.resize_index()
     PiRemote.set_position(0)
     PiRemote.start_status_poll()
-    return
-
-
-# index/volume page -- show volume sliders
-PiRemote.index_build_volume = ->
-    PiRemote.index_fetch_mixer 'volume'
-    return
-
-
-# index/equalizer page -- show equalizer sliders
-PiRemote.index_build_equalizer = ->
-    PiRemote.index_fetch_mixer 'equalizer'
     return
 
 
@@ -216,6 +203,7 @@ PiRemote.install_index_actions = ->
 # Start the short polling loop.
 # Called by load_index_page().
 PiRemote.start_status_poll = ->
+    return unless PiRemote.use_short_polling
     return if PiRemote.poll_started
     PiRemote.poll_started = true
     PiRemote.do_status_poll()
@@ -227,12 +215,12 @@ PiRemote.start_status_poll = ->
 # Callback on AJAX receive is update_status()
 PiRemote.do_status_poll = ->
     # Do not enter loop if not on index page or polling invoked twice (should not happen)
+    return unless PiRemote.use_short_polling
     return if PiRemote.polling
     return if PiRemote.current_page != 'index'
 
     PiRemote.tot_poll_count += 1
     if PiRemote.tot_poll_count > PiRemote.enforce_reload_poll_count
-        console.log PiRemote.tot_poll_count
         PiRemote.setErrorText 'Reached max poll count, reload enforced!'
         PiRemote.init_variables()
         location.reload true
@@ -308,12 +296,7 @@ PiRemote.update_status = (data) ->
     $('h4#idxalbum').html(album)
 
     # TIME
-    if (data.time) and (data.elapsed)
-        pct = 100.0 * parseFloat(data.elapsed) / parseFloat(data.time)
-        PiRemote.set_position pct
-        $('h5#idxtime').html(PiRemote.secToMin(data.elapsed)+' / '+PiRemote.secToMin(data.time))
-    else
-        PiRemote.set_position 0
+    PiRemote.index_set_time data.elapsed, data.time
 
     # BUTTONS
     d3.select('span#playpause').classed('glyphicon-play', data.state != 'play')
@@ -325,4 +308,52 @@ PiRemote.update_status = (data) ->
     d3.select('span#repeat').classed('enabled', data.repeat == '1')
     d3.select('span#repeat').classed('disabled', data.repeat != '1')
 
+    PiRemote.last_index_data['last_update'] = new Date().getTime()
+    PiRemote.index_update_time()
+
+    return
+
+
+# Update time information on time bar and time index text.
+PiRemote.index_set_time = (elapsed, time) ->
+    if (time) and (elapsed)
+        pct = 100.0 * parseFloat(elapsed) / parseFloat(time)
+        PiRemote.set_position pct
+        $('h5#idxtime').html(PiRemote.secToMin(elapsed)+' / '+PiRemote.secToMin(time))
+    else
+        PiRemote.set_position 0
+    return
+
+
+# Internal infinite time loop to progress time bar in websocket mode.
+# In websocket mode status is only updated if song changed or play/pause pressed or else.
+PiRemote.index_update_time = ->
+    return if PiRemote.use_short_polling
+    return if PiRemote.last_index_data['state'] != 'play'
+    window.setTimeout ( ->
+        return if PiRemote.last_index_data['state'] != 'play'
+        t_new = new Date().getTime()
+        delta = t_new - PiRemote.last_index_data['last_update']
+        PiRemote.last_index_data['last_update'] = t_new
+        PiRemote.last_index_data['elapsed'] = parseFloat(PiRemote.last_index_data['elapsed'])+delta/1000
+        PiRemote.index_set_time PiRemote.last_index_data['elapsed'], PiRemote.last_index_data['time']
+        if delta > 300
+            # if delta is too small, we assume that multiple loops are running.
+            PiRemote.index_update_time()
+        return
+    ), 1000
+
+    return
+
+
+# Force AJAX GET of current status.
+# Required in websocket mode if current data is outdated.
+PiRemote.index_refresh_status = ->
+    PiRemote.do_ajax
+        url: 'status'
+        method: 'GET'
+        data: {}
+        success: (data) ->
+            PiRemote.update_status data
+            return
     return

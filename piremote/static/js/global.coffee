@@ -4,6 +4,10 @@ window.PiRemote = {}
 
 PiRemote.init_variables = ->
 
+    PiRemote.socket = null  # websocket connection
+
+    PiRemote.use_short_polling = true  # True if websocket not working.
+
     PiRemote.poll_started = false  # true while polling in main view
     PiRemote.polling = 0  # current poll index in main view (>0, do not poll again)
 
@@ -13,7 +17,7 @@ PiRemote.init_variables = ->
     PiRemote.last_index_data = null  # store received data in index view.
 
     PiRemote.last_status = ''  # store status bar text for fade-out
-    PiRemote.current_page = 'index'  # selected view from menu (PiRemote.load_page)
+    # PiRemote.current_page set via index.pug
     PiRemote.current_sub_page = 'home'  # selected sub-view from buttons
     PiRemote.safe_page = 'index'  # safe last active page while blurring
     PiRemote.last_files = ''  # remember path in browse files view
@@ -35,7 +39,7 @@ PiRemote.init_variables = ->
     PiRemote.dragging = false  # true while element is dragged in playlist
 
     PiRemote.tot_poll_count = 0  # enforce reload if polled too much
-    PiRemote.enforce_reload_poll_count = 2000  # if polled this much, reload
+    PiRemote.enforce_reload_poll_count = 1000  # if polled this much, reload (browser mem could explode if poll loop runs hours and hours)
 
     PiRemote.poll_interval = 1000  # poll interval in ms
     PiRemote.poll_interval_min = 500  # prevent polling if last poll time smaller than this

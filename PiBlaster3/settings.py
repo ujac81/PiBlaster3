@@ -57,6 +57,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'compressor',
+    'ws4redis',
     'piremote',
     'piadmin'
 ]
@@ -84,6 +85,7 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                'ws4redis.context_processors.default',
             ],
             'loaders': [
                 ('pypugjs.ext.django.Loader', (
@@ -154,6 +156,10 @@ STATICFILES_FINDERS = (
 
 STATIC_URL = '/piremote/static/'
 STATIC_ROOT = 'piremote/static/'
+
+WEBSOCKET_URL = '/piremote/ws/'
+WS4REDIS_EXPIRE = 10
+# WS4REDIS_ALLOWED_CHANNELS = ['piremote']
 
 # Not too nice way to import own settings, but ok if not affect django settings
 try:

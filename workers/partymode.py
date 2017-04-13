@@ -1,12 +1,19 @@
 """partymode.py -- threaded actions on playlist (like party mode)."""
 
+import os
+os.environ.setdefault("DJANGO_SETTINGS_MODULE", "PiBlaster3.settings")
+
 from mpd import MPDClient, ConnectionError, CommandError
 import datetime
+import json
 import sqlite3
 import random
 import threading
 from time import sleep
 from PiBlaster3.settings import *
+from PiBlaster3.mpc import MPC
+from ws4redis.publisher import RedisPublisher
+from ws4redis.redis_store import RedisMessage
 
 
 class MPC_Idler:
@@ -130,9 +137,16 @@ class MPC_Idler:
         if 'player' not in res:
             return
 
-        # Check if playing and file changed --> insert into history if so.
+        # Publish current player state via websocket via redis broadcast.
         state = self.client.status()
         cur = self.client.currentsong()
+        state_data = MPC.generate_status_data(state, cur)
+        state_data['event'] = res
+        msg = json.dumps(state_data)
+        redis_publisher = RedisPublisher(facility='piremote', broadcast=True)
+        redis_publisher.publish_message(RedisMessage(msg))
+
+        # Check if playing and file changed --> insert into history if so.
         if 'state' in state and state['state'] == 'play':
             file = cur['file']
             if file != self.last_file:
