@@ -3,13 +3,11 @@ Description=PiBlaster uWSGI
 After=syslog.target
 
 [Service]
-ExecStart=/usr/local/bin/uwsgi --ini /opt/PiBlaster3/conf/piblaster.ini
-RuntimeDirectory=uwsgi
-Restart=always
-KillSignal=SIGQUIT
-Type=notify
-StandardError=syslog
-NotifyAccess=all
+ExecStart=/bin/bash -c 'cd /opt/PiBlaster3; uwsgi --ini conf/piblaster.ini'
+ExecStop=killall -9 uwsgi
+User=pi
+Group=pi
 
 [Install]
 WantedBy=multi-user.target
+
