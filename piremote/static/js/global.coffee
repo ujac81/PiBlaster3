@@ -44,6 +44,9 @@ PiRemote.init_variables = ->
     PiRemote.poll_interval = 1000  # poll interval in ms
     PiRemote.poll_interval_min = 500  # prevent polling if last poll time smaller than this
 
+    PiRemote.update_instance_id = 0  # keep number of calls of update_time() to break recursion.
+    PiRemote.pl_update_instance_id = 0  # same for playlist view
+
     return
 
 

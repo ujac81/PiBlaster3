@@ -41,7 +41,7 @@ PiRemote.install_websocket = ->
 
     # Should never happen (maybe on page reload or leave)
     PiRemote.socket.onclose = (e) ->
-        PiRemote.setStatusText 'Websocket closed.'
+        # PiRemote.setStatusText 'Websocket closed.'
         PiRemote.use_short_polling = true
         return
 

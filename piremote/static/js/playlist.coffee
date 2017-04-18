@@ -429,6 +429,7 @@ PiRemote.update_pl_status = (data) ->
     # time bar
     PiRemote.pl_set_time data.elapsed, data.time
     PiRemote.last_pl_data['last_update'] = new Date().getTime()
+    PiRemote.pl_update_instance_id += 1
     PiRemote.pl_update_time()
     return
 
@@ -438,6 +439,8 @@ PiRemote.update_pl_status = (data) ->
 PiRemote.pl_update_time = ->
     return if PiRemote.use_short_polling
     return if PiRemote.last_pl_data['state'] != 'play'
+    last_file = PiRemote.last_pl_data['file']
+    my_instance_id = PiRemote.pl_update_instance_id
     window.setTimeout ( ->
         return if PiRemote.last_pl_data['state'] != 'play'
         t_new = new Date().getTime()
@@ -445,8 +448,7 @@ PiRemote.pl_update_time = ->
         PiRemote.last_pl_data['last_update'] = t_new
         PiRemote.last_pl_data['elapsed'] = parseFloat(PiRemote.last_pl_data['elapsed'])+delta/1000
         PiRemote.pl_set_time PiRemote.last_pl_data['elapsed'], PiRemote.last_pl_data['time']
-        if delta > 300
-            # if delta is too small, we assume that multiple loops are running.
+        if my_instance_id == PiRemote.pl_update_instance_id
             PiRemote.pl_update_time()
         return
     ), 1000

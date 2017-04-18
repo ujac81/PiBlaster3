@@ -178,6 +178,8 @@ class MPC:
                   }
         """
         data = {}
+        if len(current) == 0:
+            current = {'album': '', 'artist': '', 'title': 'Not Playing!', 'time': 0, 'file': ''}
         if 'title' in current:
             data['title'] = current['title']
         else:

@@ -309,6 +309,7 @@ PiRemote.update_status = (data) ->
     d3.select('span#repeat').classed('disabled', data.repeat != '1')
 
     PiRemote.last_index_data['last_update'] = new Date().getTime()
+    PiRemote.update_instance_id += 1
     PiRemote.index_update_time()
 
     return
@@ -330,6 +331,7 @@ PiRemote.index_set_time = (elapsed, time) ->
 PiRemote.index_update_time = ->
     return if PiRemote.use_short_polling
     return if PiRemote.last_index_data['state'] != 'play'
+    my_instance_id = PiRemote.update_instance_id
     window.setTimeout ( ->
         return if PiRemote.last_index_data['state'] != 'play'
         t_new = new Date().getTime()
@@ -337,8 +339,7 @@ PiRemote.index_update_time = ->
         PiRemote.last_index_data['last_update'] = t_new
         PiRemote.last_index_data['elapsed'] = parseFloat(PiRemote.last_index_data['elapsed'])+delta/1000
         PiRemote.index_set_time PiRemote.last_index_data['elapsed'], PiRemote.last_index_data['time']
-        if delta > 300
-            # if delta is too small, we assume that multiple loops are running.
+        if my_instance_id == PiRemote.update_instance_id
             PiRemote.index_update_time()
         return
     ), 1000
