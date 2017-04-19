@@ -62,6 +62,7 @@ PiRemote.do_browse = (what) ->
         method: 'GET'
         data:
             what: what
+            ratings: selected_lists['rating']
             dates: selected_lists['date']
             genres: selected_lists['genre']
             artists: selected_lists['artist']
@@ -92,7 +93,7 @@ PiRemote.build_browse = (data) ->
 
     if mode == 'date'
         browse_data = ['All', '0-1970', '1971-1980', '1981-1990', '1991-2000', '2001-2010', '2010-today'].concat(data.browse)
-    else
+    else if mode != 'rating'
         browse_data = ['All'].concat(data.browse)
 
     # Append dirs

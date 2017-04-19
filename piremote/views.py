@@ -268,12 +268,13 @@ def list_ajax(request):
     :return: JSON only -- use with ajax!
     """
     what = request.GET.get('what', '')
+    ratings = request.GET.getlist('ratings[]', [])
     dates = request.GET.getlist('dates[]', [])
     genres = request.GET.getlist('genres[]', [])
     artists = request.GET.getlist('artists[]', [])
     albums = request.GET.getlist('albums[]', [])
     mpc = MPC()
-    browse = mpc.list_by(what, dates, genres, artists, albums)
+    browse = mpc.list_by(what, ratings, dates, genres, artists, albums)
     context = dict(what=what, browse=browse, truncated=mpc.truncated)
     return JsonResponse(context)
 
@@ -286,12 +287,13 @@ def seed_browse_ajax(request):
     what = request.POST.get('what', '')
     count = int(request.POST.get('count', ''))
     plname = request.POST.get('plname', '')
+    ratings = request.POST.getlist('ratings[]', [])
     dates = request.POST.getlist('dates[]', [])
     genres = request.POST.getlist('genres[]', [])
     artists = request.POST.getlist('artists[]', [])
     albums = request.POST.getlist('albums[]', [])
     mpc = MPC()
-    return JsonResponse({'status_str': mpc.seed_by(count, plname, what, dates, genres, artists, albums)})
+    return JsonResponse({'status_str': mpc.seed_by(count, plname, what, ratings, dates, genres, artists, albums)})
 
 
 def history_ajax(request):

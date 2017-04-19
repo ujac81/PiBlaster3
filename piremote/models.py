@@ -165,4 +165,11 @@ class History(models.Model):
 
 class Rating(models.Model):
     path = models.FilePathField(max_length=500)
-    rating = models.SmallIntegerField()
+    title = models.CharField(max_length=50, default='')
+    artist = models.CharField(max_length=50, default='')
+    album = models.CharField(max_length=50, default='')
+    genre = models.CharField(max_length=50, default='unknown')
+    date = models.SmallIntegerField(default=0)
+    rating = models.SmallIntegerField(default=0)
+
+

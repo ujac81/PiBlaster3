@@ -30,8 +30,8 @@ PiRemote.init_variables = ->
     PiRemote.last_search = ''  # remember last search pattern
     PiRemote.last_search_data = []  # keep data of last search
 
-    PiRemote.select_classes = ['date', 'genre', 'artist', 'album', 'song']
-    PiRemote.select_class_names = ['Year', 'Genre', 'Artist', 'Album', 'Files']
+    PiRemote.select_classes = ['rating', 'date', 'genre', 'artist', 'album', 'song']
+    PiRemote.select_class_names = ['Rating', 'Year', 'Genre', 'Artist', 'Album', 'Files']
     PiRemote.selected = {}  # per class array of selected items
     PiRemote.browse_current_page_index = 0  # current class index in browse by tag
     PiRemote.last_browse = null  # last received data in browse by tag

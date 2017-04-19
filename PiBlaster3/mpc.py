@@ -718,10 +718,11 @@ class MPC:
 
         return {'error_str': 'No such command: %s' % cmd}
 
-    def list_by(self, what, in_dates, in_genres, in_artists, in_albums, file_mode=False):
+    def list_by(self, what, in_ratings, in_dates, in_genres, in_artists, in_albums, file_mode=False):
         """Create content data for browse view.
 
         :param what: category of results [date, genre, artist, album, song]
+        :param in_ratings: list of ratings for filter ['All'] for all ratings
         :param in_dates: list of dates for filter ['All'] for all dates
         :param in_genres: list of genres for filter ['All'] for all
         :param in_artists: list of artists for filter ['All'] for all
@@ -734,6 +735,13 @@ class MPC:
         self.ensure_connected()
 
         seek = 'file' if file_mode or what == 'song' else what
+
+        if what == 'rating':
+            if seek != 'file':
+                return ['All', '5', 'at least 4', 'at least 3', 'at least 2', 'at least 1',
+                        'exactly 4', 'exactly 3', 'exactly 2', 'exactly 1', 'unrated']
+            else:
+                return self.client.list(seek)
 
         # request is date --> return all available dates
         if what == 'date':
@@ -870,12 +878,13 @@ class MPC:
         # Return all other results directly as sorted unique array.
         return sorted(set(res))
 
-    def seed_by(self, count, plname, what, dates, genres, artists, albums):
+    def seed_by(self, count, plname, what, ratings, dates, genres, artists, albums):
         """Random add items to playlist from browse view.
 
         :param count: number of items to add
         :param plname: playlist name ('' for current)
         :param what: [date, genre, artist, album, song]
+        :param ratings: see list_by()
         :param dates: see list_by()
         :param genres: see list_by()
         :param artists: see list_by()
@@ -883,7 +892,7 @@ class MPC:
         :return: status string.
         """
 
-        files = self.list_by(what, dates, genres, artists, albums, file_mode=True)
+        files = self.list_by(what, ratings, dates, genres, artists, albums, file_mode=True)
 
         if len(files) == 0:
             return 'Zero results, nothing added.'
