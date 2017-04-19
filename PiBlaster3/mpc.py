@@ -10,6 +10,7 @@ import time
 
 from django.conf import settings
 from PiBlaster3.translate_genre import translate_genre, all_genres
+from piremote.models import Rating
 
 
 class MPC:
@@ -736,6 +737,19 @@ class MPC:
 
         seek = 'file' if file_mode or what == 'song' else what
 
+        ratings_avail = {'All': [0, 1, 2, 3, 4, 5],
+                         '5': [5],
+                         'at least 4': [4, 5],
+                         'at least 3': [3, 4, 5],
+                         'at least 2': [2, 3, 4, 5],
+                         'at least 1': [1, 2, 3, 4, 5],
+                         'exactly 4': [4],
+                         'exactly 3': [3],
+                         'exactly 2': [2],
+                         'exactly 1': [1],
+                         'unrated': [0]
+                         }
+
         if what == 'rating':
             if seek != 'file':
                 return ['All', '5', 'at least 4', 'at least 3', 'at least 2', 'at least 1',
@@ -743,140 +757,55 @@ class MPC:
             else:
                 return self.client.list(seek)
 
-        # request is date --> return all available dates
-        if what == 'date':
-            return self.client.list(seek)
+        # unroll ratings
+        ratings = []
+        if len(in_ratings) > 0 and in_ratings[0] != 'All':
+            for rating in in_ratings:
+                ratings += ratings_avail[rating]
+            ratings = sorted(set(ratings))
 
         # Unroll special dates (decades like '1971-1980' or '2010-today')
         dates = []
         if len(in_dates) > 0 and in_dates[0] != 'All':
-            all_dates = self.client.list('date')
             for date in in_dates:
                 if '-' in date:
-                    m = re.match(r'(\d+)-(\d+)', date.replace('today', '3000'))
+                    m = re.match(r'(\d+)-(\d+)', date.replace('today', '2020'))
                     if m:
-                        for y in range(int(m.group(1)), int(m.group(2))+1):
-                            if '%d' % y in all_dates:
-                                dates.append('%d' % y)
+                        for y in range(int(m.group(1)), int(m.group(2)) + 1):
+                            dates.append(y)
                 else:
-                    dates.append(date)
+                    dates.append(int(date))
 
-        # Unroll genres (some genres have number instead of string)
-        genres = []
-        if len(in_genres) > 0 and in_genres[0] != 'All':
-            inv_genres = {v: k for k, v in all_genres().items()}
-            for genre in in_genres:
-                genres.append(genre)
-                if genre in inv_genres:
-                    genres.append('(%s)' % inv_genres[genre])
-
-        artists = [] if len(in_artists) == 1 and in_artists[0] == 'All' else in_artists
-        albums = [] if len(in_albums) == 1 and in_albums[0] == 'All' else in_albums
-
-        # Build hierarchical filter classes.
-        # Hierarchy is date->genre->artist->album->song
-        # Only add filter if what category is above itself.
-        # E.g. artist filter will only apply for album and song listings.
-        filters = {}
+        q = Rating.objects.all().order_by('path')
+        if len(ratings) > 0:
+            q = q.filter(rating__in=ratings)
         if what in ['genre', 'artist', 'album', 'song'] and len(dates) > 0:
-            filters['date'] = dates
-        if what in ['artist', 'album', 'song'] and len(genres) > 0:
-            filters['genre'] = genres
-        if what in ['album', 'song'] and len(artists) > 0:
-            filters['artist'] = artists
-        if what in ['song'] and len(albums) > 0:
-            filters['album'] = albums
-        filter_keys = list(filters.keys())
+            q = q.filter(date__in=dates)
+        if what in ['artist', 'album', 'song'] and len(in_genres) > 0 and in_genres[0] != 'All':
+            q = q.filter(genre__in=in_genres)
+        if what in ['album', 'song'] and len(in_artists) > 0 and in_artists[0] != 'All':
+            q = q.filter(artist__in=in_artists)
+        if what in ['song'] and len(in_albums) > 0 and in_albums[0] != 'All':
+            q = q.filter(albums_in=in_albums)
 
-        res = []
-        if len(filter_keys) == 0:
-            # Zero filters installed -- return full database.
-            res = self.client.list(seek)
-        elif len(filter_keys) == 1:
-            # One filter type installed, collect all results for one filter.
-            key = filter_keys[0]
-            vals = filters[key]
-            for val in vals:
-                res += self.client.list(seek, key, val)
-        elif len(filter_keys) == 2:
-            # 2 filter types installed, collect all combinations of results for 2 filters.
-            key1 = filter_keys[0]
-            vals1 = filters[key1]
-            key2 = filter_keys[1]
-            vals2 = filters[key2]
-            for val1 in vals1:
-                for val2 in vals2:
-                    res += self.client.list(seek, key1, val1, key2, val2)
-        elif len(filter_keys) == 3:
-            # 3 filter types installed, collect all combinations of results for 3 filters.
-            key1 = filter_keys[0]
-            vals1 = filters[key1]
-            key2 = filter_keys[1]
-            vals2 = filters[key2]
-            key3 = filter_keys[2]
-            vals3 = filters[key3]
-            for val1 in vals1:
-                for val2 in vals2:
-                    for val3 in vals3:
-                        res += self.client.list(seek, key1, val1, key2, val2, key3, val3)
-        elif len(filter_keys) == 4:
-            # 4 filter types installed, collect all combinations of results for 4 filters.
-            # NOTE: this might be slow, but no better idea so far.
-            # Possible solution: cache possible combinations in database.
-            key1 = filter_keys[0]
-            vals1 = filters[key1]
-            key2 = filter_keys[1]
-            vals2 = filters[key2]
-            key3 = filter_keys[2]
-            vals3 = filters[key3]
-            key4 = filter_keys[3]
-            vals4 = filters[key4]
-            for val1 in vals1:
-                for val2 in vals2:
-                    for val3 in vals3:
-                        for val4 in vals4:
-                            res += self.client.list(seek, key1, val1, key2, val2, key3, val3, key4, val4)
-
-        # If we are in file_mode (used by seed_by), return result directly.
         if file_mode:
-            return sorted(set(res))
-
-        # Translate back numeric to string genres.
+            return [x.path for x in q]
+        if what == 'date':
+            return sorted(set([x.date for x in q]))
         if what == 'genre':
-            res2 = []
-            for genre in res:
-                add = genre
-                m = re.match(r"\((\d+)\)", genre)
-                if m:
-                    add = translate_genre(int(m.group(1)))
-                if add not in res2:
-                    res2.append(add)
-            return sorted(res2)
-
-        # If we are in song mode, truncate result and expand title and artist information.
+            return sorted(set([x.genre for x in q]))
+        if what == 'artist':
+            return sorted(set([x.artist for x in q]))
+        if what == 'album':
+            return sorted(set([x.album for x in q]))
         if what == 'song':
-            res2 = []
-            res_in = sorted(set(res))
-            for item in res_in:
-                info = self.client.find('file', item)[0]
-                if 'artist' in info and 'title' in info:
-                    res2.append([item, '%s - %s' % (info['artist'], info['title'])])
-                elif 'title' in info:
-                    res2.append([item, info['title']])
+            res = []
+            for x in q:
+                if x.artist != '':
+                    res.append([x.path, x.artist + ' - ' + x.title])
                 else:
-                    no_ext = os.path.splitext(item)[0]
-                    res2.append([item, os.path.basename(no_ext).replace('_', ' ')])
-                if len(res2) >= 200:
-                    break
-
-            self.truncated = 0
-            if len(res_in) > len(res2):
-                self.truncated = len(res_in) - len(res2)
-
-            return res2
-
-        # Return all other results directly as sorted unique array.
-        return sorted(set(res))
+                    res.append([x.path, x.title])
+            return res
 
     def seed_by(self, count, plname, what, ratings, dates, genres, artists, albums):
         """Random add items to playlist from browse view.

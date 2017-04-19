@@ -17,7 +17,7 @@ PiRemote.load_browse_page = ->
 
     $('button#navbutton_browse_right').off 'click'
     $('button#navbutton_browse_right').on 'click', ->
-        if PiRemote.browse_current_page_index < 4
+        if PiRemote.browse_current_page_index < 5
             PiRemote.browse_current_page_index += 1
         PiRemote.do_browse PiRemote.select_classes[PiRemote.browse_current_page_index]
         return
@@ -31,7 +31,7 @@ PiRemote.load_browse_page = ->
     if PiRemote.last_browse isnt null
         PiRemote.build_browse PiRemote.last_browse
     else
-        PiRemote.do_browse 'date'
+        PiRemote.do_browse 'rating'
     return
 
 
@@ -51,7 +51,7 @@ PiRemote.do_browse = (what) ->
         for key, val of selected_lists
             if val.length == 1 and val[0] == 'All' and key != 'song'
                 all_all += 1
-        if all_all >= 4
+        if all_all >= 5
             PiRemote.error_message 'Error', "Browsing of all files prevented for performance reasons. Please select at least one category not equal to 'all'."
             # Stay at album view
             PiRemote.browse_current_page_index = 3
@@ -95,6 +95,8 @@ PiRemote.build_browse = (data) ->
         browse_data = ['All', '0-1970', '1971-1980', '1981-1990', '1991-2000', '2001-2010', '2010-today'].concat(data.browse)
     else if mode != 'rating'
         browse_data = ['All'].concat(data.browse)
+    else
+        browse_data = data.browse
 
     # Append dirs
     tbody.selectAll('tr')
@@ -317,6 +319,7 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
                 what: PiRemote.select_classes[PiRemote.browse_current_page_index+1]
                 count: $('input#seedspin').val()
                 plname: plname
+                ratings: selected_lists['rating']
                 dates: selected_lists['date']
                 genres: selected_lists['genre']
                 artists: selected_lists['artist']

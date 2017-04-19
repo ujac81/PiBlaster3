@@ -49,7 +49,7 @@ class RatingsScanner:
         for item in mpd_files:
             if item not in db_files:
                 filename = os.path.join(music_path, item)
-                to_add.append(self.scan_file(item. filename))
+                to_add.append(self.scan_file(item, filename))
 
             if not self.main.keep_run:
                 # worker shut down in the meantime
@@ -290,7 +290,7 @@ class RatingsScanner:
         if title == '':
             title = RatingsScanner.plain_filename(file)
 
-        return item, title, artist, album, genre, int(date), int(rating),
+        return item, title, artist, album, genre, int(date), int(rating/51),
 
     @staticmethod
     def parse_ogg(item, m, file):
@@ -325,7 +325,7 @@ class RatingsScanner:
         if title == '':
             title = RatingsScanner.plain_filename(file)
 
-        return item, title, artist, album, genre, int(date), int(rating),
+        return item, title, artist, album, genre, int(date), int(rating/51),
 
     @staticmethod
     def parse_mpc(item, m, file):
@@ -357,7 +357,7 @@ class RatingsScanner:
         if title == '':
             title = RatingsScanner.plain_filename(file)
 
-        return item, title, artist, album, genre, int(date), int(rating),
+        return item, title, artist, album, genre, int(date), int(rating/51),
 
     @staticmethod
     def parse_m4a(item, m, file):
@@ -390,4 +390,4 @@ class RatingsScanner:
         if title == '':
             title = RatingsScanner.plain_filename(file)
 
-        return item, title, artist, album, genre, int(date), int(rating),
+        return item, title, artist, album, genre, int(date), int(rating/51),
