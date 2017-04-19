@@ -58,7 +58,7 @@ class RatingsScanner:
         to_remove = []
         for item in db_files:
             if item not in mpd_files:
-                to_remove.append(item)
+                to_remove.append((item,))
 
         if not self.main.keep_run:
             # worker shut down in the meantime

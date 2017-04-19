@@ -11,7 +11,6 @@ import random
 import threading
 from time import sleep
 from PiBlaster3.settings import *
-from PiBlaster3.mpc import MPC
 from ws4redis.publisher import RedisPublisher
 from ws4redis.redis_store import RedisMessage
 
@@ -145,7 +144,7 @@ class MPC_Idler:
         # Publish current player state via websocket via redis broadcast.
         state = self.client.status()
         cur = self.client.currentsong()
-        state_data = MPC.generate_status_data(state, cur)
+        state_data = self.generate_status_data(state, cur)
         state_data['event'] = res
         msg = json.dumps(state_data)
         redis_publisher = RedisPublisher(facility='piremote', broadcast=True)
@@ -243,4 +242,39 @@ class MPDService(threading.Thread):
         client.repeat(1 if rep == 0 else 0)
         sleep(0.1)
         client.repeat(0 if rep == 0 else 1)
+
+    @staticmethod
+    def generate_status_data(status, current):
+        """Combined currentsong / status data
+
+        :return: {title: xxx
+                  time: seconds
+                  album: xxx
+                  artist: xxx
+                  date: yyyy
+                  id: N
+                  elapsed: seconds
+                  random: bool
+                  repeat: bool
+                  volume: percentage
+                  state: ['playing', 'stopped', 'paused']
+                  playlist: VERSION-NUMBER
+                  playlistlength: N
+                  file: local/Mp3/...../file.mp3
+                  }
+        """
+        data = {}
+        if len(current) == 0:
+            current = {'album': '', 'artist': '', 'title': 'Not Playing!', 'time': 0, 'file': ''}
+        if 'title' in current:
+            data['title'] = current['title']
+        else:
+            no_ext = os.path.splitext(current['file'])[0]
+            data['title'] = os.path.basename(no_ext).replace('_', ' ')
+        data['time'] = current['time'] if 'time' in current else 0
+        for key in ['album', 'artist', 'date', 'id', 'file']:
+            data[key] = current[key] if key in current else ''
+        for key in ['elapsed', 'random', 'repeat', 'volume', 'state', 'playlist', 'playlistlength']:
+            data[key] = status[key] if key in status else '0'
+        return data
 
