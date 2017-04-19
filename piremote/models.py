@@ -161,3 +161,8 @@ class History(models.Model):
             item.time += delta
             item.updated = True
             item.save()
+
+
+class Rating(models.Model):
+    path = models.FilePathField(max_length=500)
+    rating = models.SmallIntegerField()

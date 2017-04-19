@@ -32,3 +32,6 @@ PB_MEDIA_EXT = ('.mp3', '.flac', '.ogg', '.wma', '.wav', '.mp4', '.m4a', '.mpc')
 
 # Set this to true if you want to set the system time via client time
 PB_SET_TIME = False
+
+# MPD socket file (required to read mpd config)
+PB_MPD_SOCKET = '/home/ujansen/.mpd/socket'

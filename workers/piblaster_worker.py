@@ -12,8 +12,10 @@ import os
 import signal
 import time
 
+from PiBlaster3.settings import *
 from workers.uploader import Uploader
 from workers.partymode import MPDService
+from workers.ratings_scanner import RatingsScanner
 
 
 class PiBlasterWorker:
@@ -24,6 +26,8 @@ class PiBlasterWorker:
         self.keep_run = True  # run daemon as long as True
         self.uploader = Uploader(self)
         self.idler = MPDService(self)
+        self.scanner = RatingsScanner(self)
+        self.rescan_ratings = True  # rescan ratings on boot
 
     def run(self):
         """daemonize, start threads and enter daemon loop."""
@@ -35,12 +39,22 @@ class PiBlasterWorker:
         MPDService.stop_idler()
 
     def daemon_loop(self):
-        """Empty loop, idle until terminated."""
+        """Main daemon loop.
+
+        uploader and party mode threaded,
+        ratings scanner activated if idler found database update.
+
+        :return:
+        """
+
         while self.keep_run:
 
-            time.sleep(50. / 1000.)  # 50ms
+            time.sleep(100. / 1000.)  # 100ms
+            if self.rescan_ratings:
+                self.scanner.rescan()  # won't block too long
 
-        print('LEAVING')
+        if DEBUG:
+            print('LEAVING')
 
     def term_handler(self, *args):
         """ Signal handler to stop daemon loop"""

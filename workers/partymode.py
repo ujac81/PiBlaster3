@@ -19,7 +19,8 @@ from ws4redis.redis_store import RedisMessage
 class MPC_Idler:
     """Keeps idle mode loop and party mode actions."""
 
-    def __init__(self):
+    def __init__(self, main):
+        self.main = main
         self.client = MPDClient()
         self.client.timeout = 10
         self.connected = False
@@ -52,11 +53,6 @@ class MPC_Idler:
             except (ConnectionError, CommandError):
                 self.reconnect()
                 pass
-
-    def idle(self):
-        """Loop until mpd triggers an event (play, playlist, ...)"""
-        res = self.client.idle()
-        return res
 
     def check_party_mode(self, res, force=False):
         """Check if party mode is on, append items to playlist/shrink playlist if needed.
@@ -134,6 +130,10 @@ class MPC_Idler:
             res = self.client.idle()
             self.check_party_mode(res)
 
+        if 'update' in res and 'updating_db' not in self.client.status():
+            # let ratings scanner do rescan if database updated
+            self.main.rescan_ratings = True
+
         if 'playlist' in res:
             # Tell playlist view to update its status.
             redis_publisher = RedisPublisher(facility='piremote', broadcast=True)
@@ -205,7 +205,7 @@ class MPDService(threading.Thread):
         """Keep reference to PiBlasterWorker to know when to leave."""
         threading.Thread.__init__(self)
         self.parent = parent
-        self.idler = MPC_Idler()
+        self.idler = MPC_Idler(parent)
 
     def run(self):
         """Daemon loop for MPD service.
