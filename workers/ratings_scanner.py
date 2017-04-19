@@ -375,7 +375,6 @@ class RatingsScanner:
         date = 0
         rating = 0
 
-        # OGG / FLAC / ... any vorbis style file
         if '\xa9nam' in m:
             title = m['\xa9nam'][0]
         if '\xa9ART' in m:

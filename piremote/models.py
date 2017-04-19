@@ -172,4 +172,14 @@ class Rating(models.Model):
     date = models.SmallIntegerField(default=0)
     rating = models.SmallIntegerField(default=0)
 
+    @staticmethod
+    def get_rating(uri):
+        """
 
+        :param uri:
+        :return:
+        """
+        q = Rating.objects.filter(path=uri)
+        if len(q) == 0:
+            return 0
+        return q[0].rating

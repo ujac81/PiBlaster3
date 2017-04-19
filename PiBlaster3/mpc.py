@@ -191,6 +191,7 @@ class MPC:
             data[key] = current[key] if key in current else ''
         for key in ['elapsed', 'random', 'repeat', 'volume', 'state', 'playlist', 'playlistlength']:
             data[key] = status[key] if key in status else '0'
+        data['rating'] = Rating.get_rating(current['file'])
         return data
 
     def volume(self):
@@ -317,6 +318,7 @@ class MPC:
                 m = re.match(r"^\((\d+)", item['genre'])
                 if m:
                     item['genre'] = translate_genre(int(m.group(1)))
+            item['rating'] = Rating.get_rating(item['file'])
         return res
 
     def playlist_changes(self, version):
@@ -786,7 +788,7 @@ class MPC:
         if what in ['album', 'song'] and len(in_artists) > 0 and in_artists[0] != 'All':
             q = q.filter(artist__in=in_artists)
         if what in ['song'] and len(in_albums) > 0 and in_albums[0] != 'All':
-            q = q.filter(albums_in=in_albums)
+            q = q.filter(album__in=in_albums)
 
         if file_mode:
             return [x.path for x in q]
