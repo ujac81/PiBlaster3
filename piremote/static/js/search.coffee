@@ -59,17 +59,17 @@ PiRemote.search_rebuild = (data) ->
     PiRemote.last_search_data = data
 
     # no search result so far
-    return if data.status is `undefined` and data.error is `undefined`
+    return if data.status_str is `undefined` and data.error_str is `undefined`
 
     tbody = d3.select('tbody#search')
     tbody.selectAll('tr').remove()
 
-    if data.error
-        tbody.append('tr').append('td').html(data.error)
+    if data.error_str
+        tbody.append('tr').append('td').html(data.error_str)
         return
 
     if data.search isnt `undefined` and data.search.length == 0
-        tbody.append('tr').append('td').html(data.status)
+        tbody.append('tr').append('td').html(data.status_str)
         return
 
     # Rebuild results table
@@ -95,7 +95,7 @@ PiRemote.search_rebuild = (data) ->
         .selectAll('table.searchtbsub').data((d)->[d])
 
     subrows = subtables.enter().append('table').attr('class', 'searchtbsub')
-        .selectAll('tr').data((d, i)->[[i+1, d[0], d[3], span_item], ['', d[1]+' - '+d[2], '']])
+        .selectAll('tr').data((d, i)->[[i+1, d[0], d[3], span_item], ['', d[1]+' - '+d[2], PiRemote.pl_make_ratings(d[6])]])
 
     subcells = subrows.enter().append('tr').attr('class', (d, i) -> 'searchtr-'+i)
         .selectAll('td').data((d)->d)
@@ -239,7 +239,6 @@ PiRemote.search_raise_info_dialog = (file) ->
                 audio.append('source').attr('src', '/music/'+file)
 
                 $('#modalSmall').modal()
-                console.log ['span.idxrate', info.rating]
                 PiRemote.index_set_rating 'span.idxrate', info.rating
             return
     return

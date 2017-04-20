@@ -46,7 +46,15 @@ PiRemote.pl_build_home = ->
         PiRemote.resize_pl_position_indicator()
         return
 
-    PiRemote.get_playlist()
+    PiRemote.pl_edit_name = ''
+    PiRemote.playlist_poll_started = false
+    PiRemote.do_ajax
+        url: 'plinfo'
+        method: 'GET'
+        data: {}
+        success: (data) ->
+            PiRemote.rebuild_playlist data   # <-- rebuild table callback
+            return
     return
 
 
@@ -100,23 +108,6 @@ PiRemote.get_playlist_by_name = (plname) ->
     return
 
 
-# Invoke AJAX get of current playlist, callback will rebuild playlist table.
-PiRemote.get_playlist = ->
-
-    PiRemote.pl_edit_name = ''
-
-    PiRemote.playlist_poll_started = false
-
-    PiRemote.do_ajax
-        url: 'plinfo'
-        method: 'GET'
-        data: {}
-        success: (data) ->
-            PiRemote.rebuild_playlist data   # <-- rebuild table callback
-            return
-    return
-
-
 # Invoke AJAX post of changes in playlist.
 # Called if playlist version has changed.
 PiRemote.get_playlist_changes = (last_version) ->
@@ -148,7 +139,7 @@ PiRemote.rebuild_playlist = (data) ->
 
     # Prepare data for table build:
     # Array of
-    # [pos, id, title, length, arist-album, selected, file]
+    # [pos, id, title, length, arist-album, selected, file, rating]
     PiRemote.tb_data = []
     for elem in data.pl.data
         art = ''
@@ -158,7 +149,7 @@ PiRemote.rebuild_playlist = (data) ->
             if elem[2].length
                 art += ' - '
             art += elem[3]
-        item = [parseInt(elem[0]), parseInt(elem[5]), elem[1], elem[4], art, false, elem[6]]
+        item = [parseInt(elem[0]), parseInt(elem[5]), elem[1], elem[4], art, false, elem[6], elem[7]]
         PiRemote.tb_data.push(item)
 
     PiRemote.pl_update_table()
@@ -196,7 +187,7 @@ PiRemote.pl_update_table =  ->
     # UPDATE
     maincellup = mainrows.selectAll('td.pltdmain').data((d)->[d])
     subtableup = maincellup.selectAll('table.pltbsub').data((d)->[d])
-    subrowsup = subtableup.selectAll('tr').data((d)->[[d[0]+1, d[2], d[3], span_item], ['', d[4], '']])
+    subrowsup = subtableup.selectAll('tr').data((d)->[[d[0]+1, d[2], d[3], span_item], ['', d[4], PiRemote.pl_make_ratings(d[7])]])
     subcellsup = subrowsup.selectAll('td').data((d)->d)
     subcellsup
         .attr('style', (d, i) ->
@@ -221,7 +212,7 @@ PiRemote.pl_update_table =  ->
         .selectAll('table.pltbsub').data((d)->[d])
 
     subrows = subtables.enter().append('table').attr('class', 'pltbsub')
-        .selectAll('tr').data((d)->[[d[0]+1, d[2], d[3], span_item], ['', d[4], '']])
+        .selectAll('tr').data((d)->[[d[0]+1, d[2], d[3], span_item], ['', d[4], PiRemote.pl_make_ratings(d[7])]])
 
     subcells = subrows.enter().append('tr').attr('class', (d, i) -> 'pltr-'+i)
         .selectAll('td').data((d)->d)
@@ -271,7 +262,7 @@ PiRemote.pl_apply_changes = (data) ->
                 art += ' - '
             art += elem[3]
         selected = id in selected_ids
-        item = [pos, id, elem[1], elem[4], art, selected, elem[6]]
+        item = [pos, id, elem[1], elem[4], art, selected, elem[6], elem[7]]
         PiRemote.tb_data[pos] = item
 
     PiRemote.pl_update_table()
@@ -1068,3 +1059,13 @@ PiRemote.pl_refresh_status =  ->
             PiRemote.update_pl_status data
             return
     return
+
+
+# create a span of five stars (filled or empty depends on rating)
+PiRemote.pl_make_ratings = (rating) ->
+    text = ''
+    for i in [1..5]
+        text += '<span class="glyphicon glyphicon-star'
+        text += '-empty' if i > rating
+        text += '"></span>'
+    text

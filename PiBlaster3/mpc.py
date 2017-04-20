@@ -227,7 +227,7 @@ class MPC:
         """Get playlist items in interval [start, end)
         :param start: start index in playlist (start = 0)
         :param end: end index in playlist (excluded)
-        :return: [[pos, title, artist, album, length, id, file]]
+        :return: [[pos, title, artist, album, length, id, file, rating]]
         """
 
         pl_len = self.get_status_int('playlistlength')
@@ -258,6 +258,7 @@ class MPC:
             res.append(length)
             res.append(item['id'])
             res.append(item['file'])
+            res.append(Rating.get_rating(item['file']))
             data.append(res)
         result['data'] = data
         return result
@@ -328,7 +329,7 @@ class MPC:
 
         :param version: diff version of playlist.
         :return: {version: new version
-                  changes: [[pos, title, artist, album, length, id, file]]
+                  changes: [[pos, title, artist, album, length, id, file, rating]]
                   length: new playlist length}
         """
         pl_len = self.get_status_int('playlistlength')
@@ -349,6 +350,7 @@ class MPC:
             res.append(length)
             res.append(item['id'])
             res.append(item['file'])
+            res.append(Rating.get_rating(item['file']))
             result.append(res)
         return {'version': pl_ver, 'changes': result, 'length': pl_len}
 
@@ -662,6 +664,7 @@ class MPC:
             res.append(length)
             res.append('')  # dummy to push file to pos #5
             res.append(item['file'])
+            res.append(Rating.get_rating(item['file']))
             result.append(res)
 
         trunc_str = '(truncated)' if self.truncated else ''
