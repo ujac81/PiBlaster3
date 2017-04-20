@@ -87,7 +87,7 @@ PiRemote.rebuild_files = (data) ->
             .attr('data-filename', (d) -> d[5])
             .attr('data-date', (d) -> d[7])
         .selectAll('td')
-        .data((d, i) -> ['<img src="/piremote/static/img/'+d[6]+'.png"/>', d[1], action_span]).enter()
+        .data((d, i) -> ['<img src="/piremote/static/img/'+d[6]+'.png"/>', PiRemote.make_float_rating(d[1], d[8]), action_span]).enter()
         .append('td')
             .attr('class', (d, i)-> 'browse-td'+i)
             .classed('browse-head', (d, i) -> i == 0)
@@ -337,3 +337,11 @@ PiRemote.do_files_action = (action, item=null, type='file') ->
                 PiRemote.pl_raise_seed_dialog item
                 return
     return
+
+
+# put title and rating stars into a div container, float title left, rating right
+PiRemote.make_float_rating = (title, rating) ->
+    text = '<div class="tfloat"><div class="flleft">'+title+'</div><div class="flright">'
+    text += PiRemote.pl_make_ratings(rating)
+    text += '</div><div>'
+    text

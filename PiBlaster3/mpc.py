@@ -410,7 +410,7 @@ class MPC:
 
         :param path: Directory to list.
         :return: Array of ['1', title, '', '', '', directory] for dirs
-                 Array of ['2', title, artist, album, length, file, ext, date] for audio files
+                 Array of ['2', title, artist, album, length, file, ext, date, rating] for audio files
         """
         if path is None:
             return None
@@ -463,8 +463,8 @@ class MPC:
                 if ext not in ['mp3', 'wma', 'ogg', 'wav', 'flac', 'mp4']:
                     ext = 'audio'
                 res.append(ext)
-
                 res.append(item['date'] if 'date' in item else '')
+                res.append(Rating.get_rating(item['file']))
 
                 result.append(res)
 
