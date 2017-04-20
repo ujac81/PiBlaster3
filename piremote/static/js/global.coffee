@@ -53,9 +53,10 @@ PiRemote.init_variables = ->
 # Fade in status bar, set text and start fade out timer.
 # NOTE: If you are using differing fade times, the fade-out might not work
 # if you send differing messages in short time.
-PiRemote.setStatus = (text, error, fade) ->
+PiRemote.setStatus = (text, error, warning, fade) ->
     $('#footer').toggleClass('error', error)
-    $('#footer').toggleClass('status', ! error)
+    $('#footer').toggleClass('warning', not error and warning)
+    $('#footer').toggleClass('status', not error and not warning)
 
     if text == ''
         $('#footer').fadeTo('fast', 0)
@@ -74,13 +75,19 @@ PiRemote.setStatus = (text, error, fade) ->
 
 # Fade in status bar, set text and start fade out timer.
 PiRemote.setStatusText = (text, fade=5000) ->
-    PiRemote.setStatus text, false, fade
+    PiRemote.setStatus text, false, false, fade
     return
 
 
 # Fade in status red bar, set text and start fade out timer.
 PiRemote.setErrorText = (text, fade=5000) ->
-    PiRemote.setStatus text, true, fade
+    PiRemote.setStatus text, true, false, fade
+    return
+
+
+# Fade in status red bar, set text and start fade out timer.
+PiRemote.setWarningText = (text, fade=5000) ->
+    PiRemote.setStatus text, false, true, fade
     return
 
 

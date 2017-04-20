@@ -360,13 +360,13 @@ PiRemote.do_pl_poll = ->
     return if PiRemote.current_page != 'playlist'
     return if PiRemote.current_sub_page != 'home'
 
-    PiRemote.tot_poll_count += 1
-    if PiRemote.tot_poll_count > PiRemote.enforce_reload_poll_count
-        console.log PiRemote.tot_poll_count
-        PiRemote.setErrorText 'Reached max poll count, reload enforced!'
-        PiRemote.init_variables()
-        location.reload true
-        return
+#    PiRemote.tot_poll_count += 1
+#    if PiRemote.tot_poll_count > PiRemote.enforce_reload_poll_count
+#        console.log PiRemote.tot_poll_count
+#        PiRemote.setErrorText 'Reached max poll count, reload enforced!'
+#        PiRemote.init_variables()
+#        location.reload true
+#        return
 
     PiRemote.do_ajax
         url: 'status'

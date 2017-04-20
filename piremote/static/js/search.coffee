@@ -175,6 +175,37 @@ PiRemote.search_raise_info_dialog = (file) ->
                         p.append('span').html(res)
                         p.append('br')
 
+                # show rating
+                p.append('strong').html('Rating: ')
+                idxrate = p.append('span').attr('class', 'idxrate')
+                idxrate.append('span').attr('class', 'norate')
+                for i in [1..5]
+                    idxrate.append('span')
+                        .attr('class', 'ratespan glyphicon')
+                        .attr('data-idx', i)
+                        .classed('glyphicon-star-empty', i > info.rating)
+                        .classed('glyphicon-star', i <= info.rating)
+                idxrate.append('span').attr('class', 'norate')
+                p.append('br')
+
+                # rate song
+                $('span.idxrate span').off 'click'
+                $('span.idxrate span').on 'click', (event) ->
+                    rate = 0
+                    if $(this).hasClass('ratespan')
+                        rate = $(this).data('idx')
+                    PiRemote.do_ajax
+                        url: 'rate'
+                        method: 'POST'
+                        data:
+                            filename: info.file
+                            rating: rate
+                            success: (data) ->
+                                PiRemote.index_set_rating 'span.idxrate', rate
+                                return
+                    return
+
+                # show filename and parent dirs
                 filename = info.file.split('/').slice(-1)[0]
                 dirs = info.file.split('/').slice(0, -1)
 
@@ -208,5 +239,7 @@ PiRemote.search_raise_info_dialog = (file) ->
                 audio.append('source').attr('src', '/music/'+file)
 
                 $('#modalSmall').modal()
+                console.log ['span.idxrate', info.rating]
+                PiRemote.index_set_rating 'span.idxrate', info.rating
             return
     return

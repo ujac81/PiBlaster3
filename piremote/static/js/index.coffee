@@ -34,6 +34,15 @@ PiRemote.index_build_main = ->
     idxshow.append('h3').attr('id', 'idxartist')
     idxshow.append('h4').attr('id', 'idxalbum')
 
+    idxrate = root.append('div').attr('class', 'idxrate')
+    idxrate.append('span').attr('class', 'norate')
+    for i in [1..5]
+        idxrate.append('span')
+            .attr('class', 'ratespan glyphicon glyphicon-star-empty')
+            .attr('data-idx', i)
+    idxrate.append('span').attr('class', 'norate')
+    PiRemote.last_rating = 0
+
     # POSITION INDICATOR
     idxpos = root.append('div').attr('id', 'idxpos')
     idxpos.append('div').attr('id', 'idxposfill')
@@ -188,9 +197,27 @@ PiRemote.install_index_actions = ->
                 if data.success
                     PiRemote.update_status data
                 return
-
         return
 
+    # rate song
+    $('div.idxrate span').off 'click'
+    $('div.idxrate span').on 'click', (event) ->
+        if PiRemote.last_index_data isnt null and PiRemote.last_index_data.file and PiRemote.last_index_data.file isnt ''
+            rate = 0
+            if $(this).hasClass('ratespan')
+                rate = $(this).data('idx')
+            PiRemote.do_ajax
+                url: 'rate'
+                method: 'POST'
+                data:
+                    filename: PiRemote.last_index_data.file
+                    rating: rate
+                    success: (data) ->
+                        PiRemote.index_refresh_status()
+                        return
+        return
+
+    # click in title raises info dialog
     $('#idxshow').off 'click'
     $('#idxshow').on 'click', ->
         if PiRemote.last_index_data isnt null and PiRemote.last_index_data.file and PiRemote.last_index_data.file isnt ''
@@ -219,12 +246,12 @@ PiRemote.do_status_poll = ->
     return if PiRemote.polling
     return if PiRemote.current_page != 'index'
 
-    PiRemote.tot_poll_count += 1
-    if PiRemote.tot_poll_count > PiRemote.enforce_reload_poll_count
-        PiRemote.setErrorText 'Reached max poll count, reload enforced!'
-        PiRemote.init_variables()
-        location.reload true
-        return
+#    PiRemote.tot_poll_count += 1
+#    if PiRemote.tot_poll_count > PiRemote.enforce_reload_poll_count
+#        PiRemote.setErrorText 'Reached max poll count, reload enforced!'
+#        PiRemote.init_variables()
+#        location.reload true
+#        return
 
     # Remember last poll send time
     PiRemote.last_poll_time = new Date().getTime()
@@ -295,6 +322,10 @@ PiRemote.update_status = (data) ->
             album += ' ('+data.date+')'
     $('h4#idxalbum').html(album)
 
+    unless PiRemote.last_rating == data.rating
+        PiRemote.index_set_rating 'div.idxrate', data.rating
+        PiRemote.last_rating = data.rating
+
     # TIME
     PiRemote.index_set_time data.elapsed, data.time
 
@@ -356,4 +387,13 @@ PiRemote.index_refresh_status = ->
         success: (data) ->
             PiRemote.update_status data
             return
+    return
+
+
+# Toggle star/star-empty classes for stars depending on rating.
+PiRemote.index_set_rating = (parent, rating) ->
+    for i in [1..5]
+        star = $(parent+' > span.ratespan[data-idx='+i+']')
+        star.toggleClass('glyphicon-star-empty', i > rating)
+        star.toggleClass('glyphicon-star', i <= rating)
     return

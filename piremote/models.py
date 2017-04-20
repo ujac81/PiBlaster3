@@ -164,6 +164,11 @@ class History(models.Model):
 
 
 class Rating(models.Model):
+    """MPD cannot store ratings for songs, so we copy the MPD database to SQL and enrich it by rating.
+
+    Database is seeded by piblaster_worker process on any update of the MPD database.
+    Ratings are read from file tags if such, ratings made by user here are stored in SQL database only.
+    """
     path = models.FilePathField(max_length=500)
     title = models.CharField(max_length=50, default='')
     artist = models.CharField(max_length=50, default='')
@@ -174,12 +179,28 @@ class Rating(models.Model):
 
     @staticmethod
     def get_rating(uri):
-        """
+        """Get Rating for song from SQL
 
-        :param uri:
-        :return:
+        :param uri: MPD uri
+        :return: 0-5
         """
         q = Rating.objects.filter(path=uri)
         if len(q) == 0:
             return 0
         return q[0].rating
+
+    @staticmethod
+    def set_rating(uri, rating):
+        """Rate song in database and return status or error string dict for JSON response.
+
+        :param uri: MPD uri
+        :param rating: 1-5 or 0 to remove
+        :return: {error_str=''} or {status_str=''}
+        """
+        q = Rating.objects.filter(path=uri)
+        if len(q) == 0:
+            return dict(error_str='Song to rate not found in database!')
+        q.update(rating=rating)
+        if rating == 0:
+            return dict(status_str='Removed rating for %s' % q[0].title)
+        return dict(status_str='Set rating for %s to %d' % (q[0].title, rating))

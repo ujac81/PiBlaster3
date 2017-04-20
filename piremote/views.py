@@ -13,7 +13,7 @@ from PiBlaster3.commands import Commands
 from PiBlaster3.mpc import MPC
 from PiBlaster3.upload import Uploader
 
-from .models import Setting, Upload, History
+from .models import Setting, Upload, History, Rating
 from .forms import UploadForm
 
 
@@ -307,3 +307,13 @@ def history_ajax(request):
     if mode != 'dates':
         title = datetime.datetime.strptime(mode, '%Y-%m-%d').strftime('%A %d %B %Y')
     return JsonResponse({'history': History.get_history(mode), 'mode': mode, 'title': title})
+
+
+def rate_ajax(request):
+    """POST /ajax/rate
+
+    :return: JSON status_str or error_str
+    """
+    filename = request.POST.get('filename')
+    rating = request.POST.get('rating')
+    return JsonResponse(Rating.set_rating(filename, int(rating)))
