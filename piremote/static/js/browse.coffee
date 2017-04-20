@@ -170,7 +170,7 @@ PiRemote.build_browse_song = (data) ->
         .attr('class', 'selectable')
         .attr('data-index', (d, i) -> i)
         .selectAll('td')
-        .data((d, i) -> [i+1, d[1], action_span]).enter()
+        .data((d, i) -> [i+1, PiRemote.make_float_rating(d[1], d[2]), action_span]).enter()
         .append('td')
             .attr('class', (d, i)-> 'browse-td'+i)
             .html((d) -> d)

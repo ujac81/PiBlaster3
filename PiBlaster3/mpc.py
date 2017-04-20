@@ -807,9 +807,9 @@ class MPC:
             res = []
             for x in q:
                 if x.artist != '':
-                    res.append([x.path, x.artist + ' - ' + x.title])
+                    res.append([x.path, x.artist + ' - ' + x.title, x.rating])
                 else:
-                    res.append([x.path, x.title])
+                    res.append([x.path, x.title, x.rating])
             return res
 
     def seed_by(self, count, plname, what, ratings, dates, genres, artists, albums):
