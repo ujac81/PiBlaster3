@@ -92,6 +92,7 @@ PiRemote.upload_browse = (dir) ->
             return
     return
 
+
 # Build dir listing on upload
 PiRemote.rebuild_upload = (data) ->
 

@@ -1,0 +1,28 @@
+//-
+    upload_ratings.pug -- provide upload form for XML ratings file.
+
+    GET /piremote/upload/ratings
+
+!!!5
+html(lang="en")
+    head
+        meta(charset="utf-8")
+        meta(name="viewport", content="width=device-width, maximum-scale=1.0, user-scalable=yes")
+        meta(http-equiv="Cache-control", content="no-cache")
+        meta(http-equiv="Expires", content="-1")
+        title PiBlater3 Remote
+    body
+        h1 Upload Ratings File
+        p.
+            Uploaded ratings files must be XML files and are parsed for
+            rating entries for the files found in the database.
+            All matches will be rated, first match criterion is the full path name,
+            if not found, filename + 2 leading directories, if still not found
+            we will try to match by title/artist combination as good as possible.
+
+        form(action='/piremote/upload/ratings/', method='POST', enctype='multipart/form-data')
+            -csrf_token
+            label(for='ratingsfile') Ratings XML file:
+            input(type='file', name='ratingsfile', accept='application/xml', required='', placeholder='ratings.xml')
+            input(type='submit', value='Upload')
+

@@ -13,9 +13,10 @@ from PiBlaster3.alsa import AlsaMixer
 from PiBlaster3.commands import Commands
 from PiBlaster3.mpc import MPC
 from PiBlaster3.upload import Uploader
+from PiBlaster3.ratings_parser import RatingsParser
 
 from .models import Setting, Upload, History, Rating
-from .forms import UploadForm
+from .forms import UploadForm, UploadRatingsForm
 
 
 def index(request):
@@ -328,3 +329,38 @@ def download_ratings(request):
     response = HttpResponse(data, content_type="application/xml")
     response['Content-Disposition'] = 'attachment; filename=ratings.xml'
     return response
+
+
+def upload_ratings(request):
+    """/upload/ratings
+    Handle file upload form.
+    :return: upload page including status message about successful upload.
+    """
+    if request.method == 'POST':
+        form = UploadRatingsForm(request.POST, request.FILES)
+        if form.is_valid():
+            context = {'status_str': 'File parsed'}
+            filename = form.cleaned_data["ratingsfile"]
+            data = request.FILES['ratingsfile'].read()
+            parser = RatingsParser(filename, data)
+
+            context['errors'] = parser.errors
+        else:
+            context = {'error_str': 'Uploaded file is not valid!'}
+        template = loader.get_template('piremote/upload_ratings_result.pug')
+        return HttpResponse(template.render(context, request))
+
+        # if form.is_valid():
+        #     name = form.cleaned_data["uploader"]
+        #     filename = form.cleaned_data["mediafile"]
+        #     up = Uploader()
+        #     res = up.upload_file(name, filename, request.FILES['mediafile'])
+        # else:
+        #     res = {'error_str': 'Upload form data is invalid!'}
+        # template = loader.get_template('piremote/index.pug')
+        # return HttpResponse(template.render({'page': 'upload', 'upload': json.dumps(res)}, request))
+        pass
+    else:
+        template = loader.get_template('piremote/upload_ratings.pug')
+        return HttpResponse(template.render({}, request))
+

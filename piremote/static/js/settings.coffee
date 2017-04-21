@@ -72,6 +72,7 @@ PiRemote.settings_build_page = (settings) ->
     p = root.append('p').attr('class', 'settingsgroup').attr('id', 'ratings')
     p.append('h4').attr('class','settingshead').html('Ratings')
     PiRemote.settings_add_link p, 'Download ratings', '/piremote/download/ratings'
+    PiRemote.settings_add_link p, 'Upload ratings', '/piremote/upload/ratings'
 
     return
 

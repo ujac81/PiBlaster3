@@ -6,3 +6,6 @@ class UploadForm(forms.Form):
     uploader = forms.CharField(max_length=100)
     mediafile = forms.FileField()
 
+
+class UploadRatingsForm(forms.Form):
+    ratingsfile = forms.FileField()

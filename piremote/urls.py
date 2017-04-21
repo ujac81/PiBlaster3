@@ -11,6 +11,7 @@ from . import views
 urlpatterns = [
     url(r'^$', views.index, name='index'),
     url(r'^upload/$', views.upload, name='upload'),
+    url(r'^upload/ratings/$', views.upload_ratings, name='upload_ratings'),
     url(r'^pages/(?P<page>[-\w]+)$', views.pages, name='pages'),
     url(r'^ajax/browse/$', views.browse_ajax, name='browse_ajax'),
     url(r'^ajax/status/$', views.status_ajax, name='status_ajax'),
