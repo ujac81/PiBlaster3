@@ -35,5 +35,6 @@ urlpatterns = [
     url(r'^ajax/seedbrowse/$', views.seed_browse_ajax, name='seed_browse_ajax'),
     url(r'^ajax/history/$', views.history_ajax, name='history_ajax'),
     url(r'^ajax/rate/$', views.rate_ajax, name='rate_ajax'),
+    url(r'^download/ratings/$', views.download_ratings, name='download_ratings'),
 ]
 

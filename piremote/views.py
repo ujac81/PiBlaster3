@@ -5,6 +5,7 @@ Invoked via urls.py
 from django.http import HttpResponse, JsonResponse, HttpResponseRedirect
 from django.template import loader
 from django.conf import settings
+from django.core import serializers
 import datetime
 import json
 
@@ -317,3 +318,13 @@ def rate_ajax(request):
     filename = request.POST.get('filename')
     rating = request.POST.get('rating')
     return JsonResponse(Rating.set_rating(filename, int(rating)))
+
+
+def download_ratings(request):
+    """GET /download/ratings
+    """
+    q = Rating.objects.filter(rating__gte=1)
+    data = serializers.serialize("xml", q)
+    response = HttpResponse(data, content_type="application/xml")
+    response['Content-Disposition'] = 'attachment; filename=ratings.xml'
+    return response

@@ -599,10 +599,15 @@ table#tbhist tr.selected
 
 ////////////////// RATINGS //////////////////
 
+
 span.glyphicon-star-empty
     color: #777
 span.glyphicon-star
     color: orange
+
+// do not hilight filled stars orange on orange background
+tr.running td.pltdmain table.pltbsub tr.pltr-1 td.pltd-2 span.glyphicon-star
+    color: #777
 
 .tfloat
     width: 100%

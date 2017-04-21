@@ -198,6 +198,10 @@ class RatingsScanner:
                     m = mutagen.musepack.Musepack(file)
                 elif ext == 'm4a':
                     m = mutagen.mp4.MP4(file)
+                elif ext == 'flac':
+                    m = mutagen.flac.FLAC(file)
+                elif ext == 'wma':
+                    m = mutagen.asf.ASF(file)
                 else:
                     print(file)
                     print('MUTAGEN ERROR {0}'.format(e))
@@ -216,8 +220,12 @@ class RatingsScanner:
             return RatingsScanner.parse_ogg(item, m, file)
         elif type(m) == mutagen.musepack.Musepack:
             return RatingsScanner.parse_mpc(item, m, file)
+        elif type(m) == mutagen.flac.FLAC:
+            return RatingsScanner.parse_ogg(item, m, file)
         elif type(m) == mutagen.mp4.MP4:
             return RatingsScanner.parse_m4a(item, m, file)
+        elif type(m) == mutagen.asf.ASF:
+            return RatingsScanner.parse_wma(item, m, file)
 
         print('UNKNOWN TYPE: ' + file)
         print(file)
@@ -254,7 +262,7 @@ class RatingsScanner:
         if 'album' in audio:
             album = audio['album'][0]
         if 'date' in audio:
-            date = int(audio['date'][0])
+            date = RatingsScanner.conv_save_date(audio['date'][0], item)
         if 'genre' in audio:
             genre = audio['genre'][0]
 
@@ -290,11 +298,11 @@ class RatingsScanner:
         if title == '':
             title = RatingsScanner.plain_filename(file)
 
-        return item, title, artist, album, genre, int(date), int(rating/51),
+        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating/51),
 
     @staticmethod
     def parse_ogg(item, m, file):
-        """Try to extract tags from ogg file.
+        """Try to extract tags from ogg / flac file.
 
         Ratings are placed in fmps_rating field and in range [0.0, 1.0]
 
@@ -316,16 +324,21 @@ class RatingsScanner:
         if 'album' in m:
             album = m['album'][0]
         if 'date' in m:
-            date = int(m['date'][0])
+            date = m['date'][0]
         if 'genre' in m:
             genre = m['genre'][0]
         if 'fmps_rating' in m:
             rating = int(float(m['rating'][0]) * 5 * 51)
 
+        if rating == 0:
+            ratings = [float(x[1]) for x in m.tags if x[0].upper().startswith('RATING')]
+            if len(ratings) > 0:
+                rating = int(sum(ratings)*5.0/len(ratings)+0.5) * 51
+
         if title == '':
             title = RatingsScanner.plain_filename(file)
 
-        return item, title, artist, album, genre, int(date), int(rating/51),
+        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating/51),
 
     @staticmethod
     def parse_mpc(item, m, file):
@@ -350,14 +363,14 @@ class RatingsScanner:
         if 'Album' in m:
             album = m['Album'][0]
         if 'Year' in m:
-            date = int(m['Year'][0])
+            date = m['Year'][0]
         if 'Genre' in m:
             genre = m['Genre'][0]
 
         if title == '':
             title = RatingsScanner.plain_filename(file)
 
-        return item, title, artist, album, genre, int(date), int(rating/51),
+        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating/51),
 
     @staticmethod
     def parse_m4a(item, m, file):
@@ -382,11 +395,72 @@ class RatingsScanner:
         if '\xa9alb' in m:
             album = m['\xa9alb'][0]
         if '\xa9day' in m:
-            date = int(m['\xa9day'][0])
+            date = m['\xa9day'][0]
         if '\xa9gen' in m:
             genre = m['\xa9gen'][0]
 
         if title == '':
             title = RatingsScanner.plain_filename(file)
 
-        return item, title, artist, album, genre, int(date), int(rating/51),
+        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating/51),
+
+    @staticmethod
+    def parse_wma(item, m, file):
+        """Try to extract tags from WMA/ASF file.
+
+        See http://help.mp3tag.de/main_tags.html
+
+        :param item: MPD uri
+        :param m: mutagen object
+        :param file: full path
+        :return: see scan_file()
+        """
+        title, artist, album = [''] * 3
+        genre = 'unknown'
+        date = 0
+        rating = 0
+
+        tags = m.tags
+        get = tags.get('Title')
+        if get is not None:
+            title = str(get[0])
+        get = tags.get('Author')
+        if get is not None:
+            artist = str(get[0])
+        get = tags.get('WM/AlbumTitle')
+        if get is not None:
+            album = str(get[0])
+        get = tags.get('WM/Genre')
+        if get is not None:
+            genre = str(get[0])
+        get = tags.get('WM/Year')
+        if get is not None:
+            date = str(get[0])
+        get = tags.get('WM/SharedUserRating')
+        if get is not None:
+            rating = int(round(int(str(get[0]))/99.0 * 5.0))
+
+        if title == '':
+            title = RatingsScanner.plain_filename(file)
+
+        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating / 51),
+
+    @staticmethod
+    def conv_save_date(date, item):
+        """Save conversion of date string (date could be like '2015-03-07T00:00:01')
+
+        :return: integer (4 digit year)
+        """
+        try:
+            return int(date)
+        except ValueError:
+            try:
+                if len(date) < 4:
+                    return 0
+                return int(date[0:4])
+            except ValueError:
+                print(item)
+                print("DATE CONVERSION FAILED: %s" % date)
+                pass
+
+        return 0
