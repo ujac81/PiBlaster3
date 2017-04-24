@@ -175,6 +175,6 @@ class Uploader(threading.Thread):
             try:
                 ui.check_for_uploads()
             except sqlite3.OperationalError as e:
-                self.main.print_message('SQLITE ERROR {0}'.format(e))
+                self.parent.print_message('SQLITE ERROR {0}'.format(e))
                 pass
             sleep(1)
