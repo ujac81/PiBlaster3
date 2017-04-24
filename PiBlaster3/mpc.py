@@ -244,8 +244,15 @@ class MPC:
             return result
 
         items = self.client.playlistinfo("%d:%d" % (start, end))
+
+        # make sure we only do 1 SQL query for all ratings.
+        files = [x['file'] for x in items]
+        q = Rating.objects.values('path', 'rating').filter(path__in=files)
+        rat_d = dict([(x['path'], x['rating']) for x in q])
+
         data = []
         for item in items:
+            file = item['file'] if 'file' in item else ''
             res = [item['pos']]
             if 'title' in item:
                 res.append(item['title'])
@@ -257,8 +264,8 @@ class MPC:
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append(item['id'])
-            res.append(item['file'])
-            res.append(Rating.get_rating(item['file']))
+            res.append(file)
+            res.append(rat_d[file] if file in rat_d else 0)
             data.append(res)
         result['data'] = data
         return result
@@ -335,8 +342,15 @@ class MPC:
         pl_len = self.get_status_int('playlistlength')
         pl_ver = self.get_status_int('playlist')
         changes = self.client.plchanges(version)
+
+        # make fast query for all ratings
+        files = [x['file'] for x in changes]
+        q = Rating.objects.values('path', 'rating').filter(path__in=files)
+        rat_d = dict([(x['path'], x['rating']) for x in q])
+
         result = []
         for change in changes:
+            file = item['file'] if 'file' in item else ''
             item = self.client.playlistinfo(change['pos'])[0]
             res = [item['pos']]
             if 'title' in item:
@@ -349,8 +363,8 @@ class MPC:
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append(item['id'])
-            res.append(item['file'])
-            res.append(Rating.get_rating(item['file']))
+            res.append(file)
+            res.append(rat_d[file] if file in rat_d else 0)
             result.append(res)
         return {'version': pl_ver, 'changes': result, 'length': pl_len}
 
@@ -436,6 +450,11 @@ class MPC:
                         mixed_artists = True
                         break
 
+        # query all ratings at once
+        files = [x['file'] for x in lsdir if 'file' in x]
+        q = Rating.objects.values('path', 'rating').filter(path__in=files)
+        rat_d = dict([(x['path'], x['rating']) for x in q])
+
         for item in lsdir:
             if 'directory' in item:
                 title = os.path.basename(item['directory'])
@@ -464,7 +483,7 @@ class MPC:
                     ext = 'audio'
                 res.append(ext)
                 res.append(item['date'] if 'date' in item else '')
-                res.append(Rating.get_rating(item['file']))
+                res.append(rat_d[item['file']] if item['file'] in rat_d else 0)
 
                 result.append(res)
 
@@ -594,7 +613,7 @@ class MPC:
 
         return 'Unknown command '+cmd
 
-    def search_file(self, arg, limit=200):
+    def search_file(self, arg, limit=500):
         """ Search in MPD data base using 'any' and 'file' tag.
         :param arg: search pattern
         :param limit: max amount of results
@@ -623,7 +642,12 @@ class MPC:
 
         self.truncated = 0
         if len(search) > limit:
-                self.truncated = len(search) - limit
+            self.truncated = len(search) - limit
+
+        # query all ratings at once
+        files = sorted(set([x['file'] for x in search if 'file' in x]))
+        q = Rating.objects.values('path', 'rating').filter(path__in=files)
+        rat_d = dict([(x['path'], x['rating']) for x in q])
 
         for item in search[:limit]:
             if 'file' not in item:
@@ -655,7 +679,7 @@ class MPC:
             res = []
             if 'title' in item:
                 res.append(item['title'])
-            elif 'file' in item:
+            else:
                 no_ext = os.path.splitext(item['file'])[0]
                 res.append(os.path.basename(no_ext).replace('_', ' '))
             res.append(item['artist'] if 'artist' in item else '')
@@ -664,7 +688,7 @@ class MPC:
             res.append(length)
             res.append('')  # dummy to push file to pos #5
             res.append(item['file'])
-            res.append(Rating.get_rating(item['file']))
+            res.append(rat_d[item['file']] if item['file'] in rat_d else 0)
             result.append(res)
 
         trunc_str = '(truncated)' if self.truncated else ''

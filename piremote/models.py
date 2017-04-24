@@ -7,6 +7,7 @@ If changes applied here, run
 
 from django.db import models
 from django.conf import settings
+from django.core.exceptions import ObjectDoesNotExist
 
 import datetime
 import os
@@ -184,10 +185,10 @@ class Rating(models.Model):
         :param uri: MPD uri
         :return: 0-5
         """
-        q = Rating.objects.filter(path=uri)
-        if len(q) == 0:
+        try:
+            return Rating.objects.values('rating').get(path=uri)['rating']
+        except ObjectDoesNotExist:
             return 0
-        return q[0].rating
 
     @staticmethod
     def set_rating(uri, rating):
