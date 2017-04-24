@@ -28,4 +28,14 @@ html(lang="en")
         if status_str
             p.status {{status_str}}
 
+        if unparsed
+            h4.status Ratings not found in local database:
+            ol
+                each rating in unparsed
+                    li {{rating.3}}
 
+        if parsed
+            h4.status Parsed Ratings:
+            ol
+                each rating in parsed
+                    li {{rating.3}}

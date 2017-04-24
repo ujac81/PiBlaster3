@@ -345,6 +345,8 @@ def upload_ratings(request):
             parser = RatingsParser(filename, data)
 
             context['errors'] = parser.errors
+            context['parsed'] = parser.parsed_ratings
+            context['unparsed'] = parser.not_parsed_ratings
         else:
             context = {'error_str': 'Uploaded file is not valid!'}
         template = loader.get_template('piremote/upload_ratings_result.pug')
