@@ -27,8 +27,7 @@ class RatingsScanner:
         Called via main daemon loop, triggered via MPD_Idler.
         Does not block too much, will leave scanning loop if keep_run is False in main.
         """
-        if DEBUG:
-            print("RESCANNING RATINGS")
+        self.main.print_message("RESCANNING RATINGS")
 
         mpd_files = self.get_mpd_files()
         if mpd_files is None:
@@ -65,15 +64,14 @@ class RatingsScanner:
             return
 
         if DEBUG:
-            print('FOUND %d new files in mpd db' % len(to_add))
-            print('FOUND %d files in db which are not in mpd db' % len(to_remove))
+            self.main.print_message('FOUND %d new files in mpd db' % len(to_add))
+            self.main.print_message('FOUND %d files in db which are not in mpd db' % len(to_remove))
 
         self.alter_db('insert_many', to_add)
         self.alter_db('remove_many', to_remove)
         self.main.rescan_ratings = False
 
-    @staticmethod
-    def get_mpd_files():
+    def get_mpd_files(self):
         """Fetch list of uri names from MPD databse.
 
         NOTE: mpd uris do not contain leading music path.
@@ -86,16 +84,15 @@ class RatingsScanner:
             client.connect('localhost', 6600)
             mpd_files = client.list('file')
         except ConnectionError:
-            print("ERROR: CONNECT")
+            self.main.print_message("ERROR: CONNECT")
             return None
         except CommandError:
-            print("ERROR: COMMAND")
+            self.main.print_message("ERROR: COMMAND")
             return None
 
         return mpd_files
 
-    @staticmethod
-    def get_db_files():
+    def get_db_files(self):
         """Fetch list of uri names from SQL database.
 
         Uri names match MPD file names, so no leading music path.
@@ -113,13 +110,12 @@ class RatingsScanner:
             cur.close()
             conn.close()
         except sqlite3.OperationalError as e:
-            print('SQLITE ERROR {0}'.format(e))
+            self.main.print_message('SQLITE ERROR {0}'.format(e))
             return None
 
         return res
 
-    @staticmethod
-    def alter_db(what, payload):
+    def alter_db(self, what, payload):
         """Perform changes in database, (insert, delete, ....)"""
         try:
             db = DATABASES['default']
@@ -134,8 +130,8 @@ class RatingsScanner:
                         try:
                             cur.execute('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating) VALUES (?, ?, ?, ?, ?, ?, ?)', item)
                         except sqlite3.InterfaceError:
-                            print('INSERT ERROR')
-                            print(item)
+                            self.main.print_message('INSERT ERROR')
+                            self.main.print_message(item)
                             return
 
             elif what == 'remove_many':
@@ -143,17 +139,16 @@ class RatingsScanner:
             elif what == 'deleteall':
                 cur.execute('DELETE FROM piremote_rating')
             else:
-                print('ERROR: unknow alter db command: '+what)
+                self.main.print_message('ERROR: unknow alter db command: '+what)
 
             conn.commit()
             cur.close()
             conn.close()
         except sqlite3.OperationalError as e:
-            print('SQLITE ERROR {0}'.format(e))
+            self.main.print_message('SQLITE ERROR {0}'.format(e))
             return
 
-    @staticmethod
-    def get_music_path():
+    def get_music_path(self):
         """Try to connect to MPD via socket to receive music path.
 
         :return: '/local/music/path'
@@ -164,9 +159,9 @@ class RatingsScanner:
             client.connect(PB_MPD_SOCKET, 0)
             return client.config()
         except ConnectionError:
-            print("ERROR: CONNECT SOCKET")
+            self.main.print_message("ERROR: CONNECT SOCKET")
         except CommandError:
-            print("ERROR: COMMAND SOCKET")
+            self.main.print_message("ERROR: COMMAND SOCKET")
 
         return None
 
@@ -176,8 +171,7 @@ class RatingsScanner:
         no_ext = os.path.splitext(path)[0]
         return os.path.basename(no_ext).replace('_', ' ')
 
-    @staticmethod
-    def scan_file(item, file):
+    def scan_file(self, item, file):
         """Try to open file with mutagen to extract information
 
         :param item: MPD uri descriptor (path without local music path)
@@ -203,37 +197,36 @@ class RatingsScanner:
                 elif ext == 'wma':
                     m = mutagen.asf.ASF(file)
                 else:
-                    print(file)
-                    print('MUTAGEN ERROR {0}'.format(e))
+                    self.main.print_message(file)
+                    self.main.print_message('MUTAGEN ERROR {0}'.format(e))
                     m = None
             except HeaderNotFoundError as e:
-                print(file)
-                print('MUTAGEN ERROR 2 {0}'.format(e))
+                self.main.print_message(file)
+                self.main.print_message('MUTAGEN ERROR 2 {0}'.format(e))
                 m = None
 
         if m is None:
-            print('NO TAGS FOR ' + file)
-            return item, RatingsScanner.plain_filename(file), '', '', '', 0, 0,
+            self.main.print_message('NO TAGS FOR ' + file)
+            return item, self.plain_filename(file), '', '', '', 0, 0,
         elif type(m) == mutagen.mp3.MP3:
-            return RatingsScanner.parse_mp3(item, m, file)
+            return self.parse_mp3(item, m, file)
         elif type(m) == mutagen.oggvorbis.OggVorbis:
-            return RatingsScanner.parse_ogg(item, m, file)
+            return self.parse_ogg(item, m, file)
         elif type(m) == mutagen.musepack.Musepack:
-            return RatingsScanner.parse_mpc(item, m, file)
+            return self.parse_mpc(item, m, file)
         elif type(m) == mutagen.flac.FLAC:
-            return RatingsScanner.parse_ogg(item, m, file)
+            return self.parse_ogg(item, m, file)
         elif type(m) == mutagen.mp4.MP4:
-            return RatingsScanner.parse_m4a(item, m, file)
+            return self.parse_m4a(item, m, file)
         elif type(m) == mutagen.asf.ASF:
-            return RatingsScanner.parse_wma(item, m, file)
+            return self.parse_wma(item, m, file)
 
-        print('UNKNOWN TYPE: ' + file)
-        print(file)
-        print(m)
-        return item, RatingsScanner.plain_filename(file), '', '', '', 0, 0,
+        self.main.print_message('UNKNOWN TYPE: ' + file)
+        self.main.print_message(file)
+        self.main.print_message(m)
+        return item, self.plain_filename(file), '', '', '', 0, 0,
 
-    @staticmethod
-    def parse_mp3(item, m, file):
+    def parse_mp3(self, item, m, file):
         """Try to extract tags from MP3 file.
 
         Ratings are placed in POPM or TXXX:FMPS_Rating field and in range [0,255]
@@ -246,9 +239,9 @@ class RatingsScanner:
         try:
             audio = MP3(file, EasyID3)
         except HeaderNotFoundError as e:
-            print(file)
-            print('MUTAGEN ERROR {0}'.format(e))
-            return item, RatingsScanner.plain_filename(file), '', '', '', 0, 0,
+            self.main.print_message(file)
+            self.main.print_message('MUTAGEN ERROR {0}'.format(e))
+            return item, self.plain_filename(file), '', '', '', 0, 0,
 
         title, artist, album = ['']*3
         genre = 'unknown'
@@ -262,7 +255,7 @@ class RatingsScanner:
         if 'album' in audio:
             album = audio['album'][0]
         if 'date' in audio:
-            date = RatingsScanner.conv_save_date(audio['date'][0], item)
+            date = self.conv_save_date(audio['date'][0], item)
         if 'genre' in audio:
             genre = audio['genre'][0]
 
@@ -272,7 +265,7 @@ class RatingsScanner:
             fmps = m.tags.getall('TXXX:FMPS_Rating')
         except AttributeError:
             # file type does not support tags
-            return item, RatingsScanner.plain_filename(file), '', '', '', 0, 0,
+            return item, self.plain_filename(file), '', '', '', 0, 0,
 
         tot_rat = 0
         rat_count = 0
@@ -296,12 +289,11 @@ class RatingsScanner:
             rating = tot_rat
 
         if title == '':
-            title = RatingsScanner.plain_filename(file)
+            title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating/51),
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51),
 
-    @staticmethod
-    def parse_ogg(item, m, file):
+    def parse_ogg(self, item, m, file):
         """Try to extract tags from ogg / flac file.
 
         Ratings are placed in fmps_rating field and in range [0.0, 1.0]
@@ -336,12 +328,11 @@ class RatingsScanner:
                 rating = int(sum(ratings)*5.0/len(ratings)+0.5) * 51
 
         if title == '':
-            title = RatingsScanner.plain_filename(file)
+            title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating/51),
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51),
 
-    @staticmethod
-    def parse_mpc(item, m, file):
+    def parse_mpc(self, item, m, file):
         """Try to extract tags from MPC file.
 
         No rating information so far.
@@ -368,12 +359,11 @@ class RatingsScanner:
             genre = m['Genre'][0]
 
         if title == '':
-            title = RatingsScanner.plain_filename(file)
+            title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating/51),
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51),
 
-    @staticmethod
-    def parse_m4a(item, m, file):
+    def parse_m4a(self, item, m, file):
         """Try to extract tags from M4A file.
 
         No rating information so far.
@@ -400,12 +390,11 @@ class RatingsScanner:
             genre = m['\xa9gen'][0]
 
         if title == '':
-            title = RatingsScanner.plain_filename(file)
+            title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating/51),
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51),
 
-    @staticmethod
-    def parse_wma(item, m, file):
+    def parse_wma(self, item, m, file):
         """Try to extract tags from WMA/ASF file.
 
         See http://help.mp3tag.de/main_tags.html
@@ -441,12 +430,11 @@ class RatingsScanner:
             rating = int(round(int(str(get[0]))/99.0 * 5.0))
 
         if title == '':
-            title = RatingsScanner.plain_filename(file)
+            title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, RatingsScanner.conv_save_date(date, item), int(rating / 51),
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating / 51),
 
-    @staticmethod
-    def conv_save_date(date, item):
+    def conv_save_date(self, date, item):
         """Save conversion of date string (date could be like '2015-03-07T00:00:01')
 
         :return: integer (4 digit year)
@@ -459,8 +447,8 @@ class RatingsScanner:
                     return 0
                 return int(date[0:4])
             except ValueError:
-                print(item)
-                print("DATE CONVERSION FAILED: %s" % date)
+                self.main.print_message(item)
+                self.main.print_message("DATE CONVERSION FAILED: %s" % date)
                 pass
 
         return 0

@@ -75,13 +75,15 @@ class UploadIdler:
         :return: True if file uploaded
         """
 
+        self.main.print_message('Uploading %s' % filename)
+
         # Check if
         src_size = os.path.getsize(filename)
         s = os.statvfs(self.upload_path)
         free = s.f_bavail * s.f_frsize
         # keep at least 200MB (logs, cache, whatever)
         if src_size > free - 1024 * 1024 * 200:
-            print('DRIVE FULL, NOT UPLOADING')
+            self.main.print_message('DRIVE FULL, NOT UPLOADING')
             return False
 
         name = filename
@@ -107,16 +109,16 @@ class UploadIdler:
             try:
                 os.makedirs(dirname)
             except OSError as e:
-                print('MKDIR FAILED: '+dirname)
-                print("OSError: {0}".format(e))
+                self.main.print_message('MKDIR FAILED: '+dirname)
+                self.main.print_message("OSError: {0}".format(e))
                 return False
 
         # perform copy
         try:
             shutil.copy(filename, dest)
         except IOError as e:
-            print('COPY FAILED: ' + dest)
-            print("IOError: {0}".format(e))
+            self.main.print_message('COPY FAILED: ' + dest)
+            self.main.print_message("IOError: {0}".format(e))
             return False
 
         return True
@@ -167,11 +169,12 @@ class Uploader(threading.Thread):
 
         Note: make sure this thread does not throw uncaught exceptions, or upload thread will be dead.
         """
+        self.parent.print_message('UPLOADER RUNNING')
         while self.parent.keep_run:
             ui = UploadIdler(self.parent)
             try:
                 ui.check_for_uploads()
             except sqlite3.OperationalError as e:
-                print('SQLITE ERROR {0}'.format(e))
+                self.main.print_message('SQLITE ERROR {0}'.format(e))
                 pass
             sleep(1)

@@ -28,15 +28,28 @@ class PiBlasterWorker:
         self.idler = MPDService(self)
         self.scanner = RatingsScanner(self)
         self.rescan_ratings = True  # rescan ratings on boot
+        self.is_vassal = 'UWSGI_VASSAL' in os.environ
 
     def run(self):
         """daemonize, start threads and enter daemon loop."""
-        if not DEBUG:
+        if not DEBUG and not self.is_vassal:
+            # No fork in debug mode and not in uwsgi vassal mode.
             self.daemonize()
+        else:
+            print('PiBlasterWorker running in debug or as vassal')
         self.uploader.start()
         self.idler.start()
         self.daemon_loop()
         MPDService.stop_idler()
+
+    def print_message(self, msg):
+        """
+
+        :param msg:
+        :return:
+        """
+        if DEBUG or self.is_vassal:
+            print('[WORKER] %s' % msg)
 
     def daemon_loop(self):
         """Main daemon loop.
@@ -53,8 +66,7 @@ class PiBlasterWorker:
             if self.rescan_ratings:
                 self.scanner.rescan()  # won't block too long
 
-        if DEBUG:
-            print('LEAVING')
+        self.print_message('LEAVING')
 
     def term_handler(self, *args):
         """ Signal handler to stop daemon loop"""

@@ -3,7 +3,7 @@ Description=PiBlaster uWSGI
 After=syslog.target
 
 [Service]
-ExecStart=/bin/bash -c 'cd /opt/PiBlaster3; uwsgi --ini conf/piblaster.ini'
+ExecStart=/bin/bash -c 'cd /opt/PiBlaster3; uwsgi --ini conf/uwsgi.ini'
 ExecStop=killall -9 uwsgi
 User=pi
 Group=pi

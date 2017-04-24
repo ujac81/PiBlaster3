@@ -77,6 +77,7 @@ At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might u
     $ sudo pip3 install uwsgi
     $ sudo pip3 install python-mpd2
     $ sudo pip3 install django-websocket-redis
+    $ sudo pip3 install mutagen
 
 ## PiBlaster3 software
 
@@ -108,14 +109,8 @@ If any errors occur here, fix them, or nothing will work.
 ## UWSGI and Worker
 
     $ sudo cp /opt/PiBlaster3/conf/piblaster.service /etc/systemd/system
-    $ sudo cp /opt/PiBlaster3/conf/piblaster.websocket.service /etc/systemd/system
-    $ sudo cp /opt/PiBlaster3/conf/piblaster.worker.service /etc/systemd/system
-
     $ sudo systemctl daemon-reload
-
-    $ systemctl enable piblaster.service
-    $ systemctl enable piblaster.websocket.service
-    $ systemctl enable piblaster.worker.service
+    $ sudo systemctl enable piblaster.service
 
 ## MPD
 Link directories to scan to mpd library and update it.
@@ -141,8 +136,6 @@ No need for elaborate SQL server for this app.
 ## Restart service
 
     $ sudo service piblaster restart
-    $ sudo servie piblaster.worker restart
-    $ sudo servie piblaster.websocket restart
 
 ## Run piblaster3 server from command line
 To see full debugging output and interact with django server:
@@ -152,23 +145,6 @@ To see full debugging output and interact with django server:
     $ export DEBUG=1
     $ uwsgi --ini conf/piblaster.ini
 
-Run websockets:
-
-    $ sudo service piblaster.websocket stop
-    $ cd /opt/PiBlaster3
-    $ export DEBUG=1
-    $ uwsgi --ini conf/piblaster_websocket.ini
-
-Run workers:
-
-    $ sudo servie piblaster.worker stop
-    $ cd /opt/PiBlaster3
-    $ export DEBUG=1
-    $ sudo workers/piblater_worker.py
-
-Note: running the workers as root might be necessary if GPIOs activated.
-You may also run the web application piremote via uwsgi without workers,
-however features implemented in the workers like party mode (auto append items to playlist) or file upload via usb won't work.
 
 Connect to http://YOUR_PI_HOST
 

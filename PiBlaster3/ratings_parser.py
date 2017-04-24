@@ -63,7 +63,6 @@ class RatingsParser:
                     parsed = True
 
             app = [artist, album, title, path, rating]
-            print(app)
             if parsed:
                 self.parsed_ratings.append(app)
             else:
