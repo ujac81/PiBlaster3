@@ -35,7 +35,13 @@ html(lang="en")
                     li {{rating.3}}
 
         if parsed
-            h4.status Parsed Ratings:
+            h4.status Parsed and applied ratings:
             ol
                 each rating in parsed
+                    li {{rating.3}}
+
+        if skipped
+            h4.status Skipped (already applied) ratings:
+            ol
+                each rating in skipped
                     li {{rating.3}}

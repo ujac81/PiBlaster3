@@ -47,7 +47,6 @@ class MPC:
                 self.connected = True
             except ConnectionError:
                 time.sleep(0.1)
-                pass
             if self.connected:
                 return True
 
@@ -107,7 +106,6 @@ class MPC:
                 res = self.client.status()
             except (ConnectionError, CommandError):
                 self.reconnect()
-                pass
         res['error_str'] = self.error
         return res
 
@@ -350,8 +348,8 @@ class MPC:
 
         result = []
         for change in changes:
-            file = item['file'] if 'file' in item else ''
             item = self.client.playlistinfo(change['pos'])[0]
+            file = item['file'] if 'file' in item else ''
             res = [item['pos']]
             if 'title' in item:
                 res.append(item['title'])
@@ -409,10 +407,8 @@ class MPC:
                 success = False
         except CommandError:
             success = False
-            pass
         except ConnectionError:
             success = False
-            pass
 
         data = self.get_status_data()
         data['cmd'] = cmd
@@ -510,7 +506,6 @@ class MPC:
                         self.client.add(item)
                 except CommandError:
                     return 'Add error'
-                    pass
             return '%d' % len(items) + ' items appended to playlist ' + plname
         elif cmd == 'clear':
             # clear playlist
@@ -518,7 +513,6 @@ class MPC:
                 self.client.clear()
             except CommandError:
                 return 'Clear error'
-                pass
             return 'Playlist cleared.'
         elif cmd == 'deleteid' or cmd == 'deleteids':
             # Remove items from playlist
@@ -527,7 +521,6 @@ class MPC:
                     self.client.deleteid(i)
                 except CommandError:
                     return 'Delete error'
-                    pass
             return '%d items removed from playlist' % len(items)
         elif cmd == 'insert':
             # insert (list of) song(s) after current song
@@ -537,7 +530,6 @@ class MPC:
                     self.client.addid(item, pos)
                 except CommandError:
                     return 'Add error'
-                    pass
             return '%d' % len(items) + ' items inserted into playlist ' + plname
         elif cmd == 'playid':
             # Play song with #id now.
@@ -550,7 +542,6 @@ class MPC:
                 self.client.moveid(int(items[0]), -1)
             except CommandError:
                 return 'Move error'
-                pass
             return 'Moved 1 song after current song'
         elif cmd == 'playidsnext':
             # Move songs with [#id] after current song
@@ -559,7 +550,6 @@ class MPC:
                     self.client.moveid(int(item), -1)
                 except CommandError:
                     return 'Move error'
-                    pass
             return 'Moved %d songs after current song' % len(items)
         elif cmd == 'moveid':
             # move song(s) with id(s) to end
@@ -567,7 +557,6 @@ class MPC:
                 self.client.moveid(items[0], items[1])
             except CommandError:
                 return 'Move error'
-                pass
             return 'Moved song to position %d' % (int(items[1])+1)
         elif cmd == 'moveidend' or cmd == 'moveidsend':
             # move song(s) with id(s) to end
@@ -577,7 +566,6 @@ class MPC:
                     self.client.moveid(i, move_to)
                 except CommandError:
                     return 'Move error'
-                    pass
             return 'Moved %d songs to end' % len(items)
         elif cmd == 'randomize':
             # clear playlist
@@ -585,7 +573,6 @@ class MPC:
                 self.client.shuffle()
             except CommandError:
                 return 'Shuffle error'
-                pass
             return 'Playlist randomized.'
         elif cmd == 'randomize-rest':
             # clear playlist
@@ -595,7 +582,6 @@ class MPC:
                 self.client.shuffle("%d:%d" % (song_pos, pl_len))
             except CommandError:
                 return 'Shuffle error'
-                pass
             return 'Playlist randomized after current song.'
         elif cmd == 'seed':
             n = int(items[0])

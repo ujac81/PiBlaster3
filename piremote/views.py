@@ -347,21 +347,11 @@ def upload_ratings(request):
             context['errors'] = parser.errors
             context['parsed'] = parser.parsed_ratings
             context['unparsed'] = parser.not_parsed_ratings
+            context['skipped'] = parser.skipped_ratings
         else:
             context = {'error_str': 'Uploaded file is not valid!'}
         template = loader.get_template('piremote/upload_ratings_result.pug')
         return HttpResponse(template.render(context, request))
-
-        # if form.is_valid():
-        #     name = form.cleaned_data["uploader"]
-        #     filename = form.cleaned_data["mediafile"]
-        #     up = Uploader()
-        #     res = up.upload_file(name, filename, request.FILES['mediafile'])
-        # else:
-        #     res = {'error_str': 'Upload form data is invalid!'}
-        # template = loader.get_template('piremote/index.pug')
-        # return HttpResponse(template.render({'page': 'upload', 'upload': json.dumps(res)}, request))
-        pass
     else:
         template = loader.get_template('piremote/upload_ratings.pug')
         return HttpResponse(template.render({}, request))
