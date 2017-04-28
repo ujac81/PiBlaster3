@@ -69,6 +69,7 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
 
     # remove page specific classes from body
     $('body').removeClass()
+    $('#searchbardiv').hide()
 
     # clean main page node
     PiRemote.clear_navbar_buttons()

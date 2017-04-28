@@ -139,12 +139,22 @@ class History(models.Model):
         if mode == 'dates':
             dates = [i.time.date().isoformat() for i in History.objects.all().order_by('time')]
             return [[i, datetime.datetime.strptime(i, '%Y-%m-%d').strftime('%a %d %b %Y')]
-                    for i in sorted(set(dates))]
+                    for i in sorted(set(dates), reverse=True)]
 
         date = datetime.datetime.strptime(mode, '%Y-%m-%d').date()
-        q = History.objects.filter(time__year=date.year).filter(time__month=date.month).filter(time__day=date.day).order_by('time')
+        q = History.objects.filter(time__year=date.year).filter(time__month=date.month).filter(time__day=date.day).order_by('-time')
         # put dummies on position 3 and 4 to have file item at position 5.
         return [[i.time.strftime('%H:%M'), i.title, None, None, None, i.path] for i in q]
+
+    @staticmethod
+    def search_history(pattern):
+        """Search history titles for pattern
+        
+        :param pattern: search pattern to check for (case insensitive)
+        :return: same as get_history
+        """
+        q = History.objects.filter(title__icontains=pattern).order_by('-time')
+        return [[i.time.strftime('%d/%m/%Y %H:%M'), i.title, None, None, None, i.path] for i in q]
 
     @staticmethod
     def update_history_times(diff):

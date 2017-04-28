@@ -306,6 +306,9 @@ def history_ajax(request):
     """
     mode = request.GET.get('mode')
     title = 'Player History'
+    if mode == 'search':
+        pattern = request.GET.get('pattern')
+        return JsonResponse({'history': History.search_history(pattern), 'mode': mode, 'title': 'Search result'})
     if mode != 'dates':
         title = datetime.datetime.strptime(mode, '%Y-%m-%d').strftime('%A %d %B %Y')
     return JsonResponse({'history': History.get_history(mode), 'mode': mode, 'title': title})

@@ -148,12 +148,11 @@ PiRemote.add_navbar_button = (sub_page, text, glyphicon=false, sub_page_event=tr
 
     if sub_page_event
         # Load corresponding sub page on click.
-        $('button#navbutton_'+sub_page).off 'click'
-        $('button#navbutton_'+sub_page).on 'click', ->
+        btn.on 'click', ->
             PiRemote.load_page PiRemote.current_page, $(this).data('subpage')
             return
 
-    return
+    btn
 
 
 # Raise a dialog box including confirm button.
@@ -175,7 +174,6 @@ PiRemote.confirm_dialog = (req) ->
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
             .attr('id', 'confirmbutton').html('Confirm')
 
-    $('button#confirmbutton').off 'click'
     $('button#confirmbutton').on 'click', ->
         if need_pw
             do_confirm = false
@@ -211,3 +209,16 @@ PiRemote.error_message = (title, message) ->
     cont.append('p').html(message)
     $('#modalSmall').modal('show')
     return
+
+
+# Display the search bar on top of the page.
+PiRemote.show_search_header = (search_fun) ->
+    $('body').addClass 'search'
+    $('#searchbardiv').show()
+    $('button#gosearch').off 'click'
+    $('button#gosearch').on 'click', ->
+        search_fun $('input#searchfield').val()
+        return
+    return
+    
+    

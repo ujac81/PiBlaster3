@@ -6,16 +6,18 @@ import xml.etree.ElementTree as ET
 from piremote.models import Rating
 from django.core.exceptions import ObjectDoesNotExist
 
-class RatingsParser:
-    """
 
+class RatingsParser:
+    """Parse uploaded ratings from XML and apply to database.
+    
+    TODO: add other rating formats like banshee XML database or such.
     """
 
     def __init__(self, name, data):
-        """
+        """Initialize XML parser from uploaded file content.
 
-        :param name:
-        :param data:
+        :param name: name of the uploaded file
+        :param data: file data
         """
         self.errors = []
         self.parsed_ratings = []
@@ -31,10 +33,7 @@ class RatingsParser:
             self.errors.append('UNKNOWN XML File Type: %s' % self.root.tag)
 
     def parse_django(self):
-        """
-
-        :return:
-        """
+        """Parser for XML files exported by PiBlaster3"""
         for o in [x for x in self.root if x.tag == 'object']:
             path = o.find("field[@name='path']").text
             rating = int(o.find("field[@name='rating']").text)
