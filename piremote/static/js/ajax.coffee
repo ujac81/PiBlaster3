@@ -40,7 +40,6 @@ PiRemote.do_ajax = (req) ->
             console.log jqXHR
             PiRemote.setErrorText 'AJAX communication error! You might want to reload.'
             return
-
     return
 
 
@@ -57,7 +56,6 @@ PiRemote.pl_action = (cmd, plname, list, type='file', req={}) ->
         success: (data) ->
             req.success data if req.success
             return
-
     return
 
 
@@ -76,7 +74,6 @@ PiRemote.pls_action = (cmd, plname, req={}) ->
         success: (data) ->
             req.success(data) if req.success
             return
-
     return
 
 
@@ -88,3 +85,4 @@ PiRemote.do_command = (cmd, payload=[]) ->
         data:
             cmd: cmd
             payload: payload
+    return

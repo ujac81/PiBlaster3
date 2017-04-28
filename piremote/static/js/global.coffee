@@ -38,9 +38,6 @@ PiRemote.init_variables = ->
 
     PiRemote.dragging = false  # true while element is dragged in playlist
 
-    PiRemote.tot_poll_count = 0  # enforce reload if polled too much
-    PiRemote.enforce_reload_poll_count = 1000  # if polled this much, reload (browser mem could explode if poll loop runs hours and hours)
-
     PiRemote.poll_interval = 1000  # poll interval in ms
     PiRemote.poll_interval_min = 500  # prevent polling if last poll time smaller than this
 
@@ -126,6 +123,7 @@ String::width = (font_size) ->
     o.remove()
     w
 
+    
 # Clear nav-bar button area.
 PiRemote.clear_navbar_buttons = ->
     d3.select('#button-line').html('')

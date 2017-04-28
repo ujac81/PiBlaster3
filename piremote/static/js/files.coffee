@@ -1,4 +1,4 @@
-# files.coffee -- install callbacks for files view
+    # files.coffee -- install callbacks for files view
 
 # Build files page.
 # Loaded via PiRemote.load_page('files') every time 'Files' is selected in menu
@@ -64,13 +64,12 @@ PiRemote.rebuild_files = (data) ->
             .attr('class', 'dir-item file-view')
             .attr('data-dirname', (d) -> d[5])
         .selectAll('td')
-        .data((d, i) -> ['<img src="/piremote/static/img/folder-blue.png"/>', d[1], action_span]).enter()
+        .data((d) -> ['<img src="/piremote/static/img/folder-blue.png"/>', d[1], action_span]).enter()
         .append('td')
             .attr('class', (d, i)-> 'browse-td'+i)
             .classed('browse-head', (d, i) -> i == 0)
             .classed('browse-head-dir', (d, i) -> i == 0)
             .classed('browse-dir', (d, i) -> i == 1)
-            #.classed('browse-selectable', (d, i) -> i == 1)
             .classed('browse-action', (d, i) -> i == 2)
             .html((d) -> d)
 
@@ -98,80 +97,42 @@ PiRemote.rebuild_files = (data) ->
             .classed('browse-action', (d, i) -> i == 2)
             .html((d) -> d)
 
-    PiRemote.install_files_handlers()
-    window.scrollTo 0, 0
-    return
-
-
-# on click events for files list -- called after table rebuild.
-PiRemote.install_files_handlers = ->
-
     # single-click on selectable items toggles select
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').off 'click'
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').on 'click', (event) ->
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-selectable').on 'click', ->
         $(this).parent().toggleClass 'selected'
         return
 
     # move up by single-click
-    $('#trupdir').off
-    $('#trupdir').on 'click', (event) ->
+    $('#trupdir').on 'click', ->
         PiRemote.do_files $(this).data('dirname')
         return
 
     # single click on folder or folder td enters folder
-    $('div.browse-list > table > tbody > tr.dir-item > td.browse-head-dir').off
-    $('div.browse-list > table > tbody > tr.dir-item > td.browse-head-dir').on 'click', (event) ->
+    $('div.browse-list > table > tbody > tr.dir-item > td.browse-head-dir').on 'click', ->
         PiRemote.do_files $(this).parent().data('dirname')
         return
 
     # single click on dir name enters folder
-    $('div.browse-list > table > tbody > tr.dir-item > td.browse-dir').off
-    $('div.browse-list > table > tbody > tr.dir-item > td.browse-dir').on 'click', (event) ->
+    $('div.browse-list > table > tbody > tr.dir-item > td.browse-dir').on 'click', ->
         PiRemote.do_files $(this).parent().data('dirname')
         return
 
     # Single click on file image or file image cell raises file dialog
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-head-file').off
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-head-file').on 'click', (event) ->
-        # PiRemote.raise_file_dialog $(this).parent()
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-head-file').on 'click', ->
         PiRemote.search_raise_info_dialog $(this).parent().data('filename')
         return
 
     # dir action triggered
-    $('div.browse-list > table > tbody > tr.dir-item > td.browse-action').off
-    $('div.browse-list > table > tbody > tr.dir-item > td.browse-action').on 'click', (event) ->
+    $('div.browse-list > table > tbody > tr.dir-item > td.browse-action').on 'click', ->
         PiRemote.raise_dir_dialog $(this).parent()
         return
 
     # file action triggered
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-action').off
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-action').on 'click', (event) ->
+    $('div.browse-list > table > tbody > tr.selectable > td.browse-action').on 'click', ->
         PiRemote.raise_file_actions $(this).parent().data('title'), $(this).parent().data('filename')
         return
-    return
-
-
-# Image pressed on pressed on file item.
-PiRemote.raise_file_dialog = (element) ->
-    d3.select('#smallModalLabel').html('Audio File')
-    cont = d3.select('#smallModalMessage')
-    cont.html('')
-    cont.append('h5').html(element.data('title'))
-
-    artist = element.data('artist')
-    album = element.data('album')
-    length = element.data('length')
-    year = element.data('date')
-
-    p = cont.append('p')
-    for item in ['Artist', 'Album', 'Length', 'Date']
-        data = element.data(item.toLowerCase())
-        if data.length > 0
-            p.append('strong').html(item+': ')
-            p.append('span').html(data)
-            p.append('br')
-
-    $('#modalSmall').modal()
+        
+    window.scrollTo 0, 0
     return
 
 
@@ -195,12 +156,10 @@ PiRemote.raise_file_actions = (title, filename) ->
             .html(elem[1])
 
     # Callback for click actions on navigation.
-    $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         PiRemote.do_files_action $(this).data('action'), $(this).data('item'), 'file'
         return
 
-    # Raise dialog.
     $('#modalSmall').modal()
     return
 
@@ -224,7 +183,6 @@ PiRemote.raise_dir_dialog = (element) ->
         full_path += dir + '/'
 
     # Callback function for clicks on dir items in header.
-    $(document).off 'click', 'span.browse-span'
     $(document).on 'click', 'span.browse-span', () ->
         PiRemote.do_files $(this).data('dirname')
         $('#modalSmall').modal('hide')
@@ -244,12 +202,10 @@ PiRemote.raise_dir_dialog = (element) ->
             .html(elem[1])
 
     # Callback function for clicks on navigation actions.
-    $(document).off 'click', 'span.browse-action-dir'
     $(document).on 'click', 'span.browse-action-dir', () ->
         PiRemote.do_files_action $(this).data('action'), $(this).data('item'), 'dir'
         return
 
-    # Raise dialog.
     $('#modalSmall').modal()
     return
 
@@ -277,12 +233,10 @@ PiRemote.files_raise_add_dialog = ->
             .html(elem[1])
 
     # Callback for click actions on navigation.
-    $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         PiRemote.do_files_action $(this).data('action')
         return
 
-    # Raise dialog.
     $('#modalSmall').modal('show')
     return
 

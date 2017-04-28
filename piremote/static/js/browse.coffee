@@ -5,18 +5,16 @@
 PiRemote.load_browse_page = ->
 
     # Insert buttons
-    PiRemote.add_navbar_button 'browse_left', 'chevron-left', true, false
-    PiRemote.add_navbar_button 'browse_right', 'chevron-right', true, false
+    btn_left = PiRemote.add_navbar_button 'browse_left', 'chevron-left', true, false
+    btn_right = PiRemote.add_navbar_button 'browse_right', 'chevron-right', true, false
 
-    $('button#navbutton_browse_left').off 'click'
-    $('button#navbutton_browse_left').on 'click', ->
+    btn_left.on 'click', ->
         if PiRemote.browse_current_page_index > 0
             PiRemote.browse_current_page_index -= 1
         PiRemote.do_browse PiRemote.select_classes[PiRemote.browse_current_page_index]
         return
 
-    $('button#navbutton_browse_right').off 'click'
-    $('button#navbutton_browse_right').on 'click', ->
+    btn_right.on 'click', ->
         if PiRemote.browse_current_page_index < 5
             PiRemote.browse_current_page_index += 1
         PiRemote.do_browse PiRemote.select_classes[PiRemote.browse_current_page_index]
@@ -54,7 +52,7 @@ PiRemote.do_browse = (what) ->
         if all_all >= 5
             PiRemote.error_message 'Error', "Browsing of all files prevented for performance reasons. Please select at least one category not equal to 'all'."
             # Stay at album view
-            PiRemote.browse_current_page_index = 3
+            PiRemote.browse_current_page_index = 4
             return
 
     PiRemote.do_ajax
@@ -120,7 +118,6 @@ PiRemote.build_browse = (data) ->
         PiRemote.selected[mode] = {'All': true}
 
     # single-click on selectable items toggles select
-    $('div.browse-list > table > tbody > tr.selectable').off 'click'
     $('div.browse-list > table > tbody > tr.selectable').on 'click', (event) ->
         tr = $(this)
         if tr.data('index') == 0 and tr.data('item') == 'All'
@@ -176,7 +173,6 @@ PiRemote.build_browse_song = (data) ->
             .html((d) -> d)
 
     # single-click on index raises file info dialog
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-td0').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td0').on 'click', (event) ->
         i = $(this).parent().data('index')
         file = PiRemote.last_browse.browse[i][0]
@@ -184,13 +180,11 @@ PiRemote.build_browse_song = (data) ->
         return
 
     # single-click on selectable items toggles select
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').on 'click', (event) ->
         $(this).parent().toggleClass 'selected'
         return
 
     # single-click on action span toggles action dialog
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-td2').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td2').on 'click', (event) ->
         i = $(this).parent().data('index')
         d = PiRemote.last_browse.browse[i]
@@ -304,7 +298,6 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
             .attr('id', 'confirmbutton').html('Seed')
 
-    $('button#confirmbutton').off 'click'
     $('button#confirmbutton').on 'click', ->
         selected_lists = {}
         for mode in PiRemote.select_classes

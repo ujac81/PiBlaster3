@@ -209,5 +209,7 @@ PiRemote.search_raise_info_dialog = (file) ->
 
                 $('#modalSmall').modal()
                 PiRemote.index_set_rating 'span.idxrate', info.rating
+            else
+                PiRemote.error_message 'File not found', 'File info for this file cannot be found. Maybe the file was removed. Full path was: '+file
             return
     return
