@@ -176,3 +176,9 @@ Use pypugjs file.pug to check output.
 Javascript and CSS files are compiled by django_compress http://django-compressor.readthedocs.io/en/latest/ .
 Sass/coffeescript files are handled via COMPRESS_PRECOMPILERS in settings.py.
 
+## Upgrading
+
+# Python Packages
+Upgrade all python packages installed via pip
+
+    # pip3  list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | xargs -n1 pip3 install -U

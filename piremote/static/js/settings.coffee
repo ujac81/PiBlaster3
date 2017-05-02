@@ -70,7 +70,7 @@ PiRemote.settings_build_page = (settings) ->
     p = root.append('p').attr('class', 'settingsgroup').attr('id', 'ratings')
     p.append('h4').attr('class','settingshead').html('Ratings')
     PiRemote.settings_add_link p, 'Download ratings', '/piremote/download/ratings'
-    PiRemote.settings_add_link p, 'Upload ratings', '/piremote/upload/ratings'
+    PiRemote.settings_add_link p, 'Upload ratings', '/piremote/upload/ratings', 'Upload'
 
     return
 
@@ -132,7 +132,7 @@ PiRemote.settings_add_button = (root, key, text, button_text) ->
 
 
 # Add download link
-PiRemote.settings_add_link = (root, text, link) ->
+PiRemote.settings_add_link = (root, text, link, btn_text='Download') ->
 
     d = root.append('div').attr('class', 'setting')
     d.append('div').attr('class', 'slabel').html(text)
@@ -141,7 +141,7 @@ PiRemote.settings_add_link = (root, text, link) ->
         .attr('href', link)
         .append('button')
         .attr('class', 'btn btn-default')
-        .html('Download')
+        .html(btn_text)
 
     return
 
