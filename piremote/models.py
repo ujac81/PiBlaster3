@@ -124,7 +124,7 @@ class History(models.Model):
 
     history recorded to database by MPC_Idler via worker daemon.
     """
-    title = models.CharField(max_length=100)
+    title = models.CharField(max_length=256)
     path = models.FilePathField(max_length=500)
     time = models.DateTimeField(auto_now_add=True)
     updated = models.BooleanField(default=False)
@@ -181,10 +181,10 @@ class Rating(models.Model):
     Ratings are read from file tags if such, ratings made by user here are stored in SQL database only.
     """
     path = models.FilePathField(max_length=500)
-    title = models.CharField(max_length=50, default='')
-    artist = models.CharField(max_length=50, default='')
-    album = models.CharField(max_length=50, default='')
-    genre = models.CharField(max_length=50, default='unknown')
+    title = models.CharField(max_length=256, default='')
+    artist = models.CharField(max_length=256, default='')
+    album = models.CharField(max_length=256, default='')
+    genre = models.CharField(max_length=256, default='unknown')
     date = models.SmallIntegerField(default=0)
     rating = models.SmallIntegerField(default=0)
 

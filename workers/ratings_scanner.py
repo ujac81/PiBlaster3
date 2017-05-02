@@ -7,7 +7,7 @@ from mutagen.mp3 import MP3
 from PiBlaster3.settings import *
 import mutagen
 import os
-import sqlite3
+import psycopg2
 
 
 class RatingsScanner:
@@ -36,7 +36,7 @@ class RatingsScanner:
 
         db_files = self.get_db_files()
         if db_files is None:
-            # there was an sqlite read error, retry next loop
+            # there was an db read error, retry next loop
             return
 
         music_path = self.get_music_path()
@@ -102,15 +102,15 @@ class RatingsScanner:
         res = []
         try:
             db = DATABASES['default']
-            conn = sqlite3.connect(database=db['NAME'], timeout=15)
+            conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
             cur = conn.cursor()
             cur.execute('''SELECT path FROM piremote_rating''')
             for row in cur.fetchall():
                 res.append(row[0])
             cur.close()
             conn.close()
-        except sqlite3.OperationalError as e:
-            self.main.print_message('SQLITE ERROR {0}'.format(e))
+        except psycopg2.OperationalError as e:
+            self.main.print_message('PSQL ERROR {0}'.format(e))
             return None
 
         return res
@@ -119,23 +119,24 @@ class RatingsScanner:
         """Perform changes in database, (insert, delete, ....)"""
         try:
             db = DATABASES['default']
-            conn = sqlite3.connect(database=db['NAME'], timeout=15)
+            conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
             cur = conn.cursor()
 
             if what == 'insert_many':
                 try:
-                    cur.executemany('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating) VALUES (?, ?, ?, ?, ?, ?, ?)', payload)
-                except sqlite3.InterfaceError:
+                    cur.executemany('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating) VALUES (%s, %s, %s, %s, %s, %s, %s)', payload)
+                except (psycopg2.DataError, psycopg2.InterfaceError):
                     for item in payload:
                         try:
-                            cur.execute('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating) VALUES (?, ?, ?, ?, ?, ?, ?)', item)
-                        except sqlite3.InterfaceError:
-                            self.main.print_message('INSERT ERROR')
+                            cur.execute('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating) VALUES (%s, %s, %s, %s, %s, %s, %s)', item)
+                        except (psycopg2.DataError, psycopg2.InterfaceError, psycopg2.InternalError) as e:
+                            self.main.print_message('INSERT ERROR: {0}'.format(e))
+                            self.main.print_message(e.pgerror)
                             self.main.print_message(item)
                             return
 
             elif what == 'remove_many':
-                cur.executemany('DELETE FROM piremote_rating WHERE path=?', payload)
+                cur.executemany('DELETE FROM piremote_rating WHERE path=(%s)', payload)
             elif what == 'deleteall':
                 cur.execute('DELETE FROM piremote_rating')
             else:
@@ -144,8 +145,10 @@ class RatingsScanner:
             conn.commit()
             cur.close()
             conn.close()
-        except sqlite3.OperationalError as e:
-            self.main.print_message('SQLITE ERROR {0}'.format(e))
+        except psycopg2.Error as e:
+            self.main.print_message('PSQL ERROR {0}'.format(e))
+            self.main.print_message(e.pgcode)
+            self.main.print_message(e.pgerror)
             return
 
     def get_music_path(self):

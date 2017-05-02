@@ -1,14 +1,15 @@
 """partymode.py -- threaded actions on playlist (like party mode)."""
 
+import datetime
+import json
 import os
+import psycopg2
+import random
+import threading
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "PiBlaster3.settings")
 
 from mpd import MPDClient, ConnectionError, CommandError
-import datetime
-import json
-import sqlite3
-import random
-import threading
 from time import sleep
 from PiBlaster3.settings import *
 from ws4redis.publisher import RedisPublisher
@@ -56,7 +57,7 @@ class MPC_Idler:
     def check_party_mode(self, res, force=False):
         """Check if party mode is on, append items to playlist/shrink playlist if needed.
 
-        Fetch settings directly from sqlite3 database of piremote App.
+        Fetch settings directly from SQL database of piremote App.
         This is some of the dirtiest hacks possible for process communication,
         but works for this purpose.
 
@@ -83,7 +84,7 @@ class MPC_Idler:
         party_remain = 10
 
         db = DATABASES['default']
-        conn = sqlite3.connect(database=db['NAME'], timeout=15)
+        conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
         cur = conn.cursor()
         cur.execute('''SELECT key, value FROM piremote_setting''')
         for row in cur.fetchall():
@@ -176,18 +177,18 @@ class MPC_Idler:
         :param title: artist - title or filename without extension
         """
         db = DATABASES['default']
-        conn = sqlite3.connect(database=db['NAME'], timeout=15)
+        conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
         cur = conn.cursor()
         # 1st read updated status from settings table.
         # Non-updated rows need to be fixed if clock is not set correctly.
         # Fixing is done via piremote/commands when time is set via client.
-        cur.execute('''SELECT value FROM piremote_setting WHERE key=?''', ('time_updated', ))
+        cur.execute('SELECT value FROM piremote_setting WHERE key=(%s)', ('time_updated', ))
         updated = False
         row = cur.fetchone()
         if row is not None:
             updated = row[0] == '1'
         now = datetime.datetime.now()
-        cur.execute('''INSERT INTO piremote_history (title, path, time, updated) VALUES (?,?,?,?)''',
+        cur.execute('INSERT INTO piremote_history (title, path, time, updated) VALUES (%s,%s,%s,%s)',
                     (title, file, now, updated,))
         conn.commit()
         cur.close()
@@ -216,8 +217,8 @@ class MPDService(threading.Thread):
         except (ConnectionError, CommandError) as e:
             self.parent.print_message('MPD INIT ERROR')
             self.parent.print_message(e)
-        except sqlite3.OperationalError as e:
-            self.parent.print_message('SQLITE ERROR {0}'.format(e))
+        except psycopg2.OperationalError as e:
+            self.parent.print_message('PSQL ERROR {0}'.format(e))
 
         while self.parent.keep_run:
             try:
@@ -226,8 +227,8 @@ class MPDService(threading.Thread):
                 self.parent.print_message('MPD ERROR')
                 self.parent.print_message(e)
                 sleep(1)
-            except sqlite3.OperationalError as e:
-                self.parent.print_message('SQLITE ERROR {0}'.format(e))
+            except psycopg2.OperationalError as e:
+                self.parent.print_message('PSQL ERROR {0}'.format(e))
 
     @staticmethod
     def stop_idler():
