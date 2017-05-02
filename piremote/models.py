@@ -8,6 +8,7 @@ If changes applied here, run
 from django.db import models
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 
 import datetime
 import os
@@ -137,14 +138,15 @@ class History(models.Model):
         :return [[YYYY-MM-DD, Mon 1 Jan 2000] or [HH:MM, title, path]]
         """
         if mode == 'dates':
-            dates = [i.time.date().isoformat() for i in History.objects.all().order_by('time')]
+            dates = [timezone.localtime(i.time).date().isoformat() for i in History.objects.all().order_by('time')]
             return [[i, datetime.datetime.strptime(i, '%Y-%m-%d').strftime('%a %d %b %Y')]
                     for i in sorted(set(dates), reverse=True)]
 
-        date = datetime.datetime.strptime(mode, '%Y-%m-%d').date()
-        q = History.objects.filter(time__year=date.year).filter(time__month=date.month).filter(time__day=date.day).order_by('-time')
+        d1 = timezone.make_aware(datetime.datetime.strptime(mode, '%Y-%m-%d'))
+        d2 = d1 + datetime.timedelta(days=1, seconds=-1)
+        q = History.objects.filter(time__gte=timezone.localtime(d1)).filter(time__lte=timezone.localtime(d2)).order_by('-time')
         # put dummies on position 3 and 4 to have file item at position 5.
-        return [[i.time.strftime('%H:%M'), i.title, None, None, None, i.path] for i in q]
+        return [[timezone.localtime(i.time).strftime('%H:%M'), i.title, None, None, None, i.path] for i in q]
 
     @staticmethod
     def search_history(pattern):
@@ -154,7 +156,7 @@ class History(models.Model):
         :return: same as get_history
         """
         q = History.objects.filter(title__icontains=pattern).order_by('-time')
-        return [[i.time.strftime('%d/%m/%Y %H:%M'), i.title, None, None, None, i.path] for i in q]
+        return [[timezone.localtime(i.time).strftime('%d/%m/%Y %H:%M'), i.title, None, None, None, i.path] for i in q]
 
     @staticmethod
     def update_history_times(diff):
