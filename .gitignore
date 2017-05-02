@@ -100,3 +100,6 @@ piremote/static/CACHE/
 PiBlaster3/settings_piremote.py
 conf/hostapd.conf.new
 
+piremote/static/js/*.js
+piremote/static/js/*.js.map
+

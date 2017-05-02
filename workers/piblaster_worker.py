@@ -49,7 +49,7 @@ class PiBlasterWorker:
         :return:
         """
         if DEBUG or self.is_vassal:
-            print('[WORKER] %s' % msg)
+            print('[WORKER] {0}'.format(msg))
 
     def daemon_loop(self):
         """Main daemon loop.

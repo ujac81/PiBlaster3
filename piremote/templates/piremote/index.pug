@@ -119,6 +119,14 @@ html(lang="en")
                 .modal-body(id="smallModalMessage") Message not set!
 
         .container-fluid(id='basecont')
+            #searchbardiv
+                table#searchbar.table
+                    tr#searchbartr
+                        td#searchbarlabel Search:
+                        td#searchbarinput
+                            input#searchfield(type="text")
+                        td#searchbarbutton
+                            button#gosearch.btn.btn-default(type="submit") Go
             .piremote-content
                 //- content here built via PiRemote.load_page()
 

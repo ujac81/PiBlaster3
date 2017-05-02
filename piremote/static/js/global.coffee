@@ -38,9 +38,6 @@ PiRemote.init_variables = ->
 
     PiRemote.dragging = false  # true while element is dragged in playlist
 
-    PiRemote.tot_poll_count = 0  # enforce reload if polled too much
-    PiRemote.enforce_reload_poll_count = 1000  # if polled this much, reload (browser mem could explode if poll loop runs hours and hours)
-
     PiRemote.poll_interval = 1000  # poll interval in ms
     PiRemote.poll_interval_min = 500  # prevent polling if last poll time smaller than this
 
@@ -126,6 +123,7 @@ String::width = (font_size) ->
     o.remove()
     w
 
+    
 # Clear nav-bar button area.
 PiRemote.clear_navbar_buttons = ->
     d3.select('#button-line').html('')
@@ -148,12 +146,11 @@ PiRemote.add_navbar_button = (sub_page, text, glyphicon=false, sub_page_event=tr
 
     if sub_page_event
         # Load corresponding sub page on click.
-        $('button#navbutton_'+sub_page).off 'click'
-        $('button#navbutton_'+sub_page).on 'click', ->
+        btn.on 'click', ->
             PiRemote.load_page PiRemote.current_page, $(this).data('subpage')
             return
 
-    return
+    btn
 
 
 # Raise a dialog box including confirm button.
@@ -175,7 +172,6 @@ PiRemote.confirm_dialog = (req) ->
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
             .attr('id', 'confirmbutton').html('Confirm')
 
-    $('button#confirmbutton').off 'click'
     $('button#confirmbutton').on 'click', ->
         if need_pw
             do_confirm = false
@@ -211,3 +207,16 @@ PiRemote.error_message = (title, message) ->
     cont.append('p').html(message)
     $('#modalSmall').modal('show')
     return
+
+
+# Display the search bar on top of the page.
+PiRemote.show_search_header = (search_fun) ->
+    $('body').addClass 'search'
+    $('#searchbardiv').show()
+    $('button#gosearch').off 'click'
+    $('button#gosearch').on 'click', ->
+        search_fun $('input#searchfield').val()
+        return
+    return
+    
+    

@@ -4,33 +4,36 @@
 PiRemote.load_history_page = ->
 
     # Back button should always return to browse dates mode.
-    PiRemote.add_navbar_button 'browse_left', 'chevron-left', true, false
-    $('button#navbutton_browse_left').off 'click'
-    $('button#navbutton_browse_left').on 'click', ->
-        PiRemote.do_history 'dates'
-        return
-
+    PiRemote.add_navbar_button 'home', 'chevron-left', true
+    PiRemote.add_navbar_button 'history_search', 'search', true
+    
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'hist-list')
     bl.append('h3').attr('id', 'hist-head')
     tb = bl.append('table').attr('id', 'tbhist').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'hist')
 
-    # Start with browsing dates.
-    PiRemote.do_history 'dates'
+    if PiRemote.current_sub_page == 'history_search'
+        PiRemote.show_search_header (pattern) ->
+            PiRemote.do_history 'search', pattern
+            return
+    else
+        # Start with browsing dates.
+        PiRemote.do_history 'dates'
     return
 
 
 # Invoke AJAX GET of history data.
-PiRemote.do_history = (mode) ->
+PiRemote.do_history = (mode, pattern='') ->
     PiRemote.do_ajax
-            url: 'history'
-            method: 'GET'
-            data:
-                mode: mode
-            success: (data) ->
-                PiRemote.hist_update_table data
-                return
+        url: 'history'
+        method: 'GET'
+        data:
+            mode: mode
+            pattern: pattern
+        success: (data) ->
+            PiRemote.hist_update_table data
+            return
     return
 
 
@@ -55,7 +58,6 @@ PiRemote.hist_update_table = (data) ->
                 .attr('class', 'hist-td1')
                 .html((d) -> d)
 
-        $('div.hist-list > table > tbody > tr.histdate').off 'click'
         $('div.hist-list > table > tbody > tr.histdate').on 'click', (event) ->
             PiRemote.do_history $(this).data('mode')
             return
@@ -79,19 +81,16 @@ PiRemote.hist_update_table = (data) ->
                 .html((d) -> d)
 
         # click on first to columns should raise file info
-        $('div.hist-list > table > tbody > tr.histitem > td.hist-td0').off 'click'
         $('div.hist-list > table > tbody > tr.histitem > td.hist-td0').on 'click', (event) ->
             PiRemote.search_raise_info_dialog $(this).parent().data('file')
             return
 
         # click on title should select
-        $('div.hist-list > table > tbody > tr.histitem > td.hist-td1').off 'click'
         $('div.hist-list > table > tbody > tr.histitem > td.hist-td1').on 'click', (event) ->
             $(this).parent().toggleClass 'selected'
             return
 
         # click on action column should raise add/insert dialog
-        $('div.hist-list > table > tbody > tr.histitem > td.hist-td2').off 'click'
         $('div.hist-list > table > tbody > tr.histitem > td.hist-td2').on 'click', (event) ->
             PiRemote.raise_file_actions $(this).parent().data('title'), $(this).parent().data('file')
             return
@@ -104,4 +103,3 @@ PiRemote.hist_update_table = (data) ->
             return
 
     return
-

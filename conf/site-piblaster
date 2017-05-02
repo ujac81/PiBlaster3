@@ -27,7 +27,8 @@ server {
         location /piremote {
                 include /etc/nginx/uwsgi_params;
                 uwsgi_pass piremote;
-                uwsgi_read_timeout 300;
+                # There are some long operations like upload ratings or such.
+                uwsgi_read_timeout 600;
         }
 
         location /piadmin {

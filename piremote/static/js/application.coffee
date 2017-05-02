@@ -4,7 +4,7 @@
 $ ->
     PiRemote.init_variables()
 
-    # Build selection classes
+    # Build selection classes for browse by tag view
     for item in PiRemote.select_classes
         PiRemote.selected[item] = {'All': true, 'Unknown': false}
 
@@ -64,11 +64,9 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
     PiRemote.current_page = page
     PiRemote.current_sub_page = sub_page
 
-    # Reset max poll counter for enforced page reloads.
-    PiRemote.tot_poll_count = 0
-
     # remove page specific classes from body
     $('body').removeClass()
+    $('#searchbardiv').hide()
 
     # clean main page node
     PiRemote.clear_navbar_buttons()

@@ -1,6 +1,6 @@
 """uploader.py -- threaded upload worker or piremote"""
 
-import sqlite3
+import psycopg2
 import os
 import shutil
 import threading
@@ -34,12 +34,9 @@ class UploadIdler:
         Leave check loop if keep_run set to False in PiBlasterWorker.
         Remove uploaded files from database.
         Invoke MPD update if any uploads performed.
-
-        Note: Concurrent access to sqlite3 database is safe if database is stored on local device.
-        (file locks might fail on network file systems).
         """
         db = DATABASES['default']
-        conn = sqlite3.connect(database=db['NAME'], timeout=15)
+        conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
         cur = conn.cursor()
 
         got_file = True
@@ -53,7 +50,7 @@ class UploadIdler:
                 remove = res[1]
                 if self.do_upload(remove):
                     did_upload = True
-                cur.execute("DELETE FROM piremote_upload WHERE path=(?)", (remove,))
+                cur.execute("DELETE FROM piremote_upload WHERE path=(%s)", (remove,))
                 conn.commit()
 
             sleep(0.1)  # don't block CPU too much if this thread goes insane here.
@@ -174,7 +171,6 @@ class Uploader(threading.Thread):
             ui = UploadIdler(self.parent)
             try:
                 ui.check_for_uploads()
-            except sqlite3.OperationalError as e:
-                self.parent.print_message('SQLITE ERROR {0}'.format(e))
-                pass
+            except psycopg2.OperationalError as e:
+                self.parent.print_message('PSQL ERROR {0}'.format(e))
             sleep(1)

@@ -79,6 +79,21 @@ Configuration will be done, when PiBlaster3 is installed.
     $ sudo apt install nginx
     $ sudo systemctl enable nginx
 
+## PostgreSQL Database
+PiBlaster 3 software uses pSQL database to store settings and other things like upload queue.
+
+    $ sudo apt-get install libpq-dev python-dev postgresql postgresql-contrib
+
+    $ sudo su - postgres
+    createdb piremote
+    createuser -P piremote
+    psql
+    GRANT ALL PRIVILEGES ON DATABASE piremote TO piremote
+    \q
+    logout
+
+Note: the password assigned for the database here has to match the one set in settings.py
+
 ## Required Packages
 
     $ sudo apt install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git libasound2-dev redis-server
@@ -87,7 +102,7 @@ Configuration will be done, when PiBlaster3 is installed.
 At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might use this directly)
 
     $ sudo pip3 install git+https://github.com/matannoam/pypugjs.git@master
-    $ sudo pip3 install django_compressor uwsgi python-mpd2 django-websocket-redis mutagen
+    $ sudo pip3 install django_compressor uwsgi python-mpd2 django-websocket-redis mutagen psycopg2
 
 ## PiBlaster3 software
 
@@ -103,6 +118,7 @@ Create local settings
 And update settings inside this file.
 
 Make sure DEBUG is not set in your environment, otherwise set DEBUG to FALSE in settings.py.
+Also make sure you have correct settings for the SQL database in settings.py.
 
     $ cd /opt/PiBlaster3
     $ python3 manage.py migrate
@@ -134,9 +150,11 @@ Link directories to scan to mpd library and update it.
 # Developer Notes
 
 ## Database
-We use sqlite3 database for communication between workers and app here.
-This is safe because sqlite3 database allows concurrent access.
-No need for elaborate SQL server for this app.
+PostgreSQL database is used in this project.
+For trying out some things and playing with the functionalities of the app, you might revert to sqlite3 database, however concurrent access is not easy for sqlite3.
+In theory it should work, but tests on Raspberry Pi showed that the database seems locked the whole time for the worker.
+To roll back to sqlite3 change settings.py and exchange all psycopg2 to sqlite3 in the worker modules and check that connect is correct.
+Also replace all %s with ? in the SQL commands.
 
 ## Restart service
 
@@ -162,3 +180,9 @@ Use pypugjs file.pug to check output.
 Javascript and CSS files are compiled by django_compress http://django-compressor.readthedocs.io/en/latest/ .
 Sass/coffeescript files are handled via COMPRESS_PRECOMPILERS in settings.py.
 
+## Upgrading
+
+# Python Packages
+Upgrade all python packages installed via pip
+
+    # pip3  list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | xargs -n1 pip3 install -U
