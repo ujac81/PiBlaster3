@@ -3,10 +3,7 @@
 # Run on document.ready event.
 $ ->
     PiRemote.init_variables()
-
-    # Build selection classes for browse by tag view
-    for item in PiRemote.select_classes
-        PiRemote.selected[item] = {'All': true, 'Unknown': false}
+    PiRemote.browse_reset_selection()
 
     # disable caching for AJAX
     PiRemote.ajax_setup()

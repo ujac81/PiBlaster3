@@ -1,4 +1,4 @@
-    # files.coffee -- install callbacks for files view
+# files.coffee -- install callbacks for files view
 
 # Build files page.
 # Loaded via PiRemote.load_page('files') every time 'Files' is selected in menu

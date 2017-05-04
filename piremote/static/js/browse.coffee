@@ -26,7 +26,12 @@ PiRemote.load_browse_page = ->
     tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'browse')
 
-    if PiRemote.last_browse isnt null
+    if PiRemote.should_browse isnt null
+        # should browse should not be 'song'
+        PiRemote.browse_current_page_index = PiRemote.select_indexes[PiRemote.should_browse] + 1
+        PiRemote.should_browse = null
+        PiRemote.do_browse PiRemote.select_classes[PiRemote.browse_current_page_index]
+    else if PiRemote.last_browse isnt null
         PiRemote.build_browse PiRemote.last_browse
     else
         PiRemote.do_browse 'rating'
@@ -373,4 +378,11 @@ PiRemote.browse_raise_add_files_dialog = ->
 
     # Raise dialog.
     $('#modalSmall').modal('show')
+    return
+
+    
+# Set selection to 'All' for all classes
+PiRemote.browse_reset_selection = ->
+    for item in PiRemote.select_classes
+        PiRemote.selected[item] = {'All': true, 'Unknown': false}
     return

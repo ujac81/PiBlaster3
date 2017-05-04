@@ -23,7 +23,7 @@ body.search
     padding-top: 100px
 
 #basecont
-    padding: 0px
+    padding: 0
 
 p.error
     color: red
@@ -44,7 +44,7 @@ p#empty
 #footer.status
     background-color: rgb(248, 248, 248)
     p
-        font-weight: medium
+        font-weight: normal
 
 #footer.error
     background-color: red
@@ -65,10 +65,9 @@ p#empty
     width: 30px
     height: 30px
     z-index: 100
-
-#adddiv span
-    color: red
-    font-size: xx-large
+    span
+        color: red
+        font-size: xx-large
 
 ////////////////// AUDIO //////////////////
 
@@ -105,10 +104,10 @@ audio
     text-align: center
     span
         font-size: large
-        padding: 0px 2px
+        padding: 0 2px
     span.norate
         min-width: 20px
-        padding: 0px 20px
+        padding: 0 20px
 
 .idxbuttons
     text-align: center
@@ -231,18 +230,19 @@ tr.pltr-0 td.pltd-2
 // album - artist
 tr.pltr-1 td
     font-size: $small-font-size
-    padding: 0px 0px 5px 0px
+    padding: 0 0 5px 0
     vertical-align: top
     text-align: center
     color: #777
 
+// rating
 tr.pltr-1 td.pltd-2
     text-align: center
     span
         padding: 0
         font-size: $small-font-size
 
-// select
+// selected
 table#tbpl tr.selected
     background-color: blue
     color: white
@@ -252,7 +252,7 @@ table#tbpl tr.running
     background-color: orange
     color: white
 
-// active
+// active-selected
 table#tbpl tr.running.selected
     background-color: cyan
     color: white
@@ -261,8 +261,8 @@ table#tbpl tr.running.selected
 #plpos
     position: relative
     z-index: 10
-    margin: 0px
-    padding: 0px
+    margin: 0
+    padding: 0
     height: 5px
     background: rgb(248, 248, 248)
     border: 1px solid #777
@@ -408,7 +408,7 @@ tr.searchtr-0 td.searchtd-2
 // album - artist
 tr.searchtr-1 td
     font-size: $small-font-size
-    padding: 0px 0px 5px 0px
+    padding: 0 0 5px 0
     vertical-align: top
     text-align: center
     color: #777
@@ -497,8 +497,8 @@ td.slidernum
 .slider
     position: relative
     z-index: 10
-    margin: 0px
-    padding: 0px
+    margin: 0
+    padding: 0
     height: 200px
     background: rgb(248, 248, 248)
     border: 1px solid #777
@@ -523,7 +523,7 @@ table.uptable
     table-layout: fixed
 
 table.uptable tr td
-    padding: 5px 0px
+    padding: 5px 0
     max-width: 100%
     word-wrap: break-word
     overflow-wrap: break-word
@@ -537,7 +537,7 @@ table.uptable td.uptext
     font-weight: bold
 
 table.uptable td.upsubmit
-    text-algin: center
+    text-align: center
 
 table.uptable td.upsubmit input
     display: block
@@ -599,7 +599,6 @@ table#tbhist tr.selected
 
 ////////////////// RATINGS //////////////////
 
-
 span.glyphicon-star-empty
     color: #777
 span.glyphicon-star
@@ -609,6 +608,7 @@ span.glyphicon-star
 tr.running td.pltdmain table.pltbsub tr.pltr-1 td.pltd-2 span.glyphicon-star
     color: #777
 
+// float rating stars right and title left in table cells
 .tfloat
     width: 100%
     display: block
@@ -617,3 +617,7 @@ tr.running td.pltdmain table.pltbsub tr.pltr-1 td.pltd-2 span.glyphicon-star
     .flright
         float: right
         font-size: $small-font-size
+
+// highlight artist/album/genre in info dialog
+span.choose
+    color: blue

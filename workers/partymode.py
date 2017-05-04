@@ -40,9 +40,8 @@ class MPC_Idler:
                 self.client.connect('localhost', 6600)
                 self.connected = True
                 return True
-            except ConnectionError:
+            except (ConnectionError, ConnectionResetError):
                 sleep(0.1)
-                pass
         return self.connected
 
     def ensure_connected(self):
@@ -52,7 +51,6 @@ class MPC_Idler:
                 self.client.status()
             except (ConnectionError, CommandError):
                 self.reconnect()
-                pass
 
     def check_party_mode(self, res, force=False):
         """Check if party mode is on, append items to playlist/shrink playlist if needed.

@@ -143,8 +143,26 @@ PiRemote.search_raise_info_dialog = (file) ->
                         if item == 'Time'
                             res = PiRemote.secToMin res
                         p.append('strong').html(item+': ')
-                        p.append('span').html(res)
+                        p.append('span').attr('data-item', item.toLowerCase()).classed('choose', item in ['Title', 'Artist', 'Album', 'Date', 'Genre']).html(res)
                         p.append('br')
+                
+                # browse if clicked on choose item
+                $('span.choose').on 'click', ->
+                    $('#modalSmall').modal('hide')
+                    mode = $(this).data('item')
+                    if mode == 'title'
+                        pattern = $(this).text().replace(/[(\[].*[\[)]/, "").replace(/[. \-_\d]*$/, "")
+                        $('input#searchfield').val(pattern)
+                        PiRemote.load_page 'search'
+                        $('button#gosearch').click()
+                    else
+                        PiRemote.browse_reset_selection()
+                        PiRemote.selected[mode]['All'] = false
+                        PiRemote.selected[mode][$(this).text()] = true
+                        PiRemote.last_browse = null
+                        PiRemote.should_browse = mode
+                        PiRemote.load_page 'browse'
+                    return
 
                 # show rating
                 p.append('strong').html('Rating: ')
@@ -160,7 +178,7 @@ PiRemote.search_raise_info_dialog = (file) ->
                 p.append('br')
 
                 # rate song
-                $('span.idxrate span').on 'click', (event) ->
+                $('span.idxrate span').on 'click', ->
                     rate = 0
                     if $(this).hasClass('ratespan')
                         rate = $(this).data('idx')

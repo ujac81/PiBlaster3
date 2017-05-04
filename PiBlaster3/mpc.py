@@ -625,17 +625,7 @@ class MPC:
             return {'error_str': 'Command error in search: %s' % e}
 
         has_files = []
-
-        self.truncated = 0
-        if len(search) > limit:
-            self.truncated = len(search) - limit
-
-        # query all ratings at once
-        files = sorted(set([x['file'] for x in search if 'file' in x]))
-        q = Rating.objects.values('path', 'rating').filter(path__in=files)
-        rat_d = dict([(x['path'], x['rating']) for x in q])
-
-        for item in search[:limit]:
+        for item in search:
             if 'file' not in item:
                 continue
             if item['file'] in has_files:
@@ -674,12 +664,25 @@ class MPC:
             res.append(length)
             res.append('')  # dummy to push file to pos #5
             res.append(item['file'])
-            res.append(rat_d[item['file']] if item['file'] in rat_d else 0)
+            res.append(0)  # ratings placeholder
             result.append(res)
 
+        # truncate to N results
+        trunc_res = result[:limit]
+        self.truncated = 0
+        if len(result) > limit:
+            self.truncated = len(result) - limit
         trunc_str = '(truncated)' if self.truncated else ''
+
+        # query all ratings at once
+        files = sorted(set([x[5] for x in trunc_res]))
+        q = Rating.objects.values('path', 'rating').filter(path__in=files)
+        rat_d = dict([(x['path'], x['rating']) for x in q])
+        for item in trunc_res:
+            item[6] = rat_d[item[5]] if item[5] in rat_d else 0
+
         return {'status_str': '%d items found %s' % (len(result), trunc_str),
-                'search': result,
+                'search': trunc_res,
                 'truncated': self.truncated}
 
     def playlists_action(self, cmd, plname, payload):
