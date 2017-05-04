@@ -29,7 +29,14 @@ PiRemote.pl_build_home = ->
     bl = root.append('div').attr('class', 'play-list')
     tb = bl.append('table').attr('id', 'tbpl').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'pl')
+    root.append('p').attr('class', 'spacer')
 
+    $('#minussign').show()
+    $('#minussign').off 'click'
+    $('#minussign').on 'click', ->
+        PiRemote.pl_raise_add_dialog true
+        return
+    
 
     $('#addsign').show()
     $('#addsign').off 'click'
@@ -78,6 +85,7 @@ PiRemote.pl_build_edit_playlist = ->
     bl = root.append('div').attr('class', 'play-list')
     tb = bl.append('table').attr('id', 'tbpledit').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'pledit')
+    root.append('p').attr('class', 'spacer')
 
     PiRemote.pl_action_on_playlists
         title: 'Choose Playlist to Edit'
@@ -496,7 +504,7 @@ PiRemote.pl_raise_action_dialog = (id) ->
 
 
 # Raise modal action dialog after click on plus sign.
-PiRemote.pl_raise_add_dialog = ->
+PiRemote.pl_raise_add_dialog = (minus=false) ->
 
     d3.select('#smallModalLabel').html('Playlist Action')
     cont = d3.select('#smallModalMessage')
@@ -504,23 +512,24 @@ PiRemote.pl_raise_add_dialog = ->
     navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
 
     items = [
-        ['select-all', 'Select All'],
-        ['deselect-all', 'Deselect All'],
-        ['invert-selection', 'Invert Selection'],
-        ['playidsnext', 'Selection After Current'],
-        ['moveidsend', 'Selection to End'],
-        ['selection-to-pl', 'Selection to Another Playlist'],
-        ['deleteids', 'Delete Selection'],
-        ['randomize', 'Randomize Playlist'],
-        ['randomize-rest', 'Randomize Playlist After Current'],
-        ['clear', 'Clear playlist'],
-        ['seed', 'Random add songs']
+        ['select-all', 'Select All', false],
+        ['deselect-all', 'Deselect All', true],
+        ['invert-selection', 'Invert Selection', false],
+        ['playidsnext', 'Selection After Current', false],
+        ['moveidsend', 'Selection to End', false],
+        ['selection-to-pl', 'Selection to Another Playlist', false],
+        ['deleteids', 'Delete Selection', true],
+        ['randomize', 'Randomize Playlist', false],
+        ['randomize-rest', 'Randomize Playlist After Current', false],
+        ['clear', 'Clear playlist', true],
+        ['seed', 'Random add songs', false]
         ]
     for elem in items
-        navul.append('li').attr('role', 'presentation')
-            .append('span').attr('class', 'browse-action-file')
-            .attr('data-action', elem[0])
-            .html(elem[1])
+        if elem[2] is minus
+            navul.append('li').attr('role', 'presentation')
+                .append('span').attr('class', 'browse-action-file')
+                .attr('data-action', elem[0])
+                .html(elem[1])
 
     # Callback for click actions on navigation.
     $(document).off 'click', 'span.browse-action-file'
@@ -886,6 +895,12 @@ PiRemote.rebuild_edit_playlist = (data) ->
         i = $(this).parent().data('index')
         PiRemote.pl_raise_edit_action_dialog data.pl[i][0], data.pl[i][1], i
         return
+        
+    $('#minussign').show()
+    $('#minussign').off 'click'
+    $('#minussign').on 'click', ->
+        PiRemote.pl_raise_edit_add_dialog true
+        return
 
     $('#addsign').show()
     $('#addsign').off 'click'
@@ -941,7 +956,7 @@ PiRemote.pl_raise_edit_action_dialog = (file, title, pos) ->
 
 
 # Plus sign pressed in edit mode
-PiRemote.pl_raise_edit_add_dialog = ->
+PiRemote.pl_raise_edit_add_dialog = (minus=false) ->
 
     d3.select('#smallModalLabel').html('Playlist Action')
     cont = d3.select('#smallModalMessage')
@@ -949,22 +964,23 @@ PiRemote.pl_raise_edit_add_dialog = ->
     navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
 
     items = [
-        ['select-all', 'Select All'],
-        ['deselect-all', 'Deselect All'],
-        ['invert-selection', 'Invert Selection'],
-        ['moveend', 'Move Selection to End'],
-        ['insert', 'Insert Selection to Current Playlist'],
-        ['append', 'Append Selection to Current Playlist'],
-        ['selection-to-pl', 'Append Selection to Another Playlist'],
-        ['delete', 'Delete Selection'],
-        ['clear', 'Clear Playlist'],
-        ['seed', 'Add random songs']
+        ['select-all', 'Select All', false],
+        ['deselect-all', 'Deselect All', true],
+        ['invert-selection', 'Invert Selection', false],
+        ['moveend', 'Move Selection to End', false],
+        ['insert', 'Insert Selection to Current Playlist', false],
+        ['append', 'Append Selection to Current Playlist', false],
+        ['selection-to-pl', 'Append Selection to Another Playlist', false],
+        ['delete', 'Delete Selection', true],
+        ['clear', 'Clear Playlist', true],
+        ['seed', 'Add random songs', false]
         ]
     for elem in items
-        navul.append('li').attr('role', 'presentation')
-            .append('span').attr('class', 'browse-action-file')
-            .attr('data-action', elem[0])
-            .html(elem[1])
+        if elem[2] is minus
+            navul.append('li').attr('role', 'presentation')
+                .append('span').attr('class', 'browse-action-file')
+                .attr('data-action', elem[0])
+                .html(elem[1])
 
     # Callback for click actions on navigation.
     $(document).on 'click', 'span.browse-action-file', () ->

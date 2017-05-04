@@ -68,6 +68,7 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
     # clean main page node
     PiRemote.clear_navbar_buttons()
     d3.select('.piremote-content').html('')
+    $('#minussign').hide()
     $('#addsign').hide()
 
     if page == 'index'
