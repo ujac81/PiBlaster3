@@ -5,22 +5,36 @@
 Install instructions -- updated 2016/12/16
 
 # Set up Raspberry Pi
-Install latest raspbian
+Install latest raspbian, like told on the website.
+After first boot run
+
+    $ sudo raspi-config
+
+Enable ssh, set locale, set timezone, disable waiting for network at boot.
+
+## Hifiberry AMP
+If using PiBlaster with hifiberry amp, follow instructions on the website: https://www.hifiberry.com/build/documentation/configuring-linux-3-18-x/
+Don't forget to set up the equalizer if desired: https://support.hifiberry.com/hc/en-us/articles/205311292-Adding-equalization-using-alsaeq
 
 ## Access Point Mode
+To access the PiBlaster 3 interface via WiFi, you can either use the onboard WiFi device which comes with newer versions of raspberry Pi or you can attach a usb WiFi-dongle.
+If using another dongle, please check if you need to set wlan0 or wlan1 here.
+
+**Note:** other devices require other drivers for hostapd.conf!!! There are some dongles which require drivers that are not shipped with the default version of hostapd. You will have to find another distribution of hostapd or patch the sources or whatever...
+
 Example set for net 192.168.207.0
 
-**Note:** settings configured for wlan1 -- if you have no raspi model #3, you might want to switch to wlan0.
+**Note:** settings configured for wlan0 -- if you have no raspi model #3, you might want to switch to wlan0.
 
-    $ sudo aptitude install hostapd dnsmasq
+    $ sudo apt install hostapd dnsmasq
 
 Prevent dhcpd on wlan interface. At the bottom of /etc/dhcpcd.conf add
 
-    denyinterfaces wlan1
+    denyinterfaces wlan0
 
 /etc/network/interfaces
 
-    iface wlan1 inet static
+    iface wlan0 inet static
       address 192.168.207.1
       network 192.168.207.0
       netmask 255.255.255.0
@@ -32,7 +46,7 @@ Use hostapd.conf from PiBlaster3 installation to /etc/default/hostapd make sure 
 
 /etc/hosts
 
-    192.168.207.1 pi.blaster pi
+    192.168.207.1 blaster.local blaster
 
 /etc/resolv.conf
 
@@ -55,15 +69,15 @@ Use hostapd.conf from PiBlaster3 installation to /etc/default/hostapd make sure 
 
 Enable services at boot
 
-    $ sudo update-rc.d hostapd enable
-    $ sudo update-rc.d dnsmasq enable
+    $ sudo systemctl enable nginx hostapd
+    $ sudo systemctl enable nginx dnsmasq
 
 ## Reverse Proxy
 Nginx will be used as revere proxy and delivery of mp3 files.
 Configuration will be done, when PiBlaster3 is installed.
 
-    $ sudo aptitude install nginx
-    $ sudo update-rc.d nginx enable
+    $ sudo apt install nginx
+    $ sudo systemctl enable nginx
 
 ## PostgreSQL Database
 PiBlaster 3 software uses pSQL database to store settings and other things like upload queue.
@@ -82,18 +96,13 @@ Note: the password assigned for the database here has to match the one set in se
 
 ## Required Packages
 
-    $ sudo aptitude install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git libasound2-dev redis-server
+    $ sudo apt install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git libasound2-dev redis-server
     $ sudo pip3 install django==1.10.5
 
 At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might use this directly)
 
     $ sudo pip3 install git+https://github.com/matannoam/pypugjs.git@master
-    $ sudo pip3 install django_compressor
-    $ sudo pip3 install uwsgi
-    $ sudo pip3 install python-mpd2
-    $ sudo pip3 install django-websocket-redis
-    $ sudo pip3 install mutagen
-    $ sudo pip3 install psycopg2
+    $ sudo pip3 install django_compressor uwsgi python-mpd2 django-websocket-redis mutagen psycopg2
 
 ## PiBlaster3 software
 
@@ -103,6 +112,7 @@ At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might u
 
 Create local settings
 
+    $ cd /opt/PiBlaster3
     $ cp PiBlaster3/settings_piremote.py.example PiBlaster3/settings_piremote.py
 
 And update settings inside this file.
@@ -145,12 +155,6 @@ For trying out some things and playing with the functionalities of the app, you 
 In theory it should work, but tests on Raspberry Pi showed that the database seems locked the whole time for the worker.
 To roll back to sqlite3 change settings.py and exchange all psycopg2 to sqlite3 in the worker modules and check that connect is correct.
 Also replace all %s with ? in the SQL commands.
-
-## Create new django project
-
-    $ sudo pip3 install django=x
-    See version list
-    $ sudo pip3 install django=1.10.5
 
 ## Restart service
 
