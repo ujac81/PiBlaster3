@@ -8,7 +8,8 @@ PiRemote.load_files_page = ->
     bl = root.append('div').attr('class', 'browse-list')
     tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'browse')
-
+    
+    $('h3#heading').html('Browse Files').show()
     $('#addsign').show()
     $('#addsign').off 'click'
     $('#addsign').on 'click', ->
@@ -156,6 +157,7 @@ PiRemote.raise_file_actions = (title, filename) ->
             .html(elem[1])
 
     # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         PiRemote.do_files_action $(this).data('action'), $(this).data('item'), 'file'
         return
@@ -183,6 +185,7 @@ PiRemote.raise_dir_dialog = (element) ->
         full_path += dir + '/'
 
     # Callback function for clicks on dir items in header.
+    $(document).off 'click', 'span.browse-span'
     $(document).on 'click', 'span.browse-span', () ->
         PiRemote.do_files $(this).data('dirname')
         $('#modalSmall').modal('hide')
@@ -202,6 +205,7 @@ PiRemote.raise_dir_dialog = (element) ->
             .html(elem[1])
 
     # Callback function for clicks on navigation actions.
+    $(document).off 'click', 'span.browse-action-dir'
     $(document).on 'click', 'span.browse-action-dir', () ->
         PiRemote.do_files_action $(this).data('action'), $(this).data('item'), 'dir'
         return
@@ -233,6 +237,7 @@ PiRemote.files_raise_add_dialog = ->
             .html(elem[1])
 
     # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         PiRemote.do_files_action $(this).data('action')
         return
@@ -244,7 +249,7 @@ PiRemote.files_raise_add_dialog = ->
 # Callback if span pressed in dir or file dialog.
 # Invoke playlist actions via PiRemote.pl_action().
 PiRemote.do_files_action = (action, item=null, type='file') ->
-
+    
     if action == 'select-all'
         d3.selectAll('tr.selectable').classed('selected', 1)
         $('#modalSmall').modal('hide')

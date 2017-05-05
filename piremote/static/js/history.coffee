@@ -9,7 +9,6 @@ PiRemote.load_history_page = ->
     
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'hist-list')
-    bl.append('h3').attr('id', 'hist-head')
     tb = bl.append('table').attr('id', 'tbhist').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'hist')
 
@@ -40,7 +39,7 @@ PiRemote.do_history = (mode, pattern='') ->
 # Callback for retrieved history data.
 PiRemote.hist_update_table = (data) ->
 
-    d3.select('h3#hist-head').html(data.title)
+    $('h3#heading').html(data.title).show()
     # clean table
     tbody = d3.select('tbody#hist')
     tbody.selectAll('tr').remove()

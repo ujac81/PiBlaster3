@@ -215,6 +215,7 @@ PiRemote.search_raise_info_dialog = (file) ->
                     full_path += dir + '/'
 
                 # Callback function for clicks on dir items in header.
+                $(document).off 'click', 'span.browse-span'
                 $(document).on 'click', 'span.browse-span', () ->
                     $('#modalSmall').modal('hide')
                     PiRemote.last_files = $(this).data('dirname')

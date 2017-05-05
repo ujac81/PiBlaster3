@@ -26,6 +26,7 @@ PiRemote.load_upload_page = ->
     bl = root.append('div').attr('class', 'upload-list')
     tb = bl.append('table').attr('id', 'tbupload').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'upload')
+    $('h3#heading').html('Browse Uploadable Files').show()
 
     $('#addsign').show()
     $('#addsign').off 'click'
@@ -212,6 +213,7 @@ PiRemote.up_dir_dialog = (item) ->
             .html('Upload Directory')
 
     # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         PiRemote.up_do_action $(this).data('action'), path
         return
@@ -236,6 +238,7 @@ PiRemote.up_file_dialog = (item) ->
             .html('Upload File')
 
     # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         PiRemote.up_do_action $(this).data('action'), path
         return

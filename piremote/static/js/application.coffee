@@ -70,6 +70,7 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
     d3.select('.piremote-content').html('')
     $('#minussign').hide()
     $('#addsign').hide()
+    $('h3#heading').hide()
 
     if page == 'index'
         PiRemote.load_index_page()

@@ -22,7 +22,6 @@ PiRemote.load_browse_page = ->
 
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'browse-list')
-    bl.append('h3').attr('id', 'browse-head')
     tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'browse')
 
@@ -79,12 +78,11 @@ PiRemote.do_browse = (what) ->
 
 # Build table result from all categories except 'song'
 PiRemote.build_browse = (data) ->
-
     PiRemote.last_browse = data
 
     mode = data.what
     title = PiRemote.select_class_names[PiRemote.browse_current_page_index]
-    d3.select('h3#browse-head').html('Browse by '+title)
+    $('h3#heading').html('Browse by <em>'+title+'</em>').show()
 
     # clean table
     tbody = d3.select('tbody#browse')

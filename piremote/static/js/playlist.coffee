@@ -30,13 +30,12 @@ PiRemote.pl_build_home = ->
     tb = bl.append('table').attr('id', 'tbpl').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'pl')
     root.append('p').attr('class', 'spacer')
-
+    
     $('#minussign').show()
     $('#minussign').off 'click'
     $('#minussign').on 'click', ->
         PiRemote.pl_raise_add_dialog true
         return
-    
 
     $('#addsign').show()
     $('#addsign').off 'click'
@@ -729,6 +728,8 @@ PiRemote.pl_raise_seed_dialog = (seed_dir='')->
 PiRemote.pl_rebuild_playlist_list = (data) ->
 
     action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
+    
+    $('h3#heading').html('List of playlists').show()
 
     # clean table
     tbody = d3.select('tbody#pls')
@@ -775,6 +776,7 @@ PiRemote.pl_raise_playlist_list_actions = (plname) ->
             .html(elem[1])
 
     # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         action = $(this).data('action')
         if action == 'load'
@@ -827,6 +829,7 @@ PiRemote.pl_action_on_playlists = (req) ->
                     .html(elem)
 
             # Callback for click actions on navigation.
+            $(document).off 'click', 'span.browse-action-file'
             $(document).on 'click', 'span.browse-action-file', () ->
                 plname = $(this).data('plname')
                 if plname.length > 0
@@ -865,6 +868,8 @@ PiRemote.rebuild_edit_playlist = (data) ->
 
     PiRemote.tb_short_data = data.pl
     PiRemote.pl_edit_name = data.plname
+    
+    $('h3#heading').html('Saved playlist <em>'+data.plname+'</em>').show()
 
     action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
 
@@ -936,6 +941,7 @@ PiRemote.pl_raise_edit_action_dialog = (file, title, pos) ->
             .html(elem[1])
 
     # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         action = $(this).data('action')
         if action in ['insert', 'append']
@@ -984,6 +990,7 @@ PiRemote.pl_raise_edit_add_dialog = (minus=false) ->
                 .html(elem[1])
 
     # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
     $(document).on 'click', 'span.browse-action-file', () ->
         action = $(this).data('action')
         items = d3.selectAll('tr.pledit-item.selected').data().map((d)->d[0])
