@@ -342,8 +342,7 @@ def download_playlist(request):
     source = request.GET.get('source')
     name = request.GET.get('name')
     mpc = MPC()
-    data = mpc.get_m3u(source, name)
-    return JsonResponse({'status_str': 'playlist.m3u generated', 'data': data})
+    return JsonResponse(mpc.get_m3u(source, name))
 
 
 def upload_ratings(request):

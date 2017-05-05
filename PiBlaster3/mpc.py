@@ -10,7 +10,7 @@ import time
 
 from django.conf import settings
 from PiBlaster3.translate_genre import translate_genre, all_genres
-from piremote.models import Rating
+from piremote.models import Rating, History
 
 
 class MPC:
@@ -869,10 +869,10 @@ class MPC:
             path_prefix = client.config()
         except ConnectionError:
             print("ERROR: CONNECT SOCKET")
-            return []
+            return dict(error_str='Failed to connect to MPD socket!', data=[])
         except CommandError:
             print("ERROR: COMMAND SOCKET")
-            return []
+            return dict(error_str='Failed to connect to MPD socket!', data=[])
 
         self.ensure_connected()
         if source == 'current':
@@ -883,7 +883,10 @@ class MPC:
                 items = self.client.listplaylistinfo(name)
                 res = [os.path.join(path_prefix, x['file']) for x in items]
             except CommandError:
-                return []
+                return dict(error_str='Playlist not found: '+name, data=[])
+        elif source == 'history':
+            items = History.get_history(name)
+            res = [os.path.join(path_prefix, x[5]) for x in items]
 
-        return res
-
+        return dict(status_str='Downloading %s playlist with %d items' % (source, len(res)),
+                    data=res, prefix=path_prefix)

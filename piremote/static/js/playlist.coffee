@@ -538,7 +538,6 @@ PiRemote.pl_raise_add_dialog = (minus=false) ->
         PiRemote.pl_do_action $(this).data('action')
         return
 
-    # Raise dialog.
     $('#modalSmall').modal('show')
     return
 
@@ -590,6 +589,7 @@ PiRemote.pl_do_action = (action, id=-1) ->
             data:
                 source: 'current'
             filename: 'playlist.m3u'
+        $('#modalSmall').modal('hide')
 
     return
 

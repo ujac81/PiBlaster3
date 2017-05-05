@@ -135,7 +135,7 @@ class History(models.Model):
         """List of items in history
 
         :param mode: 'dates' for list of dates, 'YYYY-MM-DD' for specific date
-        :return [[YYYY-MM-DD, Mon 1 Jan 2000] or [HH:MM, title, path]]
+        :return [[YYYY-MM-DD, Mon 1 Jan 2000] or [HH:MM, title, , , ,path]]
         """
         if mode == 'dates':
             dates = [timezone.localtime(i.time).date().isoformat() for i in History.objects.all().order_by('time')]

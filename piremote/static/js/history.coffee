@@ -43,29 +43,33 @@ PiRemote.hist_update_table = (data) ->
     # clean table
     tbody = d3.select('tbody#hist')
     tbody.selectAll('tr').remove()
+    
+    action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
 
     if data.mode == 'dates'
         # List plain dates and retrieve per date information if any date clicked.
         d3.select('tbody#hist').selectAll('tr')
             .data(data.history, (d) -> d).enter()
             .append('tr')
-            .attr('class', 'histdate')
+            .attr('class', 'file-item histitem histdate')
             .attr('data-mode', (d) -> d[0])
             .selectAll('td')
-            .data((d) -> [d[1]]).enter()
+            .data((d, i) -> [i+1, d[1], action_span]).enter()
             .append('td')
-                .attr('class', 'hist-td1')
+                .attr('class', (d, i) -> 'hist-td'+i)
                 .html((d) -> d)
 
-        $('div.hist-list > table > tbody > tr.histdate').on 'click', (event) ->
-            PiRemote.do_history $(this).data('mode')
+        $('div.hist-list > table > tbody > tr.histdate > td.hist-td1').on 'click', (event) ->
+            PiRemote.hist_raise_date_actions $(this).parent().data('mode')
+            return
+            
+        $('div.hist-list > table > tbody > tr.histdate > td.hist-td2').on 'click', (event) ->
+            PiRemote.hist_raise_date_actions $(this).parent().data('mode')
             return
 
         $('#addsign').hide()
     else
         # Build history data for specific date.
-
-        action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
 
         d3.select('tbody#hist').selectAll('tr')
             .data(data.history, (d) -> d).enter()
@@ -101,4 +105,51 @@ PiRemote.hist_update_table = (data) ->
             PiRemote.files_raise_add_dialog()
             return
 
+    return
+
+    
+# Action dots clicked on history date
+PiRemote.hist_raise_date_actions = (date) ->
+    
+    d3.select('#smallModalLabel').html('History actions for '+date)
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+    navul.append('li').attr('role', 'presentation')
+        .append('span').attr('class', 'browse-action-file')
+        .attr('data-action', 'download').html('Download as playlist')
+    navul.append('li').attr('role', 'presentation')
+        .append('span').attr('class', 'browse-action-file')
+        .attr('data-action', 'saveas').html('Save as playlist')
+    
+    # Callback for click actions on navigation.
+    $(document).off 'click', 'span.browse-action-file'
+    $(document).on 'click', 'span.browse-action-file', () ->
+        action = $(this).data('action')
+        if action == 'download'
+            PiRemote.do_download_as_text
+                url: 'download/playlist'
+                data:
+                    source: 'history'
+                    name: date
+                filename: date+'.m3u'
+            $('#modalSmall').modal('hide')
+        else if action == 'saveas'
+            PiRemote.do_ajax
+                url: 'download/playlist'
+                method: 'GET'
+                data:
+                    source: 'history'
+                    name: date
+                success: (data) ->
+                    if data.data.length == 0
+                        PiRemote.setErrorText 'Not saving empty playlist!'
+                    else
+                        items = [i.replace(data.prefix+'/', '') for i in data.data]
+                        PiRemote.pl_append_items_to_playlist items[0]
+                    return
+        return
+        
+    $('#modalSmall').modal('show')
     return
