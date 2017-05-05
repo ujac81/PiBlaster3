@@ -853,3 +853,37 @@ class MPC:
             add.append(files[random.randrange(0, len(files))])
 
         return self.playlist_action('append', plname, add)
+
+    def get_m3u(self, source, name):
+        """Return list uris to save as m3u file
+        
+        :param source: one of [current, saved, history]
+        :param name: name of saved playlist or date for history
+        :return: ['/path/to/mp31.mp3', '/path/to/next.ogg', ...]
+        """
+        res = []
+        client = MPDClient()
+        client.timeout = 10
+        try:
+            client.connect(settings.PB_MPD_SOCKET, 0)
+            path_prefix = client.config()
+        except ConnectionError:
+            print("ERROR: CONNECT SOCKET")
+            return []
+        except CommandError:
+            print("ERROR: COMMAND SOCKET")
+            return []
+
+        self.ensure_connected()
+        if source == 'current':
+            items = self.client.playlistinfo()
+            res = [os.path.join(path_prefix, x['file']) for x in items]
+        elif source == 'saved':
+            try:
+                items = self.client.listplaylistinfo(name)
+                res = [os.path.join(path_prefix, x['file']) for x in items]
+            except CommandError:
+                return []
+
+        return res
+

@@ -86,3 +86,21 @@ PiRemote.do_command = (cmd, payload=[]) ->
             cmd: cmd
             payload: payload
     return
+
+    
+# AJAX GET of downloadable content (JSON data.data as array) and create download blob.
+PiRemote.do_download_as_text = (req) ->
+    PiRemote.do_ajax
+        url: req.url
+        method: 'GET'
+        data: req.data
+        success: (data) ->
+            URL = window.URL || window.webkitURL
+            blob = new Blob([data.data.join('\r\n')], {type: 'text/plain; charset=utf-8'})
+            download_url = URL.createObjectURL blob
+            a = $('a#download')[0]
+            a.href = download_url
+            a.download = req.filename
+            a.click()
+            return
+    return

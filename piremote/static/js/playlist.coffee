@@ -523,6 +523,7 @@ PiRemote.pl_raise_add_dialog = (minus=false) ->
         ['randomize-rest', 'Randomize Playlist After Current', false],
         ['clear', 'Clear playlist', true],
         ['seed', 'Random add songs', false]
+        ['download', 'Download Playlist', false]
         ]
     for elem in items
         if elem[2] is minus
@@ -583,6 +584,12 @@ PiRemote.pl_do_action = (action, id=-1) ->
         PiRemote.pl_raise_clear_dialog()
     else if action == 'seed'
         PiRemote.pl_raise_seed_dialog()
+    else if action == 'download'
+        PiRemote.do_download_as_text
+            url: 'download/playlist'
+            data:
+                source: 'current'
+            filename: 'playlist.m3u'
 
     return
 
@@ -981,6 +988,7 @@ PiRemote.pl_raise_edit_add_dialog = (minus=false) ->
         ['delete', 'Delete Selection', true],
         ['clear', 'Clear Playlist', true],
         ['seed', 'Add random songs', false]
+        ['download', 'Download playlist', false]
         ]
     for elem in items
         if elem[2] is minus
@@ -1022,7 +1030,14 @@ PiRemote.pl_raise_edit_add_dialog = (minus=false) ->
             PiRemote.pl_raise_clear_dialog()
         else if action == 'seed'
             PiRemote.pl_raise_seed_dialog()
-        return
+        else if action == 'download'
+            PiRemote.do_download_as_text
+                url: 'download/playlist'
+                data:
+                    source: 'saved'
+                    name: PiRemote.pl_edit_name
+                filename: PiRemote.pl_edit_name+'.m3u'
+        return # action clicked
 
     $('#modalSmall').modal('show')
     return
