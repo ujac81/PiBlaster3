@@ -65,6 +65,7 @@ PiRemote.pl_build_home = ->
 PiRemote.pl_build_load_playlist = ->
 
     $('#addsign').hide()
+    $('#minussign').hide()
 
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'play-list')
@@ -75,7 +76,6 @@ PiRemote.pl_build_load_playlist = ->
         success: (data)->
             PiRemote.pl_rebuild_playlist_list data
             return
-
     return
 
 
@@ -305,30 +305,31 @@ PiRemote.install_pl_handlers = ->
                     PiRemote.search_raise_info_dialog data.result[0].file
                 return
         return
-
-    # Detect click-and-hold on item
-    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').off 'mousedown'
-    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').on 'mousedown', (event) ->
-        $this = $(this).data "mousedown", true
-        setTimeout ( ->
-            if $this.data('mousedown') == true  # prevent too short hold time
-                PiRemote.pl_raise_drag_element event, $this
-            return
-        ), 1000  # <-- click and hold timeout
-        return
-
-    # Set mousedown data to false if mouse no longer down:
-    # Prevent mouse-hold event if hold too short.
-    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').off 'mouseup'
-    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').on 'mouseup', ->
-        $(this).data "mousedown", false
-        return
-
-    # Detect mouse up events while dragging
-    $(document).off 'mouseup'
-    $(document).on 'mouseup', (event) ->
-        PiRemote.pl_drop_drag_element event if PiRemote.dragging
-        return
+    
+    # TODO: doesn't work
+#    # Detect click-and-hold on item
+#    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').off 'mousedown'
+#    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').on 'mousedown', (event) ->
+#        $this = $(this).data "mousedown", true
+#        setTimeout ( ->
+#            if $this.data('mousedown') == true  # prevent too short hold time
+#                PiRemote.pl_raise_drag_element event, $this
+#            return
+#        ), 1000  # <-- click and hold timeout
+#        return
+#
+#    # Set mousedown data to false if mouse no longer down:
+#    # Prevent mouse-hold event if hold too short.
+#    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').off 'mouseup'
+#    $('table#tbpl > tbody > tr.selectable > td > table > tr > td.selectable').on 'mouseup', ->
+#        $(this).data "mousedown", false
+#        return
+#
+#    # Detect mouse up events while dragging
+#    $(document).off 'mouseup'
+#    $(document).on 'mouseup', (event) ->
+#        PiRemote.pl_drop_drag_element event if PiRemote.dragging
+#        return
 
     return
 

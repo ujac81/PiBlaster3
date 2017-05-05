@@ -151,7 +151,7 @@ PiRemote.search_raise_info_dialog = (file) ->
                     $('#modalSmall').modal('hide')
                     mode = $(this).data('item')
                     if mode == 'title'
-                        pattern = $(this).text().replace(/[(\[].*[\[)]/, "").replace(/[. \-_\d]*$/, "")
+                        pattern = $(this).text().replace(/[(\[].*[\[)]/g, "").replace(/[. \-_\d]*$/, "")
                         $('input#searchfield').val(pattern)
                         PiRemote.load_page 'search'
                         $('button#gosearch').click()

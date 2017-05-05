@@ -69,7 +69,8 @@ PiRemote.settings_build_page = (settings) ->
 
     p = root.append('p').attr('class', 'settingsgroup').attr('id', 'ratings')
     p.append('h4').attr('class','settingshead').html('Ratings')
-    PiRemote.settings_add_link p, 'Download ratings', '/piremote/download/ratings'
+    PiRemote.settings_add_link p, 'Download all ratings (including parsed ratings from media files)', '/piremote/download/ratings'
+    PiRemote.settings_add_link p, 'Download internal ratings (only changed ratings in PiRemote)', '/piremote/download/ratings/new'
     PiRemote.settings_add_link p, 'Upload ratings', '/piremote/upload/ratings', 'Upload'
 
     return

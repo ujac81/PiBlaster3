@@ -47,6 +47,7 @@ class RatingsParser:
                 q = Rating.objects.get(path=path)
                 if q.rating != rating:
                     q.rating = rating
+                    q.original = False
                     q.save()
                 else:
                     skipped = True
@@ -61,27 +62,21 @@ class RatingsParser:
                 if len(q) > 0:
                     q2 = q.exclude(rating=rating)
                     if len(q2) > 0:
-                        q2.update(rating=rating)
+                        q2.update(rating=rating, original=False)
                     else:
                         skipped = True
                     parsed = True
 
-            if not parsed and title + artist + album != '':
+            if not parsed and title != '' and artist != '':
                 # Check if album/artist/title matches
-                q = q_all
-                if title != '':
-                    q = q.filter(title__icontains=title)
-                if artist != '':
-                    q = q.filter(artist__icontains=artist)
-                if album != '':
-                    q = q.filter(album__icontains=album)
+                q = q_all.filter(artist__iexact=artist).filter(title__icontains=title)
                 if len(q) > 0:
                     q2 = q.exclude(rating=rating)
                     if len(q2) > 0:
-                        q2.update(rating=rating)
-                    else:
-                        skipped = True
-                    parsed = True
+                        q.update(rating=rating, original=False)
+                else:
+                    skipped = True
+                parsed = True
 
             add = [artist, album, title, path, rating]
             if parsed and not skipped:

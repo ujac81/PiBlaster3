@@ -188,7 +188,8 @@ class Rating(models.Model):
     album = models.CharField(max_length=256, default='')
     genre = models.CharField(max_length=256, default='unknown')
     date = models.SmallIntegerField(default=0)
-    rating = models.SmallIntegerField(default=0)
+    rating = models.SmallIntegerField(default=0)  # [0..5]
+    original = models.BooleanField(default=False)  # if rating came from file originally
 
     @staticmethod
     def get_rating(uri):
@@ -210,10 +211,16 @@ class Rating(models.Model):
         :param rating: 1-5 or 0 to remove
         :return: {error_str=''} or {status_str=''}
         """
-        q = Rating.objects.filter(path=uri)
-        if len(q) == 0:
+        try:
+            q = Rating.objects.get(path=uri)
+        except ObjectDoesNotExist:
             return dict(error_str='Song to rate not found in database!')
-        q.update(rating=rating)
+        if rating == q.rating:
+            return dict(status_str='Unchanged rating for %s' % q[0].title)
+        q.rating = rating
+        q.original = False
+        q.save()
+
         if rating == 0:
             return dict(status_str='Removed rating for %s' % q[0].title)
         return dict(status_str='Set rating for %s to %d' % (q[0].title, rating))

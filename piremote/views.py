@@ -324,10 +324,12 @@ def rate_ajax(request):
     return JsonResponse(Rating.set_rating(filename, int(rating)))
 
 
-def download_ratings(request):
+def download_ratings(request, mode='all'):
     """GET /download/ratings
     """
     q = Rating.objects.filter(rating__gte=1)
+    if mode == 'new':
+        q = q.filter(original=False)
     data = serializers.serialize("xml", q)
     response = HttpResponse(data, content_type="application/xml")
     response['Content-Disposition'] = 'attachment; filename=ratings.xml'

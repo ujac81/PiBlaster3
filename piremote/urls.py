@@ -37,5 +37,6 @@ urlpatterns = [
     url(r'^ajax/history/$', views.history_ajax, name='history_ajax'),
     url(r'^ajax/rate/$', views.rate_ajax, name='rate_ajax'),
     url(r'^download/ratings/$', views.download_ratings, name='download_ratings'),
+    url(r'^download/ratings/(?P<mode>[-\w]+)/$', views.download_ratings, name='download_ratings'),
 ]
 
