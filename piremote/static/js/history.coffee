@@ -60,7 +60,7 @@ PiRemote.hist_update_table = (data) ->
                 .html((d) -> d)
 
         $('div.hist-list > table > tbody > tr.histdate > td.hist-td1').on 'click', (event) ->
-            PiRemote.hist_raise_date_actions $(this).parent().data('mode')
+            PiRemote.do_history $(this).parent().data('mode')
             return
             
         $('div.hist-list > table > tbody > tr.histdate > td.hist-td2').on 'click', (event) ->

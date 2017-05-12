@@ -164,7 +164,7 @@ PiRemote.confirm_dialog = (req) ->
     cont = d3.select('#smallModalMessage')
     cont.html('')
 
-    need_pw = req.requirepw isnt `undefined` and req.requirepw
+    need_pw = req.requirepw isnt `undefined` and req.requirepw and PiRemote.has_user_pw
     if need_pw
         cont.append('p').attr('class', 'confirmpassword')
             .append('input').attr('type', 'text').attr('id', 'confirmpw').attr('placeholder', 'Confirm Password')

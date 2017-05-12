@@ -72,6 +72,11 @@ PiRemote.settings_build_page = (settings) ->
     PiRemote.settings_add_link p, 'Download all ratings (including parsed ratings from media files)', '/piremote/download/ratings'
     PiRemote.settings_add_link p, 'Download internal ratings (only changed ratings in PiRemote)', '/piremote/download/ratings/new'
     PiRemote.settings_add_link p, 'Upload ratings', '/piremote/upload/ratings', 'Upload'
+    
+    p = root.append('p').attr('class', 'settingsgroup').attr('id', 'history')
+    p.append('h4').attr('class','settingshead').html('History')
+    PiRemote.settings_add_link p, 'Download full history', '/piremote/download/history'
+    PiRemote.settings_add_link p, 'Upload history for merge', '/piremote/upload/history', 'Upload'
 
     return
 

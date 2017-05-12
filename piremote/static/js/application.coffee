@@ -18,7 +18,6 @@ $ ->
             payload: [new Date().getTime()]
 
     # Top menu action -- invoke load_page() on data-action value.
-    $(document).off 'click', 'a[data-toggle="menu"]'
     $(document).on 'click', 'a[data-toggle="menu"]', (event) ->
         action = event.target.dataset.action
         event.preventDefault()
@@ -30,8 +29,9 @@ $ ->
 
     # Disable polling while focus is lost.
     # Load blur page on focus loss and reload page on focus return.
-    unless PiRemote.debug
+    unless PiRemote.debug and false  # TODO blur always, also in DEBUG mode
         $(window).blur ->
+            # Blurring the window stops the short poll loops in main and playlist view and thus saves resources.
             PiRemote.safe_page = PiRemote.current_page
             PiRemote.safe_sub_page = PiRemote.current_sub_page
             PiRemote.load_page 'blur'

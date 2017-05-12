@@ -127,7 +127,7 @@ class History(models.Model):
     """
     title = models.CharField(max_length=256)
     path = models.FilePathField(max_length=500)
-    time = models.DateTimeField(auto_now_add=True)
+    time = models.DateTimeField(default=timezone.now)
     updated = models.BooleanField(default=False)
 
     @staticmethod
@@ -174,6 +174,8 @@ class History(models.Model):
             item.time += delta
             item.updated = True
             item.save()
+            print('UPDATE')
+            print(item)
 
 
 class Rating(models.Model):
@@ -216,11 +218,11 @@ class Rating(models.Model):
         except ObjectDoesNotExist:
             return dict(error_str='Song to rate not found in database!')
         if rating == q.rating:
-            return dict(status_str='Unchanged rating for %s' % q[0].title)
+            return dict(status_str='Unchanged rating for %s' % q.title)
         q.rating = rating
         q.original = False
         q.save()
 
         if rating == 0:
-            return dict(status_str='Removed rating for %s' % q[0].title)
-        return dict(status_str='Set rating for %s to %d' % (q[0].title, rating))
+            return dict(status_str='Removed rating for %s' % q.title)
+        return dict(status_str='Set rating for %s to %d' % (q.title, rating))

@@ -5,8 +5,9 @@ imported at the end of settings.py
 DO NOT OVERWRITE DJANGO SETTINGS HERE
 """
 
-# input required for confirm dialogs (delete playlist, etc)
-PB_CONFIRM_PASSWORD = 'ulli'
+# Input required for confirm dialogs (delete playlist, etc).
+# Set to '' to disable, do not just remove this line.
+PB_CONFIRM_PASSWORD = 'piremote'
 
 # Directory to store uploaded files inside.
 # Make sure this one is scanned by MPD or songs won't appear in player.
@@ -34,4 +35,4 @@ PB_MEDIA_EXT = ('.mp3', '.flac', '.ogg', '.wma', '.wav', '.mp4', '.m4a', '.mpc')
 PB_SET_TIME = False
 
 # MPD socket file (required to read mpd config)
-PB_MPD_SOCKET = '/home/ujansen/.mpd/socket'
+PB_MPD_SOCKET = '/run/mpd/socket'

@@ -9,3 +9,7 @@ class UploadForm(forms.Form):
 
 class UploadRatingsForm(forms.Form):
     ratingsfile = forms.FileField()
+
+
+class UploadHistoryForm(forms.Form):
+    historyfile = forms.FileField()

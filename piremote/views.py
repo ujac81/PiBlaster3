@@ -14,9 +14,10 @@ from PiBlaster3.commands import Commands
 from PiBlaster3.mpc import MPC
 from PiBlaster3.upload import Uploader
 from PiBlaster3.ratings_parser import RatingsParser
+from PiBlaster3.history_parser import HistoryParser
 
 from .models import Setting, Upload, History, Rating
-from .forms import UploadForm, UploadRatingsForm
+from .forms import UploadForm, UploadRatingsForm, UploadHistoryForm
 
 
 def index(request):
@@ -24,9 +25,7 @@ def index(request):
     We only have one get for the main page.
     Sub pages are dynamical loaded via AJAX and inner page content is rebuilt by d3.js.
     """
-    template = loader.get_template('piremote/index.pug')
-    context = dict(page='index', debug=1 if settings.DEBUG else 0)
-    return HttpResponse(template.render(context, request))
+    return pages(request, 'index')
 
 
 def pages(request, page):
@@ -35,7 +34,9 @@ def pages(request, page):
     Sub pages are dynamical loaded via AJAX and inner page content is rebuilt by d3.js.
     """
     template = loader.get_template('piremote/index.pug')
-    context = dict(page=page, debug=1 if settings.DEBUG else 0)
+    context = dict(page=page,
+                   debug=1 if settings.DEBUG else 0,
+                   has_pw=0 if settings.PB_CONFIRM_PASSWORD is '' else 1)
     return HttpResponse(template.render(context, request))
 
 
@@ -336,6 +337,16 @@ def download_ratings(request, mode='all'):
     return response
 
 
+def download_history(request):
+    """GET /download/history
+    """
+    q = History.objects.all()
+    data = serializers.serialize("xml", q)
+    response = HttpResponse(data, content_type="application/xml")
+    response['Content-Disposition'] = 'attachment; filename=history.xml'
+    return response
+
+
 def download_playlist(request):
     """GET /download/playlist
     """
@@ -368,5 +379,31 @@ def upload_ratings(request):
         return HttpResponse(template.render(context, request))
     else:
         template = loader.get_template('piremote/upload_ratings.pug')
+        return HttpResponse(template.render({}, request))
+
+
+def upload_history(request):
+    """/upload/history
+    Handle file upload form.
+    :return: upload page including status message about successful upload.
+    """
+    if request.method == 'POST':
+        form = UploadHistoryForm(request.POST, request.FILES)
+        if form.is_valid():
+            context = {'status_str': 'File parsed'}
+            filename = form.cleaned_data["historyfile"]
+            data = request.FILES['historyfile'].read()
+            parser = HistoryParser(filename, data)
+
+            context['errors'] = parser.errors
+            context['parsed'] = parser.parsed_items
+            context['unparsed'] = parser.not_parsed_items
+            context['skipped'] = parser.skipped_items
+        else:
+            context = {'error_str': 'Uploaded file is not valid!'}
+        template = loader.get_template('piremote/upload_history_result.pug')
+        return HttpResponse(template.render(context, request))
+    else:
+        template = loader.get_template('piremote/upload_history.pug')
         return HttpResponse(template.render({}, request))
 
