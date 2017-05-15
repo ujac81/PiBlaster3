@@ -1,7 +1,7 @@
 //-
-    upload_ratings_result.pug -- show ratings upload result
+    upload_result.pug -- show upload result
 
-    POST /piremote/upload/ratings
+    POST /piremote/upload/UPLOAD
 
 !!!5
 html(lang="en")
@@ -12,9 +12,9 @@ html(lang="en")
         meta(http-equiv="Expires", content="-1")
         title PiBlater3 Remote
     body
-        h1 Upload Ratings File
+        h1 {{title}}
         p.
-            Ratings uploaded.
+            {{text}}
 
         if error_str
             h4.error Error:
@@ -29,19 +29,19 @@ html(lang="en")
             p.status {{status_str}}
 
         if unparsed
-            h4.status Ratings not found in local database:
+            h4.status Items not found in local database:
             ol
-                each rating in unparsed
-                    li {{rating.3}}
+                each item in unparsed
+                    li {{item.0}}
 
         if parsed
-            h4.status Parsed and applied ratings:
+            h4.status Parsed and applied items:
             ol
-                each rating in parsed
-                    li {{rating.3}}
+                each item in parsed
+                    li {{item.0}}
 
         if skipped
-            h4.status Skipped (already applied) ratings:
+            h4.status Skipped (already applied) items:
             ol
-                each rating in skipped
-                    li {{rating.3}}
+                each item in skipped
+                    li {{item.0}}

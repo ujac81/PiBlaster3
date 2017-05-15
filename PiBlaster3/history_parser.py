@@ -1,12 +1,10 @@
 """history_parser.py -- parse history received from XML file.
 """
 
-import dateutil.parser
 import xml.etree.ElementTree as ET
 
 from piremote.models import History, Rating
 from django.core.exceptions import ObjectDoesNotExist
-from pytz import UTC
 
 
 class HistoryParser:
@@ -92,11 +90,6 @@ class HistoryParser:
             # end for object in XML
 
         for item in insert:
-            #d = dateutil.parser.parse(item[2])
+            # We could do this faster, but should work.
             h = History(title=item[0], path=item[1], time=item[2], updated=item[3])
-            print('INSERT')
-            print(item)
             h.save()
-            print(h.time)
-
-

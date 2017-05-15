@@ -363,19 +363,22 @@ def upload_ratings(request):
     """
     if request.method == 'POST':
         form = UploadRatingsForm(request.POST, request.FILES)
+        context = dict(title='Upload History File', text='History uploaded')
+
         if form.is_valid():
-            context = {'status_str': 'File parsed'}
             filename = form.cleaned_data["ratingsfile"]
             data = request.FILES['ratingsfile'].read()
             parser = RatingsParser(filename, data)
 
+            context['status_str'] = 'File parsed'
             context['errors'] = parser.errors
             context['parsed'] = parser.parsed_ratings
             context['unparsed'] = parser.not_parsed_ratings
             context['skipped'] = parser.skipped_ratings
         else:
-            context = {'error_str': 'Uploaded file is not valid!'}
-        template = loader.get_template('piremote/upload_ratings_result.pug')
+            context['error_str'] = 'Uploaded file is not valid!'
+
+        template = loader.get_template('piremote/upload_result.pug')
         return HttpResponse(template.render(context, request))
     else:
         template = loader.get_template('piremote/upload_ratings.pug')
@@ -389,19 +392,21 @@ def upload_history(request):
     """
     if request.method == 'POST':
         form = UploadHistoryForm(request.POST, request.FILES)
+        context = dict(title='Upload Ratings File', text='Ratings uploaded')
+
         if form.is_valid():
-            context = {'status_str': 'File parsed'}
             filename = form.cleaned_data["historyfile"]
             data = request.FILES['historyfile'].read()
             parser = HistoryParser(filename, data)
 
+            context['status_str'] = 'File parsed'
             context['errors'] = parser.errors
             context['parsed'] = parser.parsed_items
             context['unparsed'] = parser.not_parsed_items
             context['skipped'] = parser.skipped_items
         else:
-            context = {'error_str': 'Uploaded file is not valid!'}
-        template = loader.get_template('piremote/upload_history_result.pug')
+            context['error_str'] = 'Uploaded file is not valid!'
+        template = loader.get_template('piremote/upload_result.pug')
         return HttpResponse(template.render(context, request))
     else:
         template = loader.get_template('piremote/upload_history.pug')
