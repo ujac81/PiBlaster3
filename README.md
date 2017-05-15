@@ -182,7 +182,25 @@ Sass/coffeescript files are handled via COMPRESS_PRECOMPILERS in settings.py.
 
 ## Upgrading
 
-# Python Packages
+### Python Packages
 Upgrade all python packages installed via pip
 
     # pip3  list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | xargs -n1 pip3 install -U
+
+## Testing
+
+# Create test database
+
+    $ sudo su - postgres
+    createdb test_piremote
+    psql
+    GRANT ALL PRIVILEGES ON DATABASE test_piremote TO piremote;
+    ALTER DATABASE test_piremote OWNER TO piremote;
+    ALTER USER piremote CREATEDB;
+    \q
+    logout
+
+# Run tests
+
+    ./manage.py compress --extension=pug
+    ./manage.py test
