@@ -185,11 +185,33 @@ Sass/coffeescript files are handled via COMPRESS_PRECOMPILERS in settings.py.
 ### Python Packages
 Upgrade all python packages installed via pip
 
-    # pip3  list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | xargs -n1 pip3 install -U
+    # pip3 install --force pip
+    # pip3 list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | xargs -n1 pip3 install -U
+    # pip3 list --outdated --format=legacy | grep -v '^\-e' | cut -d ' ' -f 1 | xargs -n1 pip3 install -U
+    
+**NOTE:** If you used sudo to install pip packages, you might need sudo again here before the pip3 commands.
+     
+### PostgreSQL
+Upgrade PostgreSQL databases to new version (after distupgrade or such).
+
+    Assumption: new psql version installed by dist upgrade, old running.
+    $ sudo service postgres stop
+    $ sudo su - postgres
+    $ cd
+    Create Backup
+    $ pg_dumpall > backup.sql
+    Remove newly created cluster for the upgraded version (NOT YOUR OLD ONE)
+    $ pg_dropcluster 9.6 main
+    $ pg_upgradecluster 9.5 main
+    $ pg_dropcluster 9.5 main
+    $ logout
+    $ sudo apt remove postgresql-9.5 postgresql-client-9.5 postgresql-contrib-9.5
+    $ sudo systemctl daemon-reload
+    $ sudo service postgresql start
 
 ## Testing
 
-# Create test database
+### Create test database
 
     $ sudo su - postgres
     createdb test_piremote
@@ -200,7 +222,8 @@ Upgrade all python packages installed via pip
     \q
     logout
 
-# Run tests
+### Run tests
+Make sure DEBUG is not set in env!
 
-    ./manage.py compress --extension=pug
-    ./manage.py test
+    $ ./manage.py compress --extension=pug
+    $ ./manage.py test
