@@ -285,3 +285,8 @@ class SmartPlaylistItem(models.Model):
     weight = models.FloatField(default=1.0)
     payload = models.CharField(max_length=512)
     negate = models.BooleanField(default=False)
+
+    @staticmethod
+    def get_by_id(idx):
+        q = SmartPlaylistItem.objects.filter(playlist=idx).order_by('id')
+        return [[x.itemtype, x.weight, x.payload, x.negate] for x in q]

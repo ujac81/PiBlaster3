@@ -99,11 +99,30 @@ PiRemote.smart_pl_new = (title='New smart playlist', text='Enter name for playli
 
     $('#modalSmall').modal('show')
     return
-    
-    
-    
+  
+
+# Load smart playlist filters for name/id of smart playlist.
 PiRemote.smart_pl_load_smart_pl = (name, id) ->
-    console.log [name, id]
+    PiRemote.do_ajax
+        method: 'GET'
+        url: 'list/smart_playlist'
+        data:
+            id: id
+        success: (data) ->
+            if data.data
+                PiRemote.smart_pl_build name, id, data
+            return
+    return
+    
+    
+# Build list with filters from smart playlist filter listing.
+PiRemote.smart_pl_build = (name, id, data) ->
+    $('h3#heading').html(name).show()
+    root = d3.select('.piremote-content')
+    root.html('')
+    
+    console.log data
+    
     return
     
     

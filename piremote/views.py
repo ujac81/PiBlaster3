@@ -16,7 +16,7 @@ from PiBlaster3.upload import Uploader
 from PiBlaster3.ratings_parser import RatingsParser
 from PiBlaster3.history_parser import HistoryParser
 
-from .models import Setting, Upload, History, Rating, SmartPlaylist
+from .models import Setting, Upload, History, Rating, SmartPlaylist, SmartPlaylistItem
 from .forms import UploadForm, UploadRatingsForm, UploadHistoryForm
 
 
@@ -48,6 +48,10 @@ def list_ajax(request, what):
     if what == 'smart_playlists':
         q = SmartPlaylist.objects.all().order_by('title')
         result['data'] = [[x.id, x.title, x.time.strftime('%a %d %b %Y')] for x in q]
+    elif what == 'smart_playlist':
+        idx = request.GET.get('id')
+        result['data'] = SmartPlaylistItem.get_by_id(idx)
+        result['choices'] = SmartPlaylistItem.TYPE_CHOICES
     else:
         result['error_str'] = 'Cannot list: '+what
 
