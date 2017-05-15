@@ -43,9 +43,11 @@ PiRemote.init_variables = ->
 
     PiRemote.poll_interval = 1000  # poll interval in ms
     PiRemote.poll_interval_min = 500  # prevent polling if last poll time smaller than this
-
+    
     PiRemote.update_instance_id = 0  # keep number of calls of update_time() to break recursion.
     PiRemote.pl_update_instance_id = 0  # same for playlist view
+    
+    PiRemote.action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
 
     return
 
@@ -222,4 +224,21 @@ PiRemote.show_search_header = (search_fun) ->
         return
     return
     
+    
+# Raise a dialog with stacked actions.
+PiRemote.raise_selection_dialog = (title, text, items) ->
+    d3.select('#smallModalLabel').html(title)
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    cont.append('p').html(text)
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+    for elem in items
+        navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', elem[0])
+            .html(elem[1])
+    $(document).off 'click', 'span.browse-action-file'
+    $('#modalSmall').modal('show')
+    return
     

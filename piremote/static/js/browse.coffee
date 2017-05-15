@@ -60,7 +60,7 @@ PiRemote.do_browse = (what) ->
             return
 
     PiRemote.do_ajax
-        url: 'list'
+        url: 'listby'
         method: 'GET'
         data:
             what: what

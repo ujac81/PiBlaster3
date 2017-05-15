@@ -16,7 +16,7 @@ from PiBlaster3.upload import Uploader
 from PiBlaster3.ratings_parser import RatingsParser
 from PiBlaster3.history_parser import HistoryParser
 
-from .models import Setting, Upload, History, Rating
+from .models import Setting, Upload, History, Rating, SmartPlaylist
 from .forms import UploadForm, UploadRatingsForm, UploadHistoryForm
 
 
@@ -38,6 +38,20 @@ def pages(request, page):
                    debug=1 if settings.DEBUG else 0,
                    has_pw=0 if settings.PB_CONFIRM_PASSWORD is '' else 1)
     return HttpResponse(template.render(context, request))
+
+
+def list_ajax(request, what):
+    """GET /ajax/list/WHAT/ 
+    """
+    result = dict(data=[])
+
+    if what == 'smart_playlists':
+        q = SmartPlaylist.objects.all().order_by('title')
+        result['data'] = [[x.id, x.title, x.time.strftime('%a %d %b %Y')] for x in q]
+    else:
+        result['error_str'] = 'Cannot list: '+what
+
+    return JsonResponse(result)
 
 
 def browse_ajax(request):
@@ -265,7 +279,7 @@ def stats_ajax(request):
     return JsonResponse({'stats': mpc.get_stats()})
 
 
-def list_ajax(request):
+def listby_ajax(request):
     """GET /ajax/list
     List items for browse by tags
     :return: JSON only -- use with ajax!
@@ -412,3 +426,33 @@ def upload_history(request):
         template = loader.get_template('piremote/upload_history.pug')
         return HttpResponse(template.render({}, request))
 
+
+def smartpl_ajax(request, action):
+    """POST /ajax/smartpl/ACTION"""
+    response = dict()
+    if action == 'create':
+        title = request.POST.get('name')
+        if SmartPlaylist.has_smart_playlist(title):
+            response['error_str'] = 'Smart playlist exists: {0}'.format(title)
+        else:
+            s = SmartPlaylist(title=title, description='')
+            s.save()
+            response['status_str'] = 'Smart playlist {0} generated.'.format(title)
+            response['name'] = title
+    elif action == 'rm':
+        title = request.POST.get('name')
+        idx = request.POST.get('id')
+        SmartPlaylist.objects.filter(id=idx).delete()
+        response['status_str'] = 'Deleted smart playlist with title {0}.'.format(title)
+    elif action == 'rename':
+        title = request.POST.get('name')
+        idx = request.POST.get('id')
+        SmartPlaylist.objects.filter(id=idx).update(title=title)
+        response['status_str'] = 'Renamed smart playlist to {0}.'.format(title)
+    elif action == 'clone':
+        idx = request.POST.get('id')
+        response['status_str'] = SmartPlaylist.clone(idx)
+    else:
+        response['error_str'] = 'Unknown action for smart playlist: {0}'.format(action)
+
+    return JsonResponse(response)

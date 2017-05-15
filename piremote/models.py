@@ -226,3 +226,62 @@ class Rating(models.Model):
         if rating == 0:
             return dict(status_str='Removed rating for %s' % q.title)
         return dict(status_str='Set rating for %s to %d' % (q.title, rating))
+
+
+class SmartPlaylist(models.Model):
+    """Smart playlist container for many smart playlist items.
+    
+    Used to seed current playlist or new playlist.    
+    """
+    title = models.CharField(max_length=256)
+    description = models.CharField(max_length=1024)
+    time = models.DateTimeField(auto_now_add=True)
+
+    @staticmethod
+    def has_smart_playlist(title):
+        return len(SmartPlaylist.objects.filter(title=title)) > 0
+
+    @staticmethod
+    def clone(idx):
+        try:
+            p = SmartPlaylist.objects.get(id=idx)
+        except ObjectDoesNotExist:
+            return 'No playlist to clone'
+
+        new_pl = SmartPlaylist(title=p.title+' CLONE', description=p.description)
+        new_pl.save()
+        return 'Smart playlist {0} cloned.'.format(p.title)
+
+
+class SmartPlaylistItem(models.Model):
+    """Selector item in smart playlist.
+    
+    Each selector carries a weight between [0..1] to adjust the strictness of the filter.
+    Each selector carries a negate flag to invert the filter.
+    
+    """
+    EMPTY = 0
+    RATING_GTE = 1
+    RATING_EQ = 2
+    IN_PATH = 3
+    GENRE = 4
+    ARTIST = 5
+    YEAR_LTE = 6
+    YEAR_GTE = 7
+    PREVENT_INTROS = 8
+    TYPE_CHOICES = (
+        (EMPTY, 'empty'),
+        (RATING_GTE, 'Rating greater or equal'),
+        (RATING_EQ, 'Rating equal'),
+        (IN_PATH, 'Is in path'),
+        (GENRE, 'Genre'),
+        (ARTIST, 'Artist'),
+        (YEAR_LTE, 'Year less or equal'),
+        (YEAR_GTE, 'Year greater or equal'),
+        (PREVENT_INTROS, 'Prevent intros'),
+    )
+    playlist = models.ForeignKey('SmartPlaylist', on_delete=models.CASCADE)
+    itemtype = models.PositiveSmallIntegerField(default=EMPTY, choices=TYPE_CHOICES)
+    weight = models.FloatField(default=1.0)
+    payload = models.CharField(max_length=512)
+    negate = models.BooleanField(default=False)
