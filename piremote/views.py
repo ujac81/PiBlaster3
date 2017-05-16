@@ -33,10 +33,15 @@ def pages(request, page):
     We only have one get for the main page.
     Sub pages are dynamical loaded via AJAX and inner page content is rebuilt by d3.js.
     """
+    return return_page(request, page)
+
+
+def return_page(request, page, add_context=dict()):
     template = loader.get_template('piremote/index.pug')
     context = dict(page=page,
                    debug=1 if settings.DEBUG else 0,
                    has_pw=0 if settings.PB_CONFIRM_PASSWORD is '' else 1)
+    context.update(add_context)
     return HttpResponse(template.render(context, request))
 
 
@@ -241,8 +246,7 @@ def upload(request):
             res = up.upload_file(name, filename, request.FILES['mediafile'])
         else:
             res = {'error_str': 'Upload form data is invalid!'}
-        template = loader.get_template('piremote/index.pug')
-        return HttpResponse(template.render({'page': 'upload', 'upload': json.dumps(res)}, request))
+        return return_page(request, 'upload', {'upload': json.dumps(res)})
     else:
         return HttpResponseRedirect('/piremote/pages/upload')
 

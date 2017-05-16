@@ -10,12 +10,12 @@ PiRemote.load_upload_page = ->
         return
 
     if PiRemote.upload_message
-        if PiRemote.upload_message.error
+        if PiRemote.upload_message.error_str
             d3.select('#smallModalLabel').html('Upload Error')
-            cont = d3.select('#smallModalMessage').html('').append('p').attr('class', 'error').html(PiRemote.upload_message.error)
-        if PiRemote.upload_message.status
+            cont = d3.select('#smallModalMessage').html('').append('p').attr('class', 'error').html(PiRemote.upload_message.error_str)
+        if PiRemote.upload_message.status_str
             d3.select('#smallModalLabel').html('File Uploaded')
-            cont = d3.select('#smallModalMessage').html('').append('p').html(PiRemote.upload_message.status)
+            cont = d3.select('#smallModalMessage').html('').append('p').html(PiRemote.upload_message.status_str)
             cont.append('p').html('Database update running -- it might take a few moments for your uploaded file to appear in database.')
 
         $('#modalSmall').modal('show')
