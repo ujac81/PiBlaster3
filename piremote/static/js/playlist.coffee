@@ -572,7 +572,7 @@ PiRemote.pl_do_action = (action, id=-1) ->
         file = d3.select('tr[data-id="'+id+'"]').data()[0][6]
         PiRemote.pl_append_items_to_playlist [file]
     else if action == 'selection-to-pl'
-        items = d3.selectAll('tr.selectable.selected').data().map((d)->d[6  ])
+        items = d3.selectAll('tr.selectable.selected').data().map((d)->d[6])
         PiRemote.pl_append_items_to_playlist items
     else if action == 'goto'
         file = d3.select('tr[data-id="'+id+'"]').data()[0][6]

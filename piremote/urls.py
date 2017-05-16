@@ -39,6 +39,7 @@ urlpatterns = [
     url(r'^ajax/history/$', views.history_ajax, name='history_ajax'),
     url(r'^ajax/rate/$', views.rate_ajax, name='rate_ajax'),
     url(r'^ajax/smartpl/(?P<action>[\d\w]+)/$', views.smartpl_ajax, name='smartpl_ajax'),
+    url(r'^ajax/smartplaction/(?P<id>\d+)/(?P<action>\w+)/$', views.smartplaction_ajax, name='smartplaction_ajax'),
     url(r'^download/ratings/$', views.download_ratings, name='download_ratings'),
     url(r'^download/ratings/(?P<mode>[-\w]+)/$', views.download_ratings, name='download_ratings'),
     url(r'^download/history/$', views.download_history, name='download_history'),

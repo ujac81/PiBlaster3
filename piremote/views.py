@@ -464,3 +464,29 @@ def smartpl_ajax(request, action):
         response['error_str'] = 'Unknown action for smart playlist: {0}'.format(action)
 
     return JsonResponse(response)
+
+
+def smartplaction_ajax(request, id, action):
+    """POST /ajax/smartplaction/ID/ACTION"""
+    response = dict(success=True)
+    if action == 'new':
+        SmartPlaylistItem.add_new(id)
+        response['reload'] = True
+    elif action == 'itemtype':
+        new_type = int(request.POST.get('type'))
+        SmartPlaylistItem.change_type(id, new_type)
+        response['reload'] = True
+    elif action == 'rmitem':
+        SmartPlaylistItem.objects.filter(id=id).delete()
+        response['reload'] = True
+    elif action == 'downitem':
+        SmartPlaylistItem.move_down(id)
+        response['reload'] = True
+    elif action == 'upitem':
+        SmartPlaylistItem.move_up(id)
+        response['reload'] = True
+    else:
+        response['success'] = False
+        response['error_str'] = 'Unknown smart pl action {0}'.format(action)
+
+    return JsonResponse(response)

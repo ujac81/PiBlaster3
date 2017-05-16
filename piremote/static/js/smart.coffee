@@ -121,10 +121,79 @@ PiRemote.smart_pl_build = (name, id, data) ->
     root = d3.select('.piremote-content')
     root.html('')
     
-    console.log data
+    PiRemote.last_smart_pl_name = name
+    PiRemote.last_smart_pl_id = id
+    PiRemote.last_smart_pl_data = data
     
+    # list of filters
+    divfilt = root.append('div').attr('id', 'smartfilt')
+    divfilt.selectAll('p').data(data.data).enter()
+        .append('p')
+        .attr('class', 'smartp')
+        .attr('data-pos', (d)->d[4])
+        .attr('data-idx', (d, i)->i)
+        .each((d, i) -> PiRemote.pl_smart_update_filter(d, i))
+        
+    divadd = root.append('div').attr('id', 'smartadd')
+    padd = divadd.append('p')
+    upspan = padd.append('span').attr('class', 'glyphicon glyphicon-circle-arrow-up')
+    downspan = padd.append('span').attr('class', 'glyphicon glyphicon-circle-arrow-down')
+    minusspan = padd.append('span').attr('class', 'glyphicon glyphicon-minus-sign')
+    plusspan = padd.append('span').attr('class', 'glyphicon glyphicon-plus-sign')
+    
+    divseed = root.append('div').attr('id', 'smartseed')
+    pseed = divseed.append('p')
+    input = pseed.append('span').append('input')
+        .attr('type', 'number').attr('min', '10').attr('max', '1000').attr('value', '20')
+        .attr('id', 'seedspin').attr('class', 'spin')
+    seedcur = pseed.append('span')
+        .append('button').attr('type', 'button').attr('class', 'btn btn-primary').html('Add')
+    seedother = pseed.append('span')
+        .append('button').attr('type', 'button').attr('class', 'btn btn-primary').html('Add to other')
+    
+    # move up
+    upspan.on 'click', ->
+        data = d3.select('p.smartp.selected').data()
+        if data.length > 0
+            PiRemote.smart_pl_do_action
+                id: data[0][5]
+                action: 'upitem'
+        return
+        
+    # move down
+    downspan.on 'click', ->
+        data = d3.select('p.smartp.selected').data()
+        if data.length > 0
+            PiRemote.smart_pl_do_action
+                id: data[0][5]
+                action: 'downitem'
+        return
+    
+    # remove filter item on '-' click
+    minusspan.on 'click', ->
+        data = d3.select('p.smartp.selected').data()
+        if data.length > 0
+            PiRemote.smart_pl_do_action
+                id: data[0][5]
+                action: 'rmitem'
+        return
+    
+    # add new filter on '+' click and reload
+    plusspan.on 'click', ->
+        PiRemote.smart_pl_do_action
+            id: id
+            action: 'new'
+        return
+        
+    # click on p item (de)selects
+    $('p.smartp').on 'click', ->
+        is_selected = $(this).hasClass('selected')
+        d3.selectAll('p.smartp').classed('selected', false)
+        $(this).toggleClass('selected', ! is_selected)
+        return
+        
     return
-    
+        
     
 # Action dots pressed on smart playlist in list of smart playlists
 PiRemote.smart_pl_raise_smart_pl_actions = (name, id) ->
@@ -156,8 +225,8 @@ PiRemote.smart_pl_raise_smart_pl_actions = (name, id) ->
                         success: (data) ->
                             PiRemote.smart_pl_rebuild_list()
                             return
+                    $('#modalSmall').modal('hide')
                     return
-            $('#modalSmall').modal('hide')
         else if action == 'clone'
             PiRemote.do_ajax
                 method: 'POST'
@@ -171,3 +240,45 @@ PiRemote.smart_pl_raise_smart_pl_actions = (name, id) ->
         return
 
     return
+    
+    
+PiRemote.smart_pl_do_action = (req) ->
+    PiRemote.do_ajax
+        method: 'POST'
+        url: 'smartplaction/'+req.id+'/'+req.action
+        data: req.data
+        success: (data) ->
+            if data.success and req.success
+                req.success data
+            if data.reload
+                PiRemote.smart_pl_load_smart_pl PiRemote.last_smart_pl_name, PiRemote.last_smart_pl_id
+            return
+    return
+    
+
+# Called after creation of filter <p> element to fill in filter contents.
+# :param data: data from SmartPlaylistItem.get_by_id
+# :param index: index in p-list and data array -- NOT item index in database !!!
+PiRemote.pl_smart_update_filter = (data, index) ->
+    p = d3.select('p[data-idx="'+index+'"]')
+    p.html('')
+    
+    sel = p.append('select').attr('data-idx', index)
+    sel.selectAll('option').data(PiRemote.last_smart_pl_data.choices).enter()
+        .append('option')
+        .attr('value', (d)->d[0])
+        .html((d)->d[1])
+    
+    sel.selectAll('option').attr('selected', null)
+    sel.selectAll('option[value="'+data[0]+'"]').attr('selected', 'true')
+    
+    sel.on 'change', (d) ->
+        PiRemote.smart_pl_do_action
+            id: d[5]
+            action: 'itemtype'
+            data:
+                type: $(this)[0].value
+        return
+    return
+    
+    

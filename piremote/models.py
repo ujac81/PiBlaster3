@@ -285,8 +285,56 @@ class SmartPlaylistItem(models.Model):
     weight = models.FloatField(default=1.0)
     payload = models.CharField(max_length=512)
     negate = models.BooleanField(default=False)
+    position = models.PositiveSmallIntegerField()
 
     @staticmethod
     def get_by_id(idx):
-        q = SmartPlaylistItem.objects.filter(playlist=idx).order_by('id')
-        return [[x.itemtype, x.weight, x.payload, x.negate] for x in q]
+        q = SmartPlaylistItem.objects.filter(playlist=idx).order_by('position')
+        return [[x.itemtype, x.weight, x.payload, x.negate, x.position, x.id] for x in q]
+
+    @staticmethod
+    def add_new(idx):
+        l = SmartPlaylist.objects.get(id=idx)
+        q = SmartPlaylistItem.objects.filter(playlist=l).order_by('-position')
+        if len(q) == 0:
+            position = 0
+        else:
+            position = q[0].position + 1
+        s = SmartPlaylistItem(playlist=l, position=position)
+        s.save()
+
+    @staticmethod
+    def change_type(idx, new_type):
+        s = SmartPlaylistItem.objects.get(id=idx)
+        s.itemtype = new_type
+        s.save()
+
+    @staticmethod
+    def move_up(idx):
+        s = SmartPlaylistItem.objects.get(id=idx)
+        my_pos = s.position
+        q = SmartPlaylistItem.objects.filter(playlist=s.playlist).filter(position__lte=my_pos-1).order_by('-position')
+        if len(q) == 0:
+            return
+        exch_id = q[0].id
+        s2 = SmartPlaylistItem.objects.get(id=exch_id)
+        exch_pos = s2.position
+        s.position = exch_pos
+        s2.position = my_pos
+        s.save()
+        s2.save()
+
+    @staticmethod
+    def move_down(idx):
+        s = SmartPlaylistItem.objects.get(id=idx)
+        my_pos = s.position
+        q = SmartPlaylistItem.objects.filter(playlist=s.playlist).filter(position__gte=my_pos + 1).order_by('position')
+        if len(q) == 0:
+            return
+        exch_id = q[0].id
+        s2 = SmartPlaylistItem.objects.get(id=exch_id)
+        exch_pos = s2.position
+        s.position = exch_pos
+        s2.position = my_pos
+        s.save()
+        s2.save()
