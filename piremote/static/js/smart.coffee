@@ -195,6 +195,30 @@ PiRemote.smart_pl_build = (name, id, data) ->
         $(this).toggleClass('selected', ! is_selected)
         return
         
+    # Seed to current
+    seedcur.on 'click', ->
+        PiRemote.smart_pl_do_action
+            action: 'apply'
+            id: id
+            data:
+                count: $('input#seedspin')[0].value
+                playlist: ''
+        return
+        
+    # Seed to other playlist
+    seedother.on 'click', ->
+        PiRemote.pl_action_on_playlists
+            title: 'Choose Playlist for Seeding'
+            success: (data) ->
+                PiRemote.smart_pl_do_action
+                    action: 'apply'
+                    id: id
+                    data:
+                        count: $('input#seedspin')[0].value
+                        playlist: data
+                $('#modalSmall').modal('hide')
+                return
+        return
     return
         
     

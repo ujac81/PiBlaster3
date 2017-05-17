@@ -15,6 +15,7 @@ from PiBlaster3.mpc import MPC
 from PiBlaster3.upload import Uploader
 from PiBlaster3.ratings_parser import RatingsParser
 from PiBlaster3.history_parser import HistoryParser
+from PiBlaster3.smart_playlist import ApplySmartPlaylist
 
 from .models import Setting, Upload, History, Rating, SmartPlaylist, SmartPlaylistItem
 from .forms import UploadForm, UploadRatingsForm, UploadHistoryForm
@@ -506,6 +507,15 @@ def smartplaction_ajax(request, id, action):
         payload = request.POST.get('payload')
         r = SmartPlaylistItem.rm_payload(id, payload)
         response['reload'] = r
+    elif action == 'apply':
+        count = int(request.POST.get('count'))
+        playlist = request.POST.get('playlist', '')
+        a = ApplySmartPlaylist(id, count)
+        a.apply_filters(playlist)
+        if a.error:
+            response['error_str'] = a.result_string
+        else:
+            response['status_str'] = a.result_string
     else:
         response['success'] = False
         response['error_str'] = 'Unknown smart pl action {0}'.format(action)
