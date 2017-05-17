@@ -334,6 +334,7 @@ class SmartPlaylistItem(models.Model):
             return
         s.itemtype = new_type
         s.payload = ''
+        s.weight = 1
         s.save()
         SmartPlaylistItem.rm_payloads(idx)
 
