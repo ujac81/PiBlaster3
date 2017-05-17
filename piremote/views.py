@@ -53,10 +53,13 @@ def list_ajax(request, what):
     if what == 'smart_playlists':
         q = SmartPlaylist.objects.all().order_by('title')
         result['data'] = [[x.id, x.title, x.time.strftime('%a %d %b %Y')] for x in q]
+        result['choices'] = SmartPlaylistItem.TYPE_CHOICES
+        result['genres'] = Rating.get_distinct('genre')
+        result['dates'] = Rating.get_distinct('date')
+        result['artists'] = Rating.get_distinct('artist')
     elif what == 'smart_playlist':
         idx = request.GET.get('id')
         result['data'] = SmartPlaylistItem.get_by_id(idx)
-        result['choices'] = SmartPlaylistItem.TYPE_CHOICES
     else:
         result['error_str'] = 'Cannot list: '+what
 
@@ -479,12 +482,30 @@ def smartplaction_ajax(request, id, action):
     elif action == 'rmitem':
         SmartPlaylistItem.objects.filter(id=id).delete()
         response['reload'] = True
-    elif action == 'downitem':
-        SmartPlaylistItem.move_down(id)
+    elif action == 'downitem' or action == 'upitem':
+        SmartPlaylistItem.move_item(id, action)
         response['reload'] = True
-    elif action == 'upitem':
-        SmartPlaylistItem.move_up(id)
+    elif action == 'setpayload':
+        payload = request.POST.get('payload')
+        SmartPlaylistItem.objects.filter(id=id).update(payload=payload)
+    elif action == 'setweight':
+        weight = float(request.POST.get('weight'))
+        SmartPlaylistItem.objects.filter(id=id).update(weight=weight)
+    elif action == 'negate':
+        negate = request.POST.get('negate') == '1'
+        SmartPlaylistItem.objects.filter(id=id).update(negate=negate)
+    elif action == 'addpayload':
+        payload = request.POST.get('payload')
+        r = SmartPlaylistItem.add_payload(id, payload)
+        response['reload'] = r
+    elif action == 'setpayloads':
+        payloads = request.POST.getlist('payloads[]', [])
+        SmartPlaylistItem.set_payloads(id, payloads)
         response['reload'] = True
+    elif action == 'rmpayload':
+        payload = request.POST.get('payload')
+        r = SmartPlaylistItem.rm_payload(id, payload)
+        response['reload'] = r
     else:
         response['success'] = False
         response['error_str'] = 'Unknown smart pl action {0}'.format(action)

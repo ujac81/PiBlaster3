@@ -653,7 +653,19 @@ a#download
 #smartfilt
     p
         margin: 0
+        padding: 10px
         border-top: 2px solid black
+
+        label
+            float: right
+            padding: 2px
+        input.checkbox
+            float: right
+            padding: 2px
+        br
+            display: block
+            content: ""
+            margin: 0
 
     p.selected
         background-color: blue
@@ -664,7 +676,7 @@ a#download
 #smartadd
     p
         margin: 0
-        border-top: 2px solid black
+        border-top: 4px solid black
         span
             padding: 5px 20px
             margin: 5px
@@ -681,3 +693,71 @@ a#download
         button, input
             margin: 10px
 
+span.ratings
+    text-align: center
+    width: 100%
+    display: block
+    padding: 10px
+    span
+        font-size: x-large
+        padding: 5px
+
+
+span.weightspan
+    width: 100%
+    display: block
+    padding: 10px
+
+    .wlabel
+        z-index: 10
+        margin: 0
+
+    .weight
+        position: relative
+        z-index: 10
+        margin: 0
+        padding: 0
+        height: 10px
+        background: rgb(248, 248, 248)
+        border: 1px solid #777
+        width: 100%
+
+    .weightfill
+        content: ""
+        position: absolute
+        z-index: 9
+        top: 0
+        bottom: 0
+        left: 0
+        background: #777
+
+table.smartfilt
+    table-layout: fixed
+    margin-bottom: 5px
+    margin-top: 5px
+
+    tr
+        max-width: 100%
+        td
+            font-size: $normal-font-size
+            padding: 5px
+        td:last-child
+            font-size: large
+            width: 50px
+
+    tr.smartrow
+        td:first-child
+            width: 30px
+
+    tr.smartaddrow
+        td:first-child
+            font-weight: bold
+
+table#tbchoose
+    table-layout: fixed
+    tr
+        max-width: 100%
+
+    tr.choosen
+        background-color: blue
+        color: white

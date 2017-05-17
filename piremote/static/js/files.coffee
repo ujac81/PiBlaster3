@@ -108,7 +108,7 @@ PiRemote.rebuild_files = (data) ->
         PiRemote.do_files $(this).data('dirname')
         return
 
-    # single click on folder or folder td enters folder
+    # single click on folder td enters folder
     $('div.browse-list > table > tbody > tr.dir-item > td.browse-head-dir').on 'click', ->
         PiRemote.do_files $(this).parent().data('dirname')
         return

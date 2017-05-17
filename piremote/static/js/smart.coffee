@@ -20,6 +20,8 @@ PiRemote.smart_pl_rebuild_list = ->
         method: 'GET'
         url: 'list/smart_playlists'
         success: (data) ->
+            # list of smart playlists gets available choices/genres/artists/etc
+            PiRemote.smart_pl_list_data = data
             if data.data
                 PiRemote.smart_pl_build_list data.data
     return
@@ -126,6 +128,8 @@ PiRemote.smart_pl_build = (name, id, data) ->
     PiRemote.last_smart_pl_data = data
     
     # list of filters
+    divseed = root.append('div').attr('id', 'smartseed')
+    
     divfilt = root.append('div').attr('id', 'smartfilt')
     divfilt.selectAll('p').data(data.data).enter()
         .append('p')
@@ -141,10 +145,9 @@ PiRemote.smart_pl_build = (name, id, data) ->
     minusspan = padd.append('span').attr('class', 'glyphicon glyphicon-minus-sign')
     plusspan = padd.append('span').attr('class', 'glyphicon glyphicon-plus-sign')
     
-    divseed = root.append('div').attr('id', 'smartseed')
     pseed = divseed.append('p')
     input = pseed.append('span').append('input')
-        .attr('type', 'number').attr('min', '10').attr('max', '1000').attr('value', '20')
+        .attr('type', 'number').attr('min', '10').attr('max', '1000').attr('value', '50')
         .attr('id', 'seedspin').attr('class', 'spin')
     seedcur = pseed.append('span')
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary').html('Add')
@@ -263,22 +266,333 @@ PiRemote.pl_smart_update_filter = (data, index) ->
     p = d3.select('p[data-idx="'+index+'"]')
     p.html('')
     
+    payload = data[2]
+    payloads = data[6]
+    filter_id = data[5]  # id in smart playlist item table <-- use this for filter modification!
+    is_negate = data[3]
+    weight = data[1] * 100  # [0..1] --> need percentage
+    
     sel = p.append('select').attr('data-idx', index)
-    sel.selectAll('option').data(PiRemote.last_smart_pl_data.choices).enter()
+    sel.selectAll('option').data(PiRemote.smart_pl_list_data.choices).enter()
         .append('option')
         .attr('value', (d)->d[0])
         .html((d)->d[1])
     
     sel.selectAll('option').attr('selected', null)
     sel.selectAll('option[value="'+data[0]+'"]').attr('selected', 'true')
-    
     sel.on 'change', (d) ->
+        d3.event.stopPropagation()
         PiRemote.smart_pl_do_action
             id: d[5]
             action: 'itemtype'
             data:
                 type: $(this)[0].value
         return
+    sel.on 'click', ->
+        d3.event.stopPropagation()
+        return
+    sel.on 'mousedown', ->
+        d3.event.stopPropagation()
+        return
+    
+    # Show negate switch for filters where it makes sense
+    if data[0] in [1, 2, 3, 4, 5, 8]
+        p.append('label').attr('for', 'checkbox-'+filter_id).html('Negate')
+        check = p.append('input').attr('type', 'checkbox').attr('name', 'checkbox-'+filter_id).attr('class', 'checkbox')
+        check.attr('checked', 'true') if is_negate
+        check.on 'click', ->
+            d3.event.stopPropagation()
+            PiRemote.smart_pl_do_action
+                id: filter_id
+                action: 'negate'
+                data:
+                    negate: if $(this).is(':checked') then '1' else '0'
+            return
+    p.append('br')
+    
+    # RATING FIELD
+    if data[0] == 1 or data[0] == 2
+        cur_rating = 0
+        if payload != ''
+            cur_rating = parseInt(payload)
+        s = p.append('span').attr('class', 'ratings')
+        for i in [1..5]
+            r = s.append('span').attr('class', 'glyphicon')
+                .classed('glyphicon-star', i <= cur_rating)
+                .classed('glyphicon-star-empty', i > cur_rating)
+                .attr('data-idx', i)
+                .attr('data-filtid', filter_id)
+            r.on 'click', ->
+                d3.event.stopPropagation()
+                for j in [1..5]
+                    elem = $('span[data-idx="'+j+'"][data-filtid="'+filter_id+'"]')
+                    elem.toggleClass('glyphicon-star-empty', j > $(this).data('idx'))
+                    elem.toggleClass('glyphicon-star', j <= $(this).data('idx'))
+                    
+                PiRemote.smart_pl_do_action
+                    id: filter_id
+                    action: 'setpayload'
+                    data:
+                        payload: $(this).data('idx')
+                return
+                
+    # multi selection field (table with -/+ signs)
+    if data[0] in [3, 4, 5]
+        minus_item = '<span class="glyphicon glyphicon-minus-sign"></span>'
+        t = p.append('table').attr('class', 'smartfilt table table-striped')
+        t.append('tbody').selectAll('tr').data(payloads).enter()
+            .append('tr')
+            .attr('class', 'smartrow')
+            .attr('data-item', (d)->d)
+            .selectAll('td').data((d, i)-> [i+1, d, minus_item]).enter()
+            .append('td')
+            .html((d) -> d)
+            .on 'click', (d, i)->
+                d3.event.stopPropagation()
+                # click on '-' sign removes payload item
+                if i == 2
+                    item = $(this).parent().data('item')
+                    PiRemote.smart_pl_do_action
+                        id: filter_id
+                        action: 'rmpayload'
+                        data:
+                            payload: item
+                return
+        
+        # Add append row with + sign -> click on whole row adds
+        addrow = t.select('tbody').append('tr').attr('class', 'smartaddrow')
+        addrow.append('td').attr('colspan', 2).html('Add selector')
+        addrow.append('td').append('span').attr('class', 'glyphicon glyphicon-plus-sign')
+        
+        addrow.on 'click', ->
+            d3.event.stopPropagation()
+            if data[0] == 3  # Directory selector
+                PiRemote.raise_dir_selector_dialog
+                    startdir: ''
+                    title: 'Select Directory'
+                    button: 'Add'
+                    success: (data) ->
+                        PiRemote.smart_pl_do_action
+                            id: filter_id
+                            action: 'addpayload'
+                            data:
+                                payload: data
+                        return
+            if data[0] == 4  # Genre selector
+                PiRemote.raise_selector_dialog
+                    choices: PiRemote.smart_pl_list_data.genres
+                    chosen: payloads
+                    title: 'Select Genres'
+                    button: 'Select'
+                    multi: true
+                    success: (data) ->
+                        PiRemote.smart_pl_do_action
+                            id: filter_id
+                            action: 'setpayloads'
+                            data:
+                                payloads: data
+                        return
+            if data[0] == 5  # Artist selector
+                PiRemote.raise_selector_dialog
+                    choices: PiRemote.smart_pl_list_data.artists
+                    chosen: payloads
+                    title: 'Select Artists'
+                    button: 'Select'
+                    multi: true
+                    success: (data) ->
+                        PiRemote.smart_pl_do_action
+                            id: filter_id
+                            action: 'setpayloads'
+                            data:
+                                payloads: data
+                        return
+            return
+            
+    # DATE FIELD
+    if data[0] == 6 or data[0] == 7
+        cur_date = 'Choose Year'
+        if payload != ''
+            cur_date = payload
+        s = p.append('span').attr('class', 'ratings')
+        ss = s.append('span').html(cur_date)
+        ss.on 'click', ->
+            d3.event.stopPropagation()
+            PiRemote.raise_selector_dialog
+                    choices: PiRemote.smart_pl_list_data.dates
+                    chosen: cur_date
+                    title: 'Select Year'
+                    button: 'Select'
+                    multi: false
+                    success: (data) ->
+                        if data.length > 0
+                            PiRemote.smart_pl_do_action
+                                id: filter_id
+                                action: 'setpayload'
+                                data:
+                                    payload: data[0]
+                                success: (d) ->
+                                    ss.html(data[0])
+                                    return
+                        return
+            return
+                
+    # WEIGHT
+    if data[0] in [1..7]
+        p.append('br')
+        s = p.append('span').attr('class', 'weightspan')
+        s.append('div').attr('class', 'wlabel').html('weight')
+        wpos = s.append('div').attr('class', 'weight')
+        wfill = wpos.append('div').attr('class', 'weightfill').style('right', (100-weight)+'%')
+        wpos.on 'click', ->
+            d3.event.stopPropagation()
+            pct = (d3.mouse(this)[0])/$(this).width()*100.0
+            pct = 0 if pct < 5
+            pct = 100 if pct > 95
+            pct_set = 100-pct
+            pct_set = 0 if pct_set < 0
+            pct_set = 100 if pct_set > 100
+            wfill.style('right', pct_set+'%')
+            PiRemote.smart_pl_do_action
+                id: filter_id
+                action: 'setweight'
+                data:
+                    weight: pct/100.0
+            return
+        
+    return
+    
+    
+# Open dialog with directory selector
+PiRemote.raise_dir_selector_dialog = (req) ->
+    
+    d3.select('#smallModalLabel').html(req.title)
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    p = cont.append('p')
+    t = cont.append('table').attr('class', 'table table-striped').attr('id', 'tbbrowse')
+    t.append('tbody').attr('id', 'tbodydirsel')
+    
+    PiRemote.dir_selector_do_browse req.startdir
+    $('#modalSmall').modal('show')
+    
+    btn = cont.append('p').attr('class', 'confirmbutton')
+        .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
+        .attr('id', 'confirmbutton').html(req.button)
+    
+    btn.on 'click', ->
+        dir = $('tbody#tbodydirsel > tr.selected').data('dirname')
+        if dir
+            req.success dir
+            $('#modalSmall').modal('hide')
+        return
+    
+    return
+    
+
+# AJAX get of browse directories -> fill table in directory selector dialog
+PiRemote.dir_selector_do_browse = (dir) ->
+    PiRemote.do_ajax
+        url: 'browse'
+        method: 'POST'
+        data:
+            'dirname': dir
+        success: (data) ->
+            PiRemote.dir_selector_rebuild data
+            return
+    return
+
+    
+# Build directory table from AJAX result
+PiRemote.dir_selector_rebuild = (data) ->
+    tbody = d3.select('tbody#tbodydirsel')
+    tbody.selectAll('tr').remove()
+
+    # First entry is folder up
+    if data.dirname != ''
+        up_span = '<span class="glyphicon glyphicon-chevron-up" aria-hidden="true"></span>'
+        updir = data.dirname.split('/').slice(0, -1).join('/')
+        uptr = tbody.append('tr').attr('class', 'dir-item file-view').attr('data-dirname', updir).attr('id', 'trupdir')
+        uptr.append('td').classed('browse-head', 1).html(up_span)
+        dirname = '/'+data.dirname+'/../'
+        uptr.append('td').classed('browse-file', 1).html(dirname.replace(/\//g, ' / '))
+        uptr.append('td').classed('browse-action', 1)
+
+    action_span = '<span class="glyphicon glyphicon-chevron-right"></span>'
+    dirs = data.browse.filter (d) -> d[0] == '1'
+    # Append dirs
+    tbody.selectAll('tr')
+        .data(dirs, (d) -> d).enter()
+        .append('tr')
+            .attr('class', 'dir-item file-view')
+            .attr('data-dirname', (d) -> d[5])
+        .selectAll('td')
+        .data((d) -> ['<img src="/piremote/static/img/folder-blue.png"/>', d[1], action_span]).enter()
+        .append('td')
+            .attr('class', (d, i)-> 'browse-td'+i)
+            .classed('browse-head', (d, i) -> i == 0)
+            .classed('browse-head-dir', (d, i) -> i == 0)
+            .classed('browse-dir', (d, i) -> i == 1)
+            .classed('browse-action', (d, i) -> i == 2)
+            .html((d) -> d)
+    
+    # single-click on selectable items toggles select
+    $('tbody#tbodydirsel > tr.dir-item > td.browse-dir').on 'click', ->
+        d3.select('tbody#tbodydirsel').selectAll('tr').classed('selected', false)
+        $(this).parent().toggleClass 'selected', true
+        return
+        
+    # move up by single-click
+    $('#trupdir').on 'click', ->
+        PiRemote.dir_selector_do_browse $(this).data('dirname')
+        return
+        
+    # single click on folder td enters folder
+    $('tbody#tbodydirsel > tr.dir-item > td.browse-head-dir').on 'click', ->
+        PiRemote.dir_selector_do_browse $(this).parent().data('dirname')
+        return
+        
+    # single click on chevron td enters folder
+    $('tbody#tbodydirsel > tr.dir-item > td.browse-action').on 'click', ->
+        PiRemote.dir_selector_do_browse $(this).parent().data('dirname')
+        return
+
+        
+        
+# Open dialog with directory selector
+PiRemote.raise_selector_dialog = (req) ->
+    
+    d3.select('#smallModalLabel').html(req.title)
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    p = cont.append('p')
+    t = cont.append('table').attr('class', 'table table-striped').attr('id', 'tbchoose')
+    tbody = t.append('tbody').attr('id', 'tbodychoose')
+    
+    tbody.selectAll('tr').data(req.choices).enter()
+        .append('tr')
+        .attr('class', 'choices')
+        .classed('choosen', (d) -> d in req.chosen)
+        .selectAll('td').data((d) -> [d]).enter()
+        .append('td')
+        .html((d)->d)
+        .on 'click', (d, i)->
+            if not req.multi
+                d3.selectAll('tr.choices').classed('choosen', false)
+            $(this).parent().toggleClass 'choosen'
+            return
+    
+    btn = cont.append('p').attr('class', 'confirmbutton')
+        .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
+        .attr('id', 'confirmbutton').html(req.button)
+    
+    btn.on 'click', ->
+        item = d3.selectAll('tr.choices.choosen').data()
+        if item
+            req.success item
+            $('#modalSmall').modal('hide')
+        return
+        
+    $('#modalSmall').modal('show')
     return
     
     

@@ -227,6 +227,11 @@ class Rating(models.Model):
             return dict(status_str='Removed rating for %s' % q.title)
         return dict(status_str='Set rating for %s to %d' % (q.title, rating))
 
+    @staticmethod
+    def get_distinct(field):
+        q = Rating.objects.values(field).distinct()
+        return sorted([x[field] for x in q if x[field] != ''])
+
 
 class SmartPlaylist(models.Model):
     """Smart playlist container for many smart playlist items.
@@ -250,6 +255,19 @@ class SmartPlaylist(models.Model):
 
         new_pl = SmartPlaylist(title=p.title+' CLONE', description=p.description)
         new_pl.save()
+
+        qitems = SmartPlaylistItem.objects.filter(playlist=p).order_by('id')
+        for item in qitems:
+            new_item = SmartPlaylistItem(playlist=new_pl,
+                                         itemtype=item.itemtype,
+                                         weight=item.weight,
+                                         payload=item.payload,
+                                         negate=item.negate,
+                                         position=item.position)
+            new_item.save()
+            for payload in SmartPlaylistItem.get_payloads(item.id):
+                pl = SmartPlaylistItemPayload(parent=new_item, item=payload)
+                pl.save()
         return 'Smart playlist {0} cloned.'.format(p.title)
 
 
@@ -273,9 +291,9 @@ class SmartPlaylistItem(models.Model):
         (EMPTY, 'empty'),
         (RATING_GTE, 'Rating greater or equal'),
         (RATING_EQ, 'Rating equal'),
-        (IN_PATH, 'Is in path'),
-        (GENRE, 'Genre'),
-        (ARTIST, 'Artist'),
+        (IN_PATH, 'Path is one of'),
+        (GENRE, 'Genre is one of'),
+        (ARTIST, 'Artist is one of'),
         (YEAR_LTE, 'Year less or equal'),
         (YEAR_GTE, 'Year greater or equal'),
         (PREVENT_INTROS, 'Prevent intros'),
@@ -283,14 +301,20 @@ class SmartPlaylistItem(models.Model):
     playlist = models.ForeignKey('SmartPlaylist', on_delete=models.CASCADE)
     itemtype = models.PositiveSmallIntegerField(default=EMPTY, choices=TYPE_CHOICES)
     weight = models.FloatField(default=1.0)
-    payload = models.CharField(max_length=512)
+    payload = models.CharField(max_length=256)
     negate = models.BooleanField(default=False)
     position = models.PositiveSmallIntegerField()
 
     @staticmethod
     def get_by_id(idx):
         q = SmartPlaylistItem.objects.filter(playlist=idx).order_by('position')
-        return [[x.itemtype, x.weight, x.payload, x.negate, x.position, x.id] for x in q]
+        return [[x.itemtype, x.weight, x.payload, x.negate, x.position, x.id,
+                 SmartPlaylistItem.get_payloads(x.id)] for x in q]
+
+    @staticmethod
+    def get_payloads(idx):
+        q = SmartPlaylistItemPayload.objects.filter(parent=idx).order_by('item')
+        return [x.item for x in q]
 
     @staticmethod
     def add_new(idx):
@@ -306,14 +330,22 @@ class SmartPlaylistItem(models.Model):
     @staticmethod
     def change_type(idx, new_type):
         s = SmartPlaylistItem.objects.get(id=idx)
+        if s.itemtype == new_type:
+            return
         s.itemtype = new_type
+        s.payload = ''
         s.save()
+        SmartPlaylistItem.rm_payloads(idx)
 
     @staticmethod
-    def move_up(idx):
+    def move_item(idx, direction):
         s = SmartPlaylistItem.objects.get(id=idx)
         my_pos = s.position
-        q = SmartPlaylistItem.objects.filter(playlist=s.playlist).filter(position__lte=my_pos-1).order_by('-position')
+        if direction == 'downitem':
+            q = SmartPlaylistItem.objects.filter(playlist=s.playlist).filter(position__gte=my_pos + 1).order_by('position')
+        else:
+            q = SmartPlaylistItem.objects.filter(playlist=s.playlist).filter(position__lte=my_pos - 1).order_by('-position')
+
         if len(q) == 0:
             return
         exch_id = q[0].id
@@ -325,16 +357,42 @@ class SmartPlaylistItem(models.Model):
         s2.save()
 
     @staticmethod
-    def move_down(idx):
+    def add_payload(idx, payload):
         s = SmartPlaylistItem.objects.get(id=idx)
-        my_pos = s.position
-        q = SmartPlaylistItem.objects.filter(playlist=s.playlist).filter(position__gte=my_pos + 1).order_by('position')
+        q = SmartPlaylistItemPayload.objects.filter(parent=s).filter(item=payload)
         if len(q) == 0:
-            return
-        exch_id = q[0].id
-        s2 = SmartPlaylistItem.objects.get(id=exch_id)
-        exch_pos = s2.position
-        s.position = exch_pos
-        s2.position = my_pos
-        s.save()
-        s2.save()
+            p = SmartPlaylistItemPayload(parent=s, item=payload)
+            p.save()
+            return True
+        return False
+
+    @staticmethod
+    def rm_payload(idx, payload):
+        s = SmartPlaylistItem.objects.get(id=idx)
+        q = SmartPlaylistItemPayload.objects.filter(parent=s).filter(item=payload)
+        if len(q) > 0:
+            q.delete()
+            return True
+        return False
+
+    @staticmethod
+    def rm_payloads(idx):
+        s = SmartPlaylistItem.objects.get(id=idx)
+        SmartPlaylistItemPayload.objects.filter(parent=s).delete()
+
+    @staticmethod
+    def set_payloads(idx, payloads):
+        s = SmartPlaylistItem.objects.get(id=idx)
+        SmartPlaylistItemPayload.objects.filter(parent=s).delete()
+        for item in payloads:
+            p = SmartPlaylistItemPayload(parent=s, item=item)
+            p.save()
+
+
+class SmartPlaylistItemPayload(models.Model):
+    """Payload row for SmartPlaylistItem
+    
+    E.g. on directory entry in IN_PATH filter
+    """
+    parent = models.ForeignKey('SmartPlaylistItem', on_delete=models.CASCADE)
+    item = models.CharField(max_length=512)
