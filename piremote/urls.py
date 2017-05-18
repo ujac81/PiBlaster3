@@ -13,6 +13,7 @@ urlpatterns = [
     url(r'^upload/$', views.upload, name='upload'),
     url(r'^upload/ratings/$', views.upload_ratings, name='upload_ratings'),
     url(r'^upload/history/$', views.upload_history, name='upload_history'),
+    url(r'^upload/smartpl/$', views.upload_smartpl, name='upload_smartpl'),
     url(r'^pages/(?P<page>[-\w]+)$', views.pages, name='pages'),
     url(r'^ajax/list/(?P<what>[\d\w\-\_]+)/$', views.list_ajax, name='list_ajax'),
     url(r'^ajax/browse/$', views.browse_ajax, name='browse_ajax'),
@@ -43,6 +44,7 @@ urlpatterns = [
     url(r'^download/ratings/$', views.download_ratings, name='download_ratings'),
     url(r'^download/ratings/(?P<mode>[-\w]+)/$', views.download_ratings, name='download_ratings'),
     url(r'^download/history/$', views.download_history, name='download_history'),
+    url(r'^ajax/download/smartpl/(?P<idx>\d+)/$', views.download_smartpl, name='download_smartpl'),
     url(r'^ajax/download/playlist/$', views.download_playlist, name='download_playlist'),
 ]
 

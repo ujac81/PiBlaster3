@@ -243,6 +243,15 @@ class SmartPlaylist(models.Model):
     time = models.DateTimeField(auto_now_add=True)
 
     @staticmethod
+    def get_json(idx):
+        p = SmartPlaylist.objects.get(id=idx)
+        return {
+            'title': p.title,
+            'description': p.description,
+            'time': p.time.strftime("%Y-%m-%d %H:%M"),
+            'items': SmartPlaylistItem.get_by_id(p.id)}
+
+    @staticmethod
     def has_smart_playlist(title):
         return len(SmartPlaylist.objects.filter(title=title)) > 0
 

@@ -16,9 +16,10 @@ from PiBlaster3.upload import Uploader
 from PiBlaster3.ratings_parser import RatingsParser
 from PiBlaster3.history_parser import HistoryParser
 from PiBlaster3.smart_playlist import ApplySmartPlaylist
+from PiBlaster3.upload_smart_playlist import SmartPlaylistUploader
 
 from .models import Setting, Upload, History, Rating, SmartPlaylist, SmartPlaylistItem
-from .forms import UploadForm, UploadRatingsForm, UploadHistoryForm
+from .forms import UploadForm, UploadRatingsForm, UploadHistoryForm, UploadSmartPlaylistForm
 
 
 def index(request):
@@ -255,6 +256,25 @@ def upload(request):
         return HttpResponseRedirect('/piremote/pages/upload')
 
 
+def upload_smartpl(request):
+    """POST /upload/smartpl
+    Handle file upload for smart playlist files.
+    :return: Redirect to smart playlists.
+    """
+    if request.method == 'POST':
+        form = UploadSmartPlaylistForm(request.POST, request.FILES)
+        if form.is_valid():
+            playlist = form.cleaned_data["playlist"]
+            filename = form.cleaned_data["mediafile"]
+            up = SmartPlaylistUploader()
+            res = up.upload(playlist, filename, request.FILES['mediafile'])
+        else:
+            res = {'error_str': 'Upload form data is invalid!'}
+        return return_page(request, 'smart', {'upload': json.dumps(res)})
+    else:
+        return HttpResponseRedirect('/piremote/pages/smart')
+
+
 def upload_ajax(request):
     """POST /ajax/upload/
     Browse USB flash drives for uploadable content.
@@ -380,6 +400,15 @@ def download_playlist(request):
     name = request.GET.get('name')
     mpc = MPC()
     return JsonResponse(mpc.get_m3u(source, name))
+
+
+def download_smartpl(request, idx):
+    """GET /download/smartpl
+    """
+    return JsonResponse(dict(data=[json.dumps(
+        dict(object='piremote_smartplaylist',
+             version=1,
+             data=SmartPlaylist.get_json(idx)))]))
 
 
 def upload_ratings(request):
