@@ -287,10 +287,11 @@ PiRemote.smart_pl_raise_smart_pl_actions = (name, id) ->
                 url: 'download/smartpl/'+id
                 filename: name+'.json'
         return
-
     return
     
-    
+
+# AJAX POST to smartplaction/FILTER_ID/ACTION.
+# Will reload whole filter set if reload flag set in result.
 PiRemote.smart_pl_do_action = (req) ->
     PiRemote.do_ajax
         method: 'POST'
@@ -342,7 +343,7 @@ PiRemote.pl_smart_update_filter = (data, index) ->
         return
     
     # Show negate switch for filters where it makes sense
-    if data[0] in [1, 2, 3, 4, 5, 8]
+    if data[0] in [1, 2, 3, 4, 5]
         p.append('label').attr('for', 'checkbox-'+filter_id).html('Negate')
         check = p.append('input').attr('type', 'checkbox').attr('name', 'checkbox-'+filter_id).attr('class', 'checkbox')
         check.attr('checked', 'true') if is_negate

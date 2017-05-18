@@ -129,11 +129,11 @@ class ApplySmartPlaylist:
             return None
 
         if filt.itemtype == SmartPlaylistItem.IN_PATH:
-            return reduce(operator.or_, (Q(path__startswith=x) for x in payloads))
+            q_item = reduce(operator.or_, (Q(path__startswith=x) for x in payloads))
         elif filt.itemtype == SmartPlaylistItem.GENRE:
-            return Q(genre__in=payloads)
+            q_item = Q(genre__in=payloads)
         elif filt.itemtype == SmartPlaylistItem.ARTIST:
-            return Q(artist__in=payloads)
+            q_item = Q(artist__in=payloads)
 
         if q_item is not None:
             if filt.negate:
