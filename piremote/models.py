@@ -296,7 +296,7 @@ class SmartPlaylistItem(models.Model):
         (ARTIST, 'Artist is one of'),
         (YEAR_LTE, 'Year less or equal'),
         (YEAR_GTE, 'Year greater or equal'),
-        (PREVENT_INTROS, 'Prevent intros'),
+        (PREVENT_INTROS, 'Prevent intros (TODO)'),
     )
     playlist = models.ForeignKey('SmartPlaylist', on_delete=models.CASCADE)
     itemtype = models.PositiveSmallIntegerField(default=EMPTY, choices=TYPE_CHOICES)
@@ -335,6 +335,7 @@ class SmartPlaylistItem(models.Model):
         s.itemtype = new_type
         s.payload = ''
         s.weight = 1
+        s.negate = False
         s.save()
         SmartPlaylistItem.rm_payloads(idx)
 

@@ -144,6 +144,8 @@ PiRemote.smart_pl_build = (name, id, data) ->
     downspan = padd.append('span').attr('class', 'glyphicon glyphicon-circle-arrow-down')
     minusspan = padd.append('span').attr('class', 'glyphicon glyphicon-minus-sign')
     plusspan = padd.append('span').attr('class', 'glyphicon glyphicon-plus-sign')
+    divempty = root.append('div').attr('id', 'smartempty')
+    divempty.append('p').attr('id', 'empty')
     
     pseed = divseed.append('p')
     input = pseed.append('span').append('input')
