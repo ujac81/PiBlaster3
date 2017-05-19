@@ -825,10 +825,11 @@ PiRemote.pl_action_on_playlists = (req) ->
             cont = d3.select('#smallModalMessage')
             cont.html('')
             navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
-            navul.append('li').attr('role', 'presentation')
-                    .append('span').attr('class', 'browse-action-file browse-action-new')
-                    .attr('data-plname', '')
-                    .html('Create new playlist')
+            if not req.no_create
+                navul.append('li').attr('role', 'presentation')
+                        .append('span').attr('class', 'browse-action-file browse-action-new')
+                        .attr('data-plname', '')
+                        .html('Create new playlist')
             for elem in data.pls
                 navul.append('li').attr('role', 'presentation')
                     .append('span').attr('class', 'browse-action-file')

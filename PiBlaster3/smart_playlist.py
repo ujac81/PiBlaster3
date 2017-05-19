@@ -173,7 +173,10 @@ class ApplySmartPlaylist:
         # # # Filters with simple payload (year, rating) # # #
 
         if filt.payload != '':
-            int_payload = int(filt.payload)
+            try:
+                int_payload = int(filt.payload)
+            except ValueError:
+                int_payload = 0
 
             if filt.itemtype == SmartPlaylistItem.RATING_EQ:
                 q_item = Q(rating=int_payload)
@@ -187,6 +190,13 @@ class ApplySmartPlaylist:
                 q_item = Q(date__lte=int_payload)
             elif filt.itemtype == SmartPlaylistItem.YEAR_GTE:
                 q_item = Q(date__gte=int_payload)
+            elif filt.itemtype == SmartPlaylistItem.IN_PLAYLIST:
+                mpc = MPC()
+                pl_files = [x[0] for x in mpc.playlistinfo_by_name(filt.payload)]
+                if len(pl_files) > 0:
+                    q_item = Q(path__in=pl_files)
+                else:
+                    return None  # This filter ist ignored if no such playlist or empty
 
         if q_item is not None:
             if filt.negate:

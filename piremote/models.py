@@ -291,6 +291,7 @@ class SmartPlaylistItem(models.Model):
     RATING_GTE = 1
     RATING_EQ = 2
     IN_PATH = 3
+    IN_PLAYLIST = 12
     GENRE = 4
     ARTIST = 5
     YEAR_LTE = 6
@@ -305,6 +306,7 @@ class SmartPlaylistItem(models.Model):
         (RATING_GTE, 'Rating greater or equal'),
         (RATING_EQ, 'Rating equal'),
         (IN_PATH, 'Path is one of'),
+        (IN_PLAYLIST, 'Is in playlist'),
         (GENRE, 'Genre is one of'),
         (ARTIST, 'Artist is one of'),
         (YEAR_LTE, 'Year less or equal'),

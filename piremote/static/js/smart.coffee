@@ -482,9 +482,34 @@ PiRemote.pl_smart_update_filter = (data, index) ->
                                     return
                         return
             return
+            
+    # PLAYLIST FIELD
+    if data[0] == 12
+        cur_pl = 'Choose Playlist'
+        if payload != ''
+            cur_pl = payload
+        s = p.append('span').attr('class', 'ratings')
+        ss = s.append('span').html(cur_pl)
+        ss.on 'click', ->
+            d3.event.stopPropagation()
+            PiRemote.pl_action_on_playlists
+                title: 'Choose Playlist'
+                no_create: true
+                success: (data) ->
+                    if data.length > 0
+                        PiRemote.smart_pl_do_action
+                            id: filter_id
+                            action: 'setpayload'
+                            data:
+                                payload: data
+                            success: (d) ->
+                                ss.html(data)
+                                return
+                    $('#modalSmall').modal('hide')
+                    return
                 
     # WEIGHT
-    if data[0] in [1..7]
+    if data[0] in [1..7] or data[0] == 12
         p.append('br')
         s = p.append('span').attr('class', 'weightspan')
         s.append('div').attr('class', 'wlabel').html('weight')

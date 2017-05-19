@@ -277,7 +277,10 @@ class MPC:
         :return: [[file, artist - title, pos]]
         """
         self.ensure_connected()
-        info = self.client.listplaylistinfo(plname)
+        try:
+            info = self.client.listplaylistinfo(plname)
+        except CommandError:
+            return []  # no such playlist
         result = []
         pos = 0
         for item in info:
