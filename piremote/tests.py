@@ -342,8 +342,11 @@ class BrowseTagsTests(TestCase):
             genre = info['genre'] if 'genre' in info else ''
             date = info['date'] if 'date' in info else ''
             rating = info['rating'] if 'rating' in info else 0
-            r = Rating(path=path, title=title, artist=artist, album=album, genre=genre, date=date, rating=rating)
-            r.save()
+            try:
+                r = Rating(path=path, title=title, artist=artist, album=album, genre=genre, date=date, rating=rating)
+                r.save()
+            except TypeError:
+                print('TYPE ERROR: {}'.format(info[0]))
 
         response = client.get('/piremote/ajax/listby/',
                               {'what': 'rating',

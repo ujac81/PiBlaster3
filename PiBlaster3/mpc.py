@@ -225,7 +225,7 @@ class MPC:
         """Get playlist items in interval [start, end)
         :param start: start index in playlist (start = 0)
         :param end: end index in playlist (excluded)
-        :return: [[pos, title, artist, album, length, id, file, rating]]
+        :return: {version=N, length=N, data=[[pos, title, artist, album, length, id, file, rating]]}
         """
 
         pl_len = self.get_status_int('playlistlength')

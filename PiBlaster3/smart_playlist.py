@@ -1,13 +1,14 @@
 """smart_playlist.py -- Apply smart filters to create playlist
 """
 
-from piremote.models import Rating
-from piremote.models import SmartPlaylist, SmartPlaylistItem
+from piremote.models import Rating, History, SmartPlaylist, SmartPlaylistItem
 from PiBlaster3.mpc import MPC
 
-from django.core.exceptions import ObjectDoesNotExist
 from django.db.models import Q
+from django.core.exceptions import ObjectDoesNotExist
+from django.utils import timezone
 from functools import reduce
+import datetime
 import operator
 
 
@@ -41,19 +42,20 @@ class ApplySmartPlaylist:
             self.result_string = 'No such filter id {0}'.format(self.filter_id)
             return
 
-        filters = SmartPlaylistItem.objects.filter(playlist=s).exclude(itemtype=SmartPlaylistItem.EMPTY).order_by('position')
+        filters = SmartPlaylistItem.objects.filter(playlist=s).exclude(
+            itemtype=SmartPlaylistItem.EMPTY).order_by('position')
 
         # first apply all filters with weight 1 directly
         q_list = []
         for filt in filters.filter(weight=1):
-            q_item = self.get_q_item_from_filter(filt)
+            q_item = self.get_q_item_from_filter(filt, plname)
             if q_item is not None:
                 q_list.append(q_item)
 
         if len(q_list) == 0:
-            # select all if no w=1 filters so far.
             qrating = Rating.objects.all().order_by('?')
         else:
+            # apply all weight = 1 filters
             qrating = Rating.objects.filter(reduce(operator.and_, q_list)).order_by('?')
 
         if len(qrating) == 0:
@@ -68,7 +70,7 @@ class ApplySmartPlaylist:
         # Collect all ids and set current query to a randomized list of the
         # selected ids. Then apply next filter on remaining set and so on.
         for filt in filters.exclude(weight=1).exclude(weight=0):
-            q_item = self.get_q_item_from_filter(filt)
+            q_item = self.get_q_item_from_filter(filt, plname)
             if q_item is None:
                 continue
             q_in = qrating.filter(q_item).order_by('?')
@@ -94,12 +96,45 @@ class ApplySmartPlaylist:
 
             # END for filt in filters with weight < 1 #
 
-        files = [x.path for x in qrating[:self.amount]]
         mpc = MPC()
+
+        # Filter intros from result
+        files = []
+        if len(filters.filter(itemtype=SmartPlaylistItem.PREVENT_INTROS)):
+            mpc.ensure_connected()
+            for item in qrating:
+                info = mpc.client.find('file', item.path)
+                if len(info) < 1:
+                    continue
+                time = int(info[0]['time']) if 'time' in info[0] else 1000
+                title = info[0]['title'] if 'title' in info[0] else ''
+                track = int(info[0]['track'].split('/')[0]) if 'track' in info[0] else 0
+                if time < 60:
+                    continue  # prevent too short songs
+                if 'intro' in title.lower() and time < 120:
+                    continue  # intro in song name and time less than 2 minutes
+                if 'overture' in title.lower() and time < 120:
+                    continue  # overture in song name and time less than 2 minutes
+                if 'outro' in title.lower() and time < 180:
+                    continue  # outros
+                if 'intro' in title.lower() and track == 1 and time < 180:
+                    continue  # intro in first song name and time less than 3 minutes
+
+                files.append(item.path)
+                if len(files) == self.amount:
+                    break
+        else:
+            files = [x.path for x in qrating[:self.amount]]
+
+        if len(files) == 0:
+            self.error = True
+            self.result_string = 'Filter deselected all media items -- Nothing to add!'
+            return
+
         self.result_string = mpc.playlist_action('append', plname, files)
 
     @staticmethod
-    def get_q_item_from_filter(filt):
+    def get_q_item_from_filter(filt, plname=''):
         """Translate filter item to django Q object for queries
         
         :param filt: SmartPlaylistItem item
@@ -107,13 +142,47 @@ class ApplySmartPlaylist:
         """
         q_item = None
 
+        # # # Filters without payload (prevent xxx) # # #
+
+        if filt.itemtype == SmartPlaylistItem.PREVENT_LIVE:
+            # Exclude '(live', '[live' and '....live' strings in album and title
+            q_item = ~(reduce(operator.or_, (Q(album__iendswith='live'),
+                                             Q(album__icontains='(live'), Q(album__icontains='[live'),
+                                             Q(title__icontains='(live'), Q(title__icontains='[live'))))
+        elif filt.itemtype == SmartPlaylistItem.PREVENT_DUPLICATES:
+            # Get files in target playlist end exclude them
+            mpc = MPC()
+            if plname == '':  # current playlist
+                pl_files = [x[6] for x in mpc.playlistinfo(0, -1)['data']]
+            else:  # saved playlist
+                pl_files = [x[0] for x in mpc.playlistinfo_by_name(plname)]
+            if len(pl_files) > 0:
+                q_item = ~Q(path__in=pl_files)
+        elif filt.itemtype == SmartPlaylistItem.PREVENT_PLAYED_TODAY:
+            # Drop items from recent history (last 24 hours)
+            date_from = timezone.now() - datetime.timedelta(days=1)
+            last_files = [x['path'] for x in History.objects.filter(time__gte=date_from).values('path')]
+            if len(last_files) > 0:
+                q_item = ~Q(path__in=last_files)
+
+        if q_item is not None:
+            if filt.negate:
+                return ~q_item
+            return q_item
+
+        # # # Filters with simple payload (year, rating) # # #
+
         if filt.payload != '':
             int_payload = int(filt.payload)
 
             if filt.itemtype == SmartPlaylistItem.RATING_EQ:
                 q_item = Q(rating=int_payload)
             elif filt.itemtype == SmartPlaylistItem.RATING_GTE:
-                q_item = Q(rating__gte=int_payload)
+                if not filt.negate:
+                    return Q(rating__gte=int_payload)
+                else:
+                    # Negated rating GTE filter should not exclude 0 ratings
+                    return ~Q(rating__in=list(range(1, int_payload+1)))
             elif filt.itemtype == SmartPlaylistItem.YEAR_LTE:
                 q_item = Q(date__lte=int_payload)
             elif filt.itemtype == SmartPlaylistItem.YEAR_GTE:
@@ -123,6 +192,8 @@ class ApplySmartPlaylist:
             if filt.negate:
                 return ~q_item
             return q_item
+
+        # # # Filters with payload list (genre, path, artist) # # #
 
         payloads = SmartPlaylistItem.get_payloads(filt.id)
         if len(payloads) == 0:

@@ -296,6 +296,10 @@ class SmartPlaylistItem(models.Model):
     YEAR_LTE = 6
     YEAR_GTE = 7
     PREVENT_INTROS = 8
+    PREVENT_DUPLICATES = 9
+    PREVENT_PLAYED_TODAY = 10
+    PREVENT_LIVE = 11
+
     TYPE_CHOICES = (
         (EMPTY, 'empty'),
         (RATING_GTE, 'Rating greater or equal'),
@@ -305,7 +309,10 @@ class SmartPlaylistItem(models.Model):
         (ARTIST, 'Artist is one of'),
         (YEAR_LTE, 'Year less or equal'),
         (YEAR_GTE, 'Year greater or equal'),
-        (PREVENT_INTROS, 'Prevent intros (TODO)'),
+        (PREVENT_INTROS, 'Prevent intros'),
+        (PREVENT_DUPLICATES, 'Prevent duplicates'),
+        (PREVENT_PLAYED_TODAY, 'Not played last 24 hours'),
+        (PREVENT_LIVE, 'Prevent live songs'),
     )
     playlist = models.ForeignKey('SmartPlaylist', on_delete=models.CASCADE)
     itemtype = models.PositiveSmallIntegerField(default=EMPTY, choices=TYPE_CHOICES)
