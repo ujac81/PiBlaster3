@@ -101,7 +101,7 @@ class LEDThread(threading.Thread):
             except queue.Empty:
                 pass
 
-        self.print_message("[THREAD] LED driver leaving...")
+        self.main.print_message("[THREAD] LED driver leaving...")
         for i in range(len(self.leds)):
             self.set_led_by_gpio(i, 0)
         self.set_led_by_gpio(PIBLASTER_LED_YELLOW, 1)
