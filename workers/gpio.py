@@ -17,6 +17,7 @@ RED = 2
 BLUE = 3
 WHITE = 4
 
+
 class PB_GPIO:
     """Prepare GPIOs for PyBlaster"""
 
@@ -341,8 +342,7 @@ class Buttons:
             return
 
         button_color = event[1]
-        self.main.log.write(log.MESSAGE, "--- Button \"%s\" pressed" %
-                                         button_color)
+        self.main.print_message("--- Button \"%s\" pressed" % button_color)
 
         if button_color == "green":
             self.main.print_message("playtoggle button")
