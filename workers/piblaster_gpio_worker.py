@@ -13,6 +13,8 @@ import signal
 import time
 
 from PiBlaster3.settings import *
+if PIBLASTER_USE_GPIO:
+    from workers.gpio import LED, Buttons
 
 
 class PiBlasterGpioWorker:
@@ -24,8 +26,8 @@ class PiBlasterGpioWorker:
         self.is_vassal = 'UWSGI_VASSAL' in os.environ
         self.led = None
         self.buttons = None
+        self.pipe_name = '/tmp/.piblaster_led_pipe'
         if PIBLASTER_USE_GPIO:
-            from workers.gpio import LED, Buttons
             self.led = LED(self)
             self.buttons = Buttons(self)
 
@@ -50,6 +52,16 @@ class PiBlasterGpioWorker:
             self.buttons.join()
             self.led.join()
             PB_GPIO.cleanup(self)
+
+    def make_pipe(self):
+        """
+        
+        :return: 
+        """
+        if os.path.exists(self.pipe_name):
+            os.remove(self.pipe_name)
+        os.umask(0o000)
+        os.mkfifo(self.pipe_name, 0o666)
 
     def print_message(self, msg):
         """
@@ -86,6 +98,11 @@ class PiBlasterGpioWorker:
                 led_count += 1
 
         self.print_message('LEAVING')
+        # Flash red and yellow led after exit (to indicate shutdown process)
+        if PIBLASTER_USE_GPIO:
+            self.led.reset_leds()
+            self.led.set_led_yellow()
+            self.led.set_led_red()
 
     def term_handler(self, *args):
         """ Signal handler to stop daemon loop"""
