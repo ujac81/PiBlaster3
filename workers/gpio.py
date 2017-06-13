@@ -8,6 +8,7 @@ import RPi.GPIO as GPIO
 import sys
 import threading
 import time
+from subprocess import Popen, PIPE, DEVNULL
 
 from PiBlaster3.settings import *
 
@@ -345,12 +346,17 @@ class Buttons:
         self.main.print_message("--- Button \"%s\" pressed" % button_color)
 
         if button_color == "green":
-            self.main.print_message("playtoggle button")
+            Popen('mpc toggle', shell=True, bufsize=1024,
+                  stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, close_fds=True).wait()
         if button_color == "yellow":
-            self.main.print_message("playnext button")
+            Popen('mpc next', shell=True, bufsize=1024,
+                  stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, close_fds=True).wait()
         if button_color == "red":
-            self.main.print_message("poweroff button")
+            Popen('/sbin/poweroff', shell=True, bufsize=1024,
+                  stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, close_fds=True).wait()
         if button_color == "blue":
-            self.main.print_message("voldec button")
+            Popen('mpc volume -3', shell=True, bufsize=1024,
+                  stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, close_fds=True).wait()
         if button_color == "white":
-            self.main.print_message("volinc button")
+            Popen('mpc volume +3', shell=True, bufsize=1024,
+                  stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, close_fds=True).wait()

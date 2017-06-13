@@ -49,10 +49,9 @@ class RatingsScanner:
         for item in not_in_db:
             filename = os.path.join(music_path, item)
             to_add.append(self.scan_file(item, filename))
-
-        if not self.main.keep_run:
-            # worker shut down in the meantime
-            return
+            if not self.main.keep_run:
+                # worker shut down in the meantime
+                return
 
         too_many = self.get_db_files(not_in_list=mpd_files)
         to_remove = []
@@ -96,9 +95,11 @@ class RatingsScanner:
         """Fetch list of uri names from SQL database.
 
         Uri names match MPD file names, so no leading music path.
+        
+        If both parameters are None, all db entries are returned.
 
-        :param not_in_list:
-        :param not_in_database:
+        :param not_in_list: return those database items which are in list but in database (to_remove)
+        :param not_in_database: return those list items which are not found in databse (to_add) 
         :return: [local/uri1, local/uri2]
         """
         res = []
