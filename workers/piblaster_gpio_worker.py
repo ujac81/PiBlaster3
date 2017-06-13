@@ -65,11 +65,23 @@ class PiBlasterGpioWorker:
         :return:
         """
 
+        self.print_message("Entering daemon loop...")
+
+        poll_count = 0
+        led_count = 1
         while self.keep_run:
 
-            time.sleep(100. / 1000.)  # 100ms
-        
+            poll_count += 1
+
+            time.sleep(50. / 1000.)  # 50ms default in config
+
+            self.buttons.read_buttons()
+            if poll_count % 10 == 0:
+                self.led.play_leds(led_count)
+                led_count += 1
+
         self.print_message('LEAVING')
+
 
     def term_handler(self, *args):
         """ Signal handler to stop daemon loop"""
