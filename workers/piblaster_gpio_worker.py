@@ -13,7 +13,8 @@ import signal
 import time
 
 from PiBlaster3.settings import *
-from workers.gpio import PB_GPIO, LED, Buttons
+if PIBLASTER_USE_GPIO:
+    from workers.gpio import LED, Buttons
 
 
 class PiBlasterGpioWorker:
@@ -23,9 +24,12 @@ class PiBlasterGpioWorker:
         """Create uploader and mpd service threads."""
         self.keep_run = True  # run daemon as long as True
         self.is_vassal = 'UWSGI_VASSAL' in os.environ
-        self.led = LED(self)
-        self.buttons = Buttons(self)
-        
+        self.led = None
+        self.buttons = None
+        self.pipe_name = '/tmp/.piblaster_led_pipe'
+        if PIBLASTER_USE_GPIO:
+            self.led = LED(self)
+            self.buttons = Buttons(self)
 
     def run(self):
         """daemonize, start threads and enter daemon loop."""
@@ -34,19 +38,31 @@ class PiBlasterGpioWorker:
             self.daemonize()
         else:
             print('PiBlasterWorker running in debug or as vassal')
-        
-        PB_GPIO.init_gpio()        
-        self.led.init_leds()
-        self.led.show_init_done()
-        self.buttons.start()
+
+        if PIBLASTER_USE_GPIO:
+            from workers.gpio import PB_GPIO
+            PB_GPIO.init_gpio()
+            self.led.init_leds()
+            self.led.show_init_done()
+            self.buttons.start()
 
         self.daemon_loop()
 
-        self.buttons.join()
-        self.led.join()
-        PB_GPIO.cleanup(self)
+        if PIBLASTER_USE_GPIO:
+            self.buttons.join()
+            self.led.join()
+            PB_GPIO.cleanup(self)
 
+    def make_pipe(self):
+        """
         
+        :return: 
+        """
+        if os.path.exists(self.pipe_name):
+            os.remove(self.pipe_name)
+        os.umask(0o000)
+        os.mkfifo(self.pipe_name, 0o666)
+
     def print_message(self, msg):
         """
 
@@ -75,12 +91,18 @@ class PiBlasterGpioWorker:
 
             time.sleep(50. / 1000.)  # 50ms default in config
 
-            self.buttons.read_buttons()
-            if poll_count % 10 == 0:
-                self.led.play_leds(led_count)
+            if PIBLASTER_USE_GPIO:
+                self.buttons.read_buttons()
+                if poll_count % 10 == 0:
+                    self.led.play_leds(led_count)
                 led_count += 1
 
         self.print_message('LEAVING')
+        # Flash red and yellow led after exit (to indicate shutdown process)
+        if PIBLASTER_USE_GPIO:
+            self.led.reset_leds()
+            self.led.set_led_yellow()
+            self.led.set_led_red()
 
 
     def term_handler(self, *args):

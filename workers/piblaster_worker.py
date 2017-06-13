@@ -27,7 +27,7 @@ class PiBlasterWorker:
         self.uploader = Uploader(self)
         self.idler = MPDService(self)
         self.scanner = RatingsScanner(self)
-        self.rescan_ratings = False  # no rescan ratings on boot
+        self.rescan_ratings = True  # rescan ratings on boot
         self.is_vassal = 'UWSGI_VASSAL' in os.environ
 
     def run(self):

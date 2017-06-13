@@ -30,12 +30,13 @@ class RatingsScanner:
         self.main.print_message("RESCANNING RATINGS")
 
         mpd_files = self.get_mpd_files()
-        if mpd_files is None:
+        if mpd_files is None or len(mpd_files) == 0:
             # there was a mpd connect error, retry next loop
             return
 
-        db_files = self.get_db_files()
-        if db_files is None:
+        # Get mpd files which are not in database
+        not_in_db = self.get_db_files(not_in_database=mpd_files)
+        if not_in_db is None:
             # there was an db read error, retry next loop
             return
 
@@ -45,19 +46,17 @@ class RatingsScanner:
             return
 
         to_add = []
-        for item in mpd_files:
-            if item not in db_files:
-                filename = os.path.join(music_path, item)
-                to_add.append(self.scan_file(item, filename))
-
+        for item in not_in_db:
+            filename = os.path.join(music_path, item)
+            to_add.append(self.scan_file(item, filename))
             if not self.main.keep_run:
                 # worker shut down in the meantime
                 return
 
+        too_many = self.get_db_files(not_in_list=mpd_files)
         to_remove = []
-        for item in db_files:
-            if item not in mpd_files:
-                to_remove.append((item,))
+        for item in too_many:
+            to_remove.append((item,))
 
         if not self.main.keep_run:
             # worker shut down in the meantime
@@ -92,11 +91,15 @@ class RatingsScanner:
 
         return mpd_files
 
-    def get_db_files(self):
+    def get_db_files(self, not_in_list=None, not_in_database=None):
         """Fetch list of uri names from SQL database.
 
         Uri names match MPD file names, so no leading music path.
+        
+        If both parameters are None, all db entries are returned.
 
+        :param not_in_list: return those database items which are in list but in database (to_remove)
+        :param not_in_database: return those list items which are not found in databse (to_add) 
         :return: [local/uri1, local/uri2]
         """
         res = []
@@ -104,7 +107,14 @@ class RatingsScanner:
             db = DATABASES['default']
             conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
             cur = conn.cursor()
-            cur.execute('''SELECT path FROM piremote_rating''')
+            if not_in_database is not None:
+                tuples = tuple([tuple([x]) for x in not_in_database])
+                s_str = ', '.join(['%s'] * len(not_in_database))
+                cur.execute('SELECT t.path FROM ( VALUES {} ) t(path) where not exists (SELECT path FROM piremote_rating r WHERE r.path = t.path)'.format(s_str), tuples)
+            elif not_in_list is not None:
+                cur.execute("SELECT path FROM piremote_rating WHERE path NOT IN %s", (tuple(not_in_list),))
+            else:
+                cur.execute('''SELECT path FROM piremote_rating''')
             for row in cur.fetchall():
                 res.append(row[0])
             cur.close()

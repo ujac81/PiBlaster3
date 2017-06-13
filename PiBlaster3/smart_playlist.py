@@ -196,7 +196,7 @@ class ApplySmartPlaylist:
                 if len(pl_files) > 0:
                     q_item = Q(path__in=pl_files)
                 else:
-                    return None  # This filter ist ignored if no such playlist or empty
+                    return None  # This filter is ignored if no such playlist or empty
 
         if q_item is not None:
             if filt.negate:
