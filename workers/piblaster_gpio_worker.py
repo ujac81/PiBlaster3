@@ -95,7 +95,7 @@ class PiBlasterGpioWorker:
                 self.buttons.read_buttons()
                 if poll_count % 10 == 0:
                     self.led.play_leds(led_count)
-                led_count += 1
+                    led_count += 1
 
         self.print_message('LEAVING')
         # Flash red and yellow led after exit (to indicate shutdown process)

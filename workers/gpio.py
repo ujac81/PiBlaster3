@@ -352,7 +352,7 @@ class Buttons:
             Popen('mpc next', shell=True, bufsize=1024,
                   stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, close_fds=True).wait()
         if button_color == "red":
-            Popen('/sbin/poweroff', shell=True, bufsize=1024,
+            Popen('sudo /sbin/poweroff', shell=True, bufsize=1024,
                   stdin=DEVNULL, stdout=DEVNULL, stderr=DEVNULL, close_fds=True).wait()
         if button_color == "blue":
             Popen('mpc volume -3', shell=True, bufsize=1024,
