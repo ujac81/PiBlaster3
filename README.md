@@ -227,3 +227,11 @@ Make sure DEBUG is not set in env!
 
     $ ./manage.py compress --extension=pug
     $ ./manage.py test
+
+### Count code lines
+
+    $ sudo apt install cloc
+    $ cd PIBLASTER3_MAIN_FOLDER
+    $ cloc --counted=counts.txt --exclude-dir=CACHE,vendor --exclude-lang=JavaScript  piadmin PiBlaster3 piremote workers
+
+Check counts.txt file for files taken into account.

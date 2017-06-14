@@ -92,6 +92,10 @@ class PiBlasterGpioWorker:
 
         poll_count = 0
         led_count = 1
+        high_load = False
+        extreme_load = False
+        had_high_load = False
+        had_extreme_load = False
         while self.keep_run:
 
             poll_count += 1
@@ -101,8 +105,35 @@ class PiBlasterGpioWorker:
             if PB_USE_GPIO:
                 self.buttons.read_buttons()
                 if poll_count % 10 == 0:
-                    self.led.set_led_green(led_count % 2)
-                    led_count += 1
+                    if high_load and not had_high_load:
+                        self.led.set_led_green()
+                        had_high_load = True
+                    if not high_load and had_high_load:
+                        had_high_load = False
+                        self.led.set_led_green(0)
+                    if extreme_load and not had_extreme_load:
+                        self.led.set_led_yellow()
+                        self.led.set_led_red()
+                        had_extreme_load = True
+                    if not extreme_load and had_extreme_load:
+                        self.led.set_led_yellow(0)
+                        self.led.set_led_red(0)
+                        had_extreme_load = False
+
+                    if not high_load and not extreme_load:
+                        self.led.set_led_green(led_count % 2)
+                        led_count += 1
+
+                if poll_count % 20 == 0:
+                    # check for high load every 1s
+                    load = os.getloadavg()[0]
+                    if load > 1.0:
+                        extreme_load = True
+                    elif load > 0.7:
+                        high_load = True
+                    else:
+                        high_load = False
+                        extreme_load = False
 
             if PB_GPIO_PIPE is not None:
                 # Check if we can read from pipe
