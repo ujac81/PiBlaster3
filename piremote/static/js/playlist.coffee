@@ -521,6 +521,7 @@ PiRemote.pl_raise_add_dialog = (minus=false) ->
         ['deleteids', 'Delete Selection', true],
         ['randomize', 'Randomize Playlist', false],
         ['randomize-rest', 'Randomize Playlist After Current', false],
+        ['deleteallbutcur', 'Delete All but Current', true],
         ['clear', 'Clear playlist', true],
         ['seed', 'Random add songs', false]
         ['download', 'Download Playlist', false]
@@ -578,6 +579,9 @@ PiRemote.pl_do_action = (action, id=-1) ->
         file = d3.select('tr[data-id="'+id+'"]').data()[0][6]
         PiRemote.last_files = file.split('/').slice(0,-1).join('/')
         PiRemote.load_page 'files'
+        $('#modalSmall').modal('hide')
+    else if action == 'deleteallbutcur'
+        PiRemote.pl_action 'deleteallbutcur', '', []
         $('#modalSmall').modal('hide')
     else if action == 'clear'
         PiRemote.pl_raise_clear_dialog()

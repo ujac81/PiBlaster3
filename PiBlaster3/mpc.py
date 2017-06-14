@@ -538,6 +538,18 @@ class MPC:
                 return 'Clear error'
             flash_mpd_led()
             return 'Playlist cleared.'
+        elif cmd == 'deleteallbutcur':
+            flash_mpd_led()
+            now_id = self.get_status_int('songid', -1)
+            all_ids = [int(x['id']) for x in self.client.playlistinfo() if int(x['id']) != now_id]
+            for song_id in all_ids:
+                try:
+                    self.client.deleteid(song_id)
+                except CommandError:
+                    clear_mpd_led()
+                    return 'Delete error'
+            clear_mpd_led()
+            return 'Deleted {} items from playlist.'.format(len(all_ids))
         elif cmd == 'deleteid' or cmd == 'deleteids':
             # Remove items from playlist
             for i in sorted([int(x) for x in items], reverse=True):
