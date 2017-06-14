@@ -11,6 +11,7 @@ import json
 
 from PiBlaster3.alsa import AlsaMixer
 from PiBlaster3.commands import Commands
+from PiBlaster3.helpers import *
 from PiBlaster3.mpc import MPC
 from PiBlaster3.upload import Uploader
 from PiBlaster3.ratings_parser import RatingsParser
@@ -51,7 +52,7 @@ def list_ajax(request, what):
     """GET /ajax/list/WHAT/ 
     """
     result = dict(data=[])
-
+    raise_working_led()
     if what == 'smart_playlists':
         q = SmartPlaylist.objects.all().order_by('title')
         result['data'] = [[x.id, x.title, x.time.strftime('%a %d %b %Y')] for x in q]
@@ -64,7 +65,7 @@ def list_ajax(request, what):
         result['data'] = SmartPlaylistItem.get_by_id(idx)
     else:
         result['error_str'] = 'Cannot list: '+what
-
+    clear_working_led()
     return JsonResponse(result)
 
 
@@ -75,8 +76,10 @@ def browse_ajax(request):
     """
     dirname = request.POST.get('dirname', None)
     if dirname is not None:
+        raise_working_led()
         mpc = MPC()
         data = {'dirname': dirname, 'browse': mpc.browse(dirname)}
+        clear_working_led()
         return JsonResponse(data)
 
     return JsonResponse({})
@@ -98,6 +101,7 @@ def cmd_ajax(request):
     """
     cmd = request.POST.get('cmd', None)
     mpc = MPC()
+    flash_command_led()
     return JsonResponse(mpc.exec_command(cmd))
 
 
@@ -106,11 +110,14 @@ def plaction_ajax(request):
     Perform action on one playlist.
     :return: JSON only -- use with ajax!
     """
+    raise_working_led()
     cmd = request.POST.get('cmd', None)
     plname = request.POST.get('plname', '')
     items = request.POST.getlist('list[]', [])
     mpc = MPC()
-    return JsonResponse({'status_str': mpc.playlist_action(cmd, plname, items)})
+    action = mpc.playlist_action(cmd, plname, items)
+    clear_working_led()
+    return JsonResponse({'status_str': action})
 
 
 def plsaction_ajax(request):
@@ -118,11 +125,14 @@ def plsaction_ajax(request):
     Perform action on list of playlists.
     :return: JSON only -- use with ajax!
     """
+    raise_working_led()
     cmd = request.POST.get('cmd', None)
     plname = request.POST.get('plname', '')
     payload = request.POST.getlist('payload[]', [])
     mpc = MPC()
-    return JsonResponse(mpc.playlists_action(cmd, plname, payload))
+    action = mpc.playlists_action(cmd, plname, payload)
+    clear_working_led()
+    return JsonResponse(action)
 
 
 def plinfo_ajax(request):
@@ -130,8 +140,11 @@ def plinfo_ajax(request):
     Get current playlist (detailed list).
     :return: JSON only -- use with ajax!
     """
+    raise_working_led()
     mpc = MPC()
-    return JsonResponse({'pl': mpc.playlistinfo(0, -1), 'status': mpc.get_status_data()})
+    res = {'pl': mpc.playlistinfo(0, -1), 'status': mpc.get_status_data()}
+    clear_working_led()
+    return JsonResponse(res)
 
 
 def plshortinfo_ajax(request):
@@ -139,9 +152,12 @@ def plshortinfo_ajax(request):
     Get items of stored playlist (fewer data than current playlist)
     :return: JSON only -- use with ajax!
     """
+    raise_working_led()
     plname = request.GET.get('plname', '')
     mpc = MPC()
-    return JsonResponse({'pl': mpc.playlistinfo_by_name(plname), 'plname': plname})
+    res = {'pl': mpc.playlistinfo_by_name(plname), 'plname': plname}
+    clear_working_led()
+    return JsonResponse(res)
 
 
 def plinfo_id_ajax(request, id):
@@ -168,9 +184,12 @@ def search_ajax(request):
     Perform search for pattern.
     :return: JSON only -- use with ajax!
     """
+    raise_working_led()
     search = request.POST.get('pattern', None)
     mpc = MPC()
-    return JsonResponse(mpc.search_file(search))
+    res = mpc.search_file(search)
+    clear_working_led()
+    return JsonResponse(res)
 
 
 def file_info_ajax(request):
@@ -193,6 +212,7 @@ def command_ajax(request):
     commands = Commands()
     if cmd == 'settime':
         Setting.set_setting('time_updated', '1')
+    flash_command_led(0.5)
     return JsonResponse(commands.perform_command(cmd, payload))
 
 
@@ -212,6 +232,7 @@ def set_ajax(request):
     """
     key = request.POST.get('key', '')
     value = request.POST.get('value', '')
+    flash_command_led(0.2)
     return JsonResponse(Setting.set_setting(key, value))
 
 
@@ -234,6 +255,7 @@ def mixerset_ajax(request):
     mixer_channel = int(request.POST.get('channel'))
     mixer_value = int(request.POST.get('value'))
     mixer = AlsaMixer()
+    flash_command_led()
     return JsonResponse(mixer.set_channel_data(mixer_class, mixer_channel, mixer_value))
 
 
@@ -243,14 +265,18 @@ def upload(request):
     :return: upload page including status message about successful upload.
     """
     if request.method == 'POST':
+        raise_working_led()
         form = UploadForm(request.POST, request.FILES)
         if form.is_valid():
+            raise_upload_led()
             name = form.cleaned_data["uploader"]
             filename = form.cleaned_data["mediafile"]
             up = Uploader()
             res = up.upload_file(name, filename, request.FILES['mediafile'])
+            clear_upload_led()
         else:
             res = {'error_str': 'Upload form data is invalid!'}
+        clear_working_led()
         return return_page(request, 'upload', {'upload': json.dumps(res)})
     else:
         return HttpResponseRedirect('/piremote/pages/upload')
@@ -262,14 +288,18 @@ def upload_smartpl(request):
     :return: Redirect to smart playlists.
     """
     if request.method == 'POST':
+        raise_working_led()
         form = UploadSmartPlaylistForm(request.POST, request.FILES)
         if form.is_valid():
+            raise_upload_led()
             playlist = form.cleaned_data["playlist"]
             filename = form.cleaned_data["mediafile"]
             up = SmartPlaylistUploader()
             res = up.upload(playlist, filename, request.FILES['mediafile'])
+            clear_upload_led()
         else:
             res = {'error_str': 'Upload form data is invalid!'}
+        clear_working_led()
         return return_page(request, 'smart', {'upload': json.dumps(res)})
     else:
         return HttpResponseRedirect('/piremote/pages/smart')
@@ -285,6 +315,7 @@ def upload_ajax(request):
 
     dirname = request.POST.get('dirname', '').replace('//', '/')
     if dirname is not None:
+        flash_command_led()
         up = Uploader()
         return JsonResponse(up.list_dir(dirname))
     return JsonResponse({})
@@ -297,6 +328,7 @@ def doupload_ajax(request):
     """
     paths = request.POST.getlist('paths[]', [])
     if paths is not None:
+        flash_command_led()
         up = Uploader()
         return JsonResponse(up.add_to_uploads(paths))
     return JsonResponse({})
@@ -322,9 +354,11 @@ def listby_ajax(request):
     genres = request.GET.getlist('genres[]', [])
     artists = request.GET.getlist('artists[]', [])
     albums = request.GET.getlist('albums[]', [])
+    raise_working_led()
     mpc = MPC()
     browse = mpc.list_by(what, ratings, dates, genres, artists, albums)
     context = dict(what=what, browse=browse, truncated=mpc.truncated)
+    clear_working_led()
     return JsonResponse(context)
 
 
@@ -333,6 +367,7 @@ def seed_browse_ajax(request):
     Perform seed to playlist by selection from browse by tags.
     :return: JSON only -- use with ajax!
     """
+    raise_working_led()
     what = request.POST.get('what', '')
     count = int(request.POST.get('count', ''))
     plname = request.POST.get('plname', '')
@@ -342,7 +377,9 @@ def seed_browse_ajax(request):
     artists = request.POST.getlist('artists[]', [])
     albums = request.POST.getlist('albums[]', [])
     mpc = MPC()
-    return JsonResponse({'status_str': mpc.seed_by(count, plname, what, ratings, dates, genres, artists, albums)})
+    res = {'status_str': mpc.seed_by(count, plname, what, ratings, dates, genres, artists, albums)}
+    clear_working_led()
+    return JsonResponse(res)
 
 
 def history_ajax(request):
@@ -351,6 +388,7 @@ def history_ajax(request):
     :param request:
     :return:
     """
+    raise_working_led()
     mode = request.GET.get('mode')
     title = 'Player History'
     if mode == 'search':
@@ -358,7 +396,9 @@ def history_ajax(request):
         return JsonResponse({'history': History.search_history(pattern), 'mode': mode, 'title': 'Search result'})
     if mode != 'dates':
         title = datetime.datetime.strptime(mode, '%Y-%m-%d').strftime('%A %d %B %Y')
-    return JsonResponse({'history': History.get_history(mode), 'mode': mode, 'title': title})
+    res = {'history': History.get_history(mode), 'mode': mode, 'title': title}
+    clear_working_led()
+    return JsonResponse(res)
 
 
 def rate_ajax(request):
@@ -374,10 +414,14 @@ def rate_ajax(request):
 def download_ratings(request, mode='all'):
     """GET /download/ratings
     """
+    raise_working_led()
+    raise_sql_led()
     q = Rating.objects.filter(rating__gte=1)
     if mode == 'new':
         q = q.filter(original=False)
+    clear_sql_led()
     data = serializers.serialize("xml", q)
+    clear_working_led()
     response = HttpResponse(data, content_type="application/xml")
     response['Content-Disposition'] = 'attachment; filename=ratings.xml'
     return response
@@ -386,8 +430,12 @@ def download_ratings(request, mode='all'):
 def download_history(request):
     """GET /download/history
     """
+    raise_sql_led()
+    raise_working_led()
     q = History.objects.all()
+    clear_sql_led()
     data = serializers.serialize("xml", q)
+    clear_working_led()
     response = HttpResponse(data, content_type="application/xml")
     response['Content-Disposition'] = 'attachment; filename=history.xml'
     return response
@@ -398,8 +446,11 @@ def download_playlist(request):
     """
     source = request.GET.get('source')
     name = request.GET.get('name')
+    raise_working_led()
     mpc = MPC()
-    return JsonResponse(mpc.get_m3u(source, name))
+    res = mpc.get_m3u(source, name)
+    clear_working_led()
+    return JsonResponse(res)
 
 
 def download_smartpl(request, idx):
@@ -417,13 +468,16 @@ def upload_ratings(request):
     :return: upload page including status message about successful upload.
     """
     if request.method == 'POST':
+        raise_working_led()
         form = UploadRatingsForm(request.POST, request.FILES)
         context = dict(title='Upload History File', text='History uploaded')
 
         if form.is_valid():
+            raise_upload_led()
             filename = form.cleaned_data["ratingsfile"]
             data = request.FILES['ratingsfile'].read()
             parser = RatingsParser(filename, data)
+            clear_upload_led()
 
             context['status_str'] = 'File parsed'
             context['errors'] = parser.errors
@@ -434,6 +488,7 @@ def upload_ratings(request):
             context['error_str'] = 'Uploaded file is not valid!'
 
         template = loader.get_template('piremote/upload_result.pug')
+        clear_working_led()
         return HttpResponse(template.render(context, request))
     else:
         template = loader.get_template('piremote/upload_ratings.pug')
@@ -446,13 +501,16 @@ def upload_history(request):
     :return: upload page including status message about successful upload.
     """
     if request.method == 'POST':
+        raise_working_led()
         form = UploadHistoryForm(request.POST, request.FILES)
         context = dict(title='Upload Ratings File', text='Ratings uploaded')
 
         if form.is_valid():
+            raise_upload_led()
             filename = form.cleaned_data["historyfile"]
             data = request.FILES['historyfile'].read()
             parser = HistoryParser(filename, data)
+            clear_upload_led()
 
             context['status_str'] = 'File parsed'
             context['errors'] = parser.errors
@@ -462,6 +520,7 @@ def upload_history(request):
         else:
             context['error_str'] = 'Uploaded file is not valid!'
         template = loader.get_template('piremote/upload_result.pug')
+        clear_working_led()
         return HttpResponse(template.render(context, request))
     else:
         template = loader.get_template('piremote/upload_history.pug')
@@ -470,6 +529,7 @@ def upload_history(request):
 
 def smartpl_ajax(request, action):
     """POST /ajax/smartpl/ACTION"""
+    raise_working_led()
     response = dict()
     if action == 'create':
         title = request.POST.get('name')
@@ -496,11 +556,13 @@ def smartpl_ajax(request, action):
     else:
         response['error_str'] = 'Unknown action for smart playlist: {0}'.format(action)
 
+    clear_working_led()
     return JsonResponse(response)
 
 
 def smartplaction_ajax(request, id, action):
     """POST /ajax/smartplaction/ID/ACTION"""
+    raise_working_led()
     response = dict(success=True)
     if action == 'new':
         SmartPlaylistItem.add_new(id)
@@ -549,4 +611,5 @@ def smartplaction_ajax(request, id, action):
         response['success'] = False
         response['error_str'] = 'Unknown smart pl action {0}'.format(action)
 
+    clear_working_led()
     return JsonResponse(response)

@@ -6,7 +6,7 @@ import shutil
 import threading
 from time import sleep
 from mpd import MPDClient, ConnectionError, CommandError
-
+from PiBlaster3.helpers import write_gpio_pipe
 from PiBlaster3.settings import *
 
 
@@ -110,6 +110,8 @@ class UploadIdler:
                 self.main.print_message("OSError: {0}".format(e))
                 return False
 
+        write_gpio_pipe('2 1')  # raise red led
+
         # perform copy
         try:
             shutil.copy(filename, dest)
@@ -117,6 +119,8 @@ class UploadIdler:
             self.main.print_message('COPY FAILED: ' + dest)
             self.main.print_message("IOError: {0}".format(e))
             return False
+
+        write_gpio_pipe('2 0')  # clear red led
 
         return True
 

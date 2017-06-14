@@ -109,7 +109,7 @@ DATABASES = {
         'ENGINE': 'django.db.backends.postgresql_psycopg2',
         'NAME': 'piremote',
         'USER': 'piremote',
-        'PASSWORD': 'piblaster',
+        'PASSWORD': 'piremote',
         'HOST': 'localhost',
         'PORT': '',
     }

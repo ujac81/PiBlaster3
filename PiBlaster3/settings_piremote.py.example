@@ -38,6 +38,7 @@ PB_SET_TIME = False
 PB_MPD_SOCKET = '/run/mpd/socket'
 
 # Pipe for GPIO LED thread to set leds while updating, uploading, ...
+# Set to None to disable inter process communication for LEDs.
 PB_GPIO_PIPE = '/tmp/.piblaster_led_pipe'
 
 PB_USE_GPIO = True

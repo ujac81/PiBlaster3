@@ -48,6 +48,7 @@ class PiBlasterGpioWorker:
             self.led.show_init_done()
             self.buttons.start()
 
+        self.make_pipe()
         self.daemon_loop()
 
         if PB_USE_GPIO:
@@ -60,11 +61,14 @@ class PiBlasterGpioWorker:
         
         :return: 
         """
+        if PB_GPIO_PIPE is None:
+            return
         if os.path.exists(PB_GPIO_PIPE):
             os.remove(PB_GPIO_PIPE)
         os.umask(0o000)
         os.mkfifo(PB_GPIO_PIPE, 0o666)
         self.pipe = posix.open(PB_GPIO_PIPE, posix.O_RDWR)
+        self.print_message('PIPE OPENED {}'.format(PB_GPIO_PIPE))
 
     def print_message(self, msg):
         """
@@ -73,7 +77,7 @@ class PiBlasterGpioWorker:
         :return:
         """
         if DEBUG or self.is_vassal:
-            print('[WORKER] {0}'.format(msg))
+            print('[GPIO WORKER] {0}'.format(msg))
 
     def daemon_loop(self):
         """Main daemon loop.
@@ -94,17 +98,38 @@ class PiBlasterGpioWorker:
 
             time.sleep(50. / 1000.)  # 50ms default in config
 
-            # Check if we can read from pipe
-            r, w, x = select.select([self.pipe], [], [], 0)
-            if self.pipe in r:
-                line = os.read(self.pipe, 1024).decode('utf-8').split()
-                print('PIPE READ %s' % line)
-
             if PB_USE_GPIO:
                 self.buttons.read_buttons()
                 if poll_count % 10 == 0:
-                    self.led.play_leds(led_count)
+                    self.led.set_led_green(led_count % 2)
                     led_count += 1
+
+            if PB_GPIO_PIPE is not None:
+                # Check if we can read from pipe
+                r, w, x = select.select([self.pipe], [], [], 0)
+                if self.pipe in r:
+                    lines = os.read(self.pipe, 1024).decode('utf-8').split('\n')
+                    for line in lines:
+                        toks = line.split()
+                        if len(toks) < 2:
+                            continue
+                        try:
+                            led_id = int(toks[0])
+                        except ValueError:
+                            self.print_message('FIRST TOKEN NEEDS TO BE LED ID: {}'.format(line))
+                            continue
+                        if toks[1] in ['0', '1']:
+                            state = int(toks[1])
+                            self.print_message('LED SET: {} to {}'.format(led_id, state))
+                            if PB_USE_GPIO:
+                                self.led.set_led(led_id, state)
+                        elif toks[1] == 'flash':
+                            duration = float(toks[2])
+                            self.print_message('FLASH LED: {} to {}'.format(led_id, duration))
+                            if PB_USE_GPIO:
+                                self.led.flash_led(led_id, duration)
+                        else:
+                            self.print_message('NO SUCH LED COMMAND: {}'.format(line))
 
         self.print_message('LEAVING')
         # Flash red and yellow led after exit (to indicate shutdown process)
@@ -112,7 +137,6 @@ class PiBlasterGpioWorker:
             self.led.reset_leds()
             self.led.set_led_yellow()
             self.led.set_led_red()
-
 
     def term_handler(self, *args):
         """ Signal handler to stop daemon loop"""

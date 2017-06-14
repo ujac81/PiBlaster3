@@ -10,6 +10,7 @@ import time
 
 from django.conf import settings
 from PiBlaster3.translate_genre import translate_genre, all_genres
+from .helpers import *
 from piremote.models import Rating, History
 
 
@@ -241,6 +242,8 @@ class MPC:
         if start >= pl_len:
             return result
 
+        raise_mpd_led()
+
         items = self.client.playlistinfo("%d:%d" % (start, end))
 
         # make sure we only do 1 SQL query for all ratings.
@@ -266,6 +269,7 @@ class MPC:
             res.append(rat_d[file] if file in rat_d else 0)
             data.append(res)
         result['data'] = data
+        clear_mpd_led()
         return result
 
     def playlistinfo_by_name(self, plname):
@@ -378,28 +382,37 @@ class MPC:
         self.ensure_connected()
         try:
             if cmd == 'back':
+                flash_mpd_led()
                 self.client.previous()
             elif cmd == 'playpause':
+                flash_mpd_led()
                 status = self.get_status()
                 if status['state'] == 'play':
                     self.client.pause()
                 else:
                     self.client.play()
             elif cmd == 'stop':
+                flash_mpd_led()
                 self.client.stop()
             elif cmd == 'next':
+                flash_mpd_led()
                 self.client.next()
             elif cmd == 'decvol':
+                flash_mpd_led()
                 self.change_volume(-3)
             elif cmd == 'incvol':
+                flash_mpd_led()
                 self.change_volume(3)
             elif cmd == 'random':
+                flash_mpd_led()
                 rand = self.get_status_int('random')
                 self.client.random(1 if rand == 0 else 0)
             elif cmd == 'repeat':
+                flash_mpd_led()
                 rep = self.get_status_int('repeat')
                 self.client.repeat(1 if rep == 0 else 0)
             elif cmd.startswith('seekcur'):
+                flash_mpd_led()
                 pct = float(cmd.split()[1])
                 cur = self.get_currentsong()
                 jump = 0.0
@@ -432,9 +445,12 @@ class MPC:
 
         result = []
 
+        raise_mpd_led()
+
         try:
             lsdir = self.client.lsinfo(path)
         except CommandError:
+            clear_mpd_led()
             return None
 
         # check if we have differing artists in directory
@@ -486,6 +502,7 @@ class MPC:
 
                 result.append(res)
 
+        clear_mpd_led()
         return result
 
     def playlist_action(self, cmd, plname, items):
@@ -501,6 +518,7 @@ class MPC:
 
         if (cmd == 'append') or (cmd == 'insert' and 'pos' not in self.get_currentsong()):
             # append at end if command is append or insert and not playing
+            raise_mpd_led()
             for item in items:
                 try:
                     if len(plname):
@@ -508,7 +526,9 @@ class MPC:
                     else:
                         self.client.add(item)
                 except CommandError:
+                    clear_mpd_led()
                     return 'Add error'
+            clear_mpd_led()
             return '%d' % len(items) + ' items appended to playlist ' + plname
         elif cmd == 'clear':
             # clear playlist
@@ -516,6 +536,7 @@ class MPC:
                 self.client.clear()
             except CommandError:
                 return 'Clear error'
+            flash_mpd_led()
             return 'Playlist cleared.'
         elif cmd == 'deleteid' or cmd == 'deleteids':
             # Remove items from playlist
@@ -524,6 +545,7 @@ class MPC:
                     self.client.deleteid(i)
                 except CommandError:
                     return 'Delete error'
+            flash_mpd_led()
             return '%d items removed from playlist' % len(items)
         elif cmd == 'insert':
             # insert (list of) song(s) after current song
@@ -533,11 +555,13 @@ class MPC:
                     self.client.addid(item, pos)
                 except CommandError:
                     return 'Add error'
+            flash_mpd_led()
             return '%d' % len(items) + ' items inserted into playlist ' + plname
         elif cmd == 'playid':
             # Play song with #id now.
             self.client.playid(int(items[0]))
             title = self.get_status_data()['title']
+            flash_mpd_led()
             return 'Playing ' + title
         elif cmd == 'playidnext':
             # Move song with #id after current song
@@ -545,6 +569,7 @@ class MPC:
                 self.client.moveid(int(items[0]), -1)
             except CommandError:
                 return 'Move error'
+            flash_mpd_led()
             return 'Moved 1 song after current song'
         elif cmd == 'playidsnext':
             # Move songs with [#id] after current song
@@ -553,6 +578,7 @@ class MPC:
                     self.client.moveid(int(item), -1)
                 except CommandError:
                     return 'Move error'
+            flash_mpd_led()
             return 'Moved %d songs after current song' % len(items)
         elif cmd == 'moveid':
             # move song(s) with id(s) to end
@@ -560,6 +586,7 @@ class MPC:
                 self.client.moveid(items[0], items[1])
             except CommandError:
                 return 'Move error'
+            flash_mpd_led()
             return 'Moved song to position %d' % (int(items[1])+1)
         elif cmd == 'moveidend' or cmd == 'moveidsend':
             # move song(s) with id(s) to end
@@ -569,6 +596,7 @@ class MPC:
                     self.client.moveid(i, move_to)
                 except CommandError:
                     return 'Move error'
+            flash_mpd_led()
             return 'Moved %d songs to end' % len(items)
         elif cmd == 'randomize':
             # clear playlist
@@ -576,6 +604,7 @@ class MPC:
                 self.client.shuffle()
             except CommandError:
                 return 'Shuffle error'
+            flash_mpd_led()
             return 'Playlist randomized.'
         elif cmd == 'randomize-rest':
             # clear playlist
@@ -585,8 +614,10 @@ class MPC:
                 self.client.shuffle("%d:%d" % (song_pos, pl_len))
             except CommandError:
                 return 'Shuffle error'
+            flash_mpd_led()
             return 'Playlist randomized after current song.'
         elif cmd == 'seed':
+            raise_mpd_led()
             n = int(items[0])
             random.seed()
             db_files = self.client.list('file')
@@ -598,6 +629,7 @@ class MPC:
             add = []
             for i in range(n):
                 add.append(db_files[random.randrange(0, len(db_files))])
+            clear_mpd_led()
             return self.playlist_action('append', plname, add)
 
         return 'Unknown command '+cmd
@@ -622,8 +654,10 @@ class MPC:
         other_args = [s.lower() for s in arg.split(' ')[1:] if len(s)]
 
         try:
+            raise_mpd_led()
             search = self.client.search('any', first_arg)
             search += self.client.search('file', first_arg)
+            clear_mpd_led()
         except CommandError as e:
             return {'error_str': 'Command error in search: %s' % e}
 
@@ -678,9 +712,11 @@ class MPC:
         trunc_str = '(truncated)' if self.truncated else ''
 
         # query all ratings at once
+        raise_sql_led()
         files = sorted(set([x[5] for x in trunc_res]))
         q = Rating.objects.values('path', 'rating').filter(path__in=files)
         rat_d = dict([(x['path'], x['rating']) for x in q])
+        clear_sql_led()
         for item in trunc_res:
             item[6] = rat_d[item[5]] if item[5] in rat_d else 0
 
@@ -699,11 +735,13 @@ class MPC:
         self.ensure_connected()
         if cmd == 'clear':
             self.client.playlistclear(plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s cleared' % plname}
         if cmd == 'delete':
             positions = sorted([int(i) for i in payload], reverse=True)
             for pos in positions:
                 self.client.playlistdelete(plname, pos)
+            flash_mpd_led()
             return {'status_str': '%d items removed from playlist %s' % (len(positions), plname)}
         if cmd == 'list':
             pls = sorted([i['playlist'] for i in self.client.listplaylists() if 'playlist' in i])
@@ -713,29 +751,35 @@ class MPC:
             positions = sorted([int(i) for i in payload], reverse=True)
             for pos in positions:
                 self.client.playlistmove(plname, pos, pl_len-1)
+            flash_mpd_led()
             return {'status_str': '%d items moved to end in playlist %s' % (len(positions), plname)}
         if cmd == 'new':
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
                 return {'error_str': 'Playlist %s exists' % plname, 'plname': ''}
             self.client.save(plname)
             self.client.playlistclear(plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s created' % plname, 'plname': plname}
         if cmd == 'load':
             self.client.load(plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s added to playlist' % plname}
         if cmd == 'rename':
             plname_old = payload[0]
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
                 return {'error_str': 'Playlist %s already exists.' % plname}
             self.client.rename(plname_old, plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s renamed to %s' % (plname_old, plname)}
         if cmd == 'rm':
             self.client.rm(plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s removed' % plname}
         if cmd == 'saveas':
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
                 return {'error_str': 'Playlist %s already exists.' % plname}
             self.client.save(plname)
+            flash_mpd_led()
             return {'status_str': 'Current playlist saved to %s.' % plname}
 
         return {'error_str': 'No such command: %s' % cmd}
@@ -797,6 +841,7 @@ class MPC:
                 else:
                     dates.append(int(date))
 
+        raise_sql_led()
         q = Rating.objects.all().order_by('path')
         if len(ratings) > 0:
             q = q.filter(rating__in=ratings)
@@ -808,6 +853,7 @@ class MPC:
             q = q.filter(artist__in=in_artists)
         if what in ['song'] and len(in_albums) > 0 and in_albums[0] != 'All':
             q = q.filter(album__in=in_albums)
+        clear_sql_led()
 
         if file_mode:
             return [x.path for x in q]

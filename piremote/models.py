@@ -9,6 +9,7 @@ from django.db import models
 from django.conf import settings
 from django.core.exceptions import ObjectDoesNotExist
 from django.utils import timezone
+from PiBlaster3.helpers import *
 
 import datetime
 import os
@@ -59,6 +60,7 @@ class Setting(models.Model):
         :param value: value string
         :return: status message for status bar
         """
+        flash_sql_led()
         q = Setting.objects.filter(key__exact=key)
         if q.count() == 0:
             s = Setting(key=key, value=value)
@@ -103,19 +105,24 @@ class Upload(models.Model):
             if path.lower().endswith(settings.PB_MEDIA_EXT):
                 u = Upload(path=path)
                 u.save()
+                flash_sql_led()
                 return 1
             return 0
 
+        raise_upload_led()
         all_files = [os.path.join(d, f)
                      for d, subd, files in os.walk(path)
                      for f in files if f.lower().endswith(settings.PB_MEDIA_EXT)]
+        clear_upload_led()
 
         added = 0
+        raise_sql_led()
         for f in all_files:
             if not Upload.has_item(f):
                 u = Upload(path=f)
                 u.save()
                 added += 1
+        clear_sql_led()
 
         return added
 
@@ -155,7 +162,9 @@ class History(models.Model):
         :param pattern: search pattern to check for (case insensitive)
         :return: same as get_history
         """
+        raise_sql_led()
         q = History.objects.filter(title__icontains=pattern).order_by('-time')
+        clear_sql_led()
         return [[timezone.localtime(i.time).strftime('%d/%m/%Y %H:%M'), i.title, None, None, None, i.path] for i in q]
 
     @staticmethod
@@ -169,13 +178,13 @@ class History(models.Model):
         :param diff: client time - localtime
         """
         q = History.objects.filter(updated=False)
+        raise_sql_led()
         for item in q:
             delta = datetime.timedelta(seconds=diff)
             item.time += delta
             item.updated = True
             item.save()
-            print('UPDATE')
-            print(item)
+        clear_sql_led()
 
 
 class Rating(models.Model):
@@ -222,6 +231,7 @@ class Rating(models.Model):
         q.rating = rating
         q.original = False
         q.save()
+        flash_sql_led()
 
         if rating == 0:
             return dict(status_str='Removed rating for %s' % q.title)
@@ -229,7 +239,9 @@ class Rating(models.Model):
 
     @staticmethod
     def get_distinct(field):
+        raise_sql_led()
         q = Rating.objects.values(field).distinct()
+        clear_sql_led()
         return sorted([x[field] for x in q if x[field] != ''])
 
 
@@ -344,6 +356,7 @@ class SmartPlaylistItem(models.Model):
             position = q[0].position + 1
         s = SmartPlaylistItem(playlist=l, position=position)
         s.save()
+        flash_sql_led()
 
     @staticmethod
     def change_type(idx, new_type):
@@ -356,6 +369,7 @@ class SmartPlaylistItem(models.Model):
         s.negate = False
         s.save()
         SmartPlaylistItem.rm_payloads(idx)
+        flash_sql_led()
 
     @staticmethod
     def move_item(idx, direction):
@@ -375,6 +389,7 @@ class SmartPlaylistItem(models.Model):
         s2.position = my_pos
         s.save()
         s2.save()
+        flash_sql_led()
 
     @staticmethod
     def add_payload(idx, payload):
@@ -383,6 +398,7 @@ class SmartPlaylistItem(models.Model):
         if len(q) == 0:
             p = SmartPlaylistItemPayload(parent=s, item=payload)
             p.save()
+            flash_sql_led()
             return True
         return False
 
@@ -392,6 +408,7 @@ class SmartPlaylistItem(models.Model):
         q = SmartPlaylistItemPayload.objects.filter(parent=s).filter(item=payload)
         if len(q) > 0:
             q.delete()
+            flash_sql_led()
             return True
         return False
 
@@ -407,6 +424,7 @@ class SmartPlaylistItem(models.Model):
         for item in payloads:
             p = SmartPlaylistItemPayload(parent=s, item=item)
             p.save()
+        flash_sql_led()
 
 
 class SmartPlaylistItemPayload(models.Model):

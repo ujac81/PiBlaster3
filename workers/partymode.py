@@ -11,6 +11,7 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "PiBlaster3.settings")
 
 from mpd import MPDClient, ConnectionError, CommandError
 from time import sleep
+from PiBlaster3.helpers import write_gpio_pipe
 from PiBlaster3.settings import *
 from ws4redis.publisher import RedisPublisher
 from ws4redis.redis_store import RedisMessage
@@ -108,10 +109,12 @@ class MPC_Idler:
 
         # Append randomly until high_water mark reached, if below low water mark.
         if pl_remain < party_low_water:
+            write_gpio_pipe("4 1")  # raise white led
             pl_add = max(party_high_water - pl_remain, 0)
             db_files = self.client.list('file')
             for i in range(pl_add):
                 self.client.add(db_files[random.randrange(0, len(db_files))])
+            write_gpio_pipe("4 0")  # clear white led
 
         # Shrink playlist until 'remain' songs left before current item.
         if pos > party_remain:
@@ -131,6 +134,11 @@ class MPC_Idler:
         if 'update' in res and 'updating_db' not in self.client.status():
             # let ratings scanner do rescan if database updated
             self.main.rescan_ratings = True
+            # clear yellow LED
+            write_gpio_pipe('1 0')
+        elif 'update' in res:
+            # raise yellow LED
+            write_gpio_pipe('1 1')
 
         if 'playlist' in res:
             # Tell playlist view to update its status.

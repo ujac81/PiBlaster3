@@ -5,7 +5,7 @@ import xml.etree.ElementTree as ET
 
 from piremote.models import History, Rating
 from django.core.exceptions import ObjectDoesNotExist
-
+from .helpers import *
 
 class HistoryParser:
     """Parse uploaded history from XML and apply to database.
@@ -34,7 +34,8 @@ class HistoryParser:
 
     def parse_django(self):
         """Parser for XML files exported by PiBlaster3"""
-        q_all = Rating.objects.all()
+        raise_sql_led()
+        q_all = History.objects.all()
         insert = []  # for later insert into history
         for o in [x for x in self.root if x.tag == 'object']:
             path = o.find("field[@name='path']").text or None
@@ -93,3 +94,5 @@ class HistoryParser:
             # We could do this faster, but should work.
             h = History(title=item[0], path=item[1], time=item[2], updated=item[3])
             h.save()
+
+        clear_sql_led()

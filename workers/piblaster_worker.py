@@ -13,6 +13,7 @@ import signal
 import time
 
 from PiBlaster3.settings import *
+from PiBlaster3.helpers import write_gpio_pipe
 from workers.uploader import Uploader
 from workers.partymode import MPDService
 from workers.ratings_scanner import RatingsScanner

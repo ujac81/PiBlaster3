@@ -4,6 +4,7 @@ from mpd import MPDClient, ConnectionError, CommandError
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import HeaderNotFoundError
 from mutagen.mp3 import MP3
+from PiBlaster3.helpers import write_gpio_pipe
 from PiBlaster3.settings import *
 import mutagen
 import os
@@ -28,6 +29,7 @@ class RatingsScanner:
         Does not block too much, will leave scanning loop if keep_run is False in main.
         """
         self.main.print_message("RESCANNING RATINGS")
+        write_gpio_pipe("1 1\n3 1")  # raise yellow and blue led
 
         mpd_files = self.get_mpd_files()
         if mpd_files is None or len(mpd_files) == 0:
@@ -44,7 +46,6 @@ class RatingsScanner:
         if music_path is None:
             # there was an mpd error, retry next loop
             return
-
         to_add = []
         for item in not_in_db:
             filename = os.path.join(music_path, item)
@@ -66,9 +67,12 @@ class RatingsScanner:
             self.main.print_message('FOUND %d new files in mpd db' % len(to_add))
             self.main.print_message('FOUND %d files in db which are not in mpd db' % len(to_remove))
 
+        write_gpio_pipe("1 0\n3 0")  # clear yellow and blue led
+        write_gpio_pipe("3 1")  # raise blue led
         self.alter_db('insert_many', to_add)
         self.alter_db('remove_many', to_remove)
         self.main.rescan_ratings = False
+        write_gpio_pipe("3 0")  # clear blue led
 
     def get_mpd_files(self):
         """Fetch list of uri names from MPD databse.
@@ -191,6 +195,8 @@ class RatingsScanner:
         :param file: full file name
         :return: (uri, title, artist, album, genre, date, rating)
         """
+        write_gpio_pipe('2 flash 0.2')
+
         try:
             m = mutagen.File(file)
         except HeaderNotFoundError as e:

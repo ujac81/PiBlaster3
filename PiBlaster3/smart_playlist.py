@@ -3,6 +3,7 @@
 
 from piremote.models import Rating, History, SmartPlaylist, SmartPlaylistItem
 from PiBlaster3.mpc import MPC
+from .helpers import *
 
 from django.db.models import Q
 from django.core.exceptions import ObjectDoesNotExist
@@ -52,6 +53,7 @@ class ApplySmartPlaylist:
             if q_item is not None:
                 q_list.append(q_item)
 
+        raise_sql_led()
         if len(q_list) == 0:
             qrating = Rating.objects.all().order_by('?')
         else:
@@ -101,6 +103,7 @@ class ApplySmartPlaylist:
         # Filter intros from result
         files = []
         if len(filters.filter(itemtype=SmartPlaylistItem.PREVENT_INTROS)):
+            raise_mpd_led()
             mpc.ensure_connected()
             for item in qrating:
                 info = mpc.client.find('file', item.path)
@@ -123,9 +126,11 @@ class ApplySmartPlaylist:
                 files.append(item.path)
                 if len(files) == self.amount:
                     break
+            clear_mpd_led()
         else:
             files = [x.path for x in qrating[:self.amount]]
 
+        clear_sql_led()
         if len(files) == 0:
             self.error = True
             self.result_string = 'Filter deselected all media items -- Nothing to add!'

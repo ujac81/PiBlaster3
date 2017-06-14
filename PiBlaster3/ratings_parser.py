@@ -6,6 +6,8 @@ import xml.etree.ElementTree as ET
 from piremote.models import Rating
 from django.core.exceptions import ObjectDoesNotExist
 
+from .helpers import *
+
 
 class RatingsParser:
     """Parse uploaded ratings from XML and apply to database.
@@ -35,6 +37,7 @@ class RatingsParser:
     def parse_django(self):
         """Parser for XML files exported by PiBlaster3"""
         q_all = Rating.objects.all()
+        raise_sql_led()
         for o in [x for x in self.root if x.tag == 'object']:
             path = o.find("field[@name='path']").text
             rating = int(o.find("field[@name='rating']").text) or 0
@@ -85,3 +88,5 @@ class RatingsParser:
                 self.skipped_ratings.append(add)
             else:
                 self.not_parsed_ratings.append(add)
+
+        clear_sql_led()
