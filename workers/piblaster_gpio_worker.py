@@ -9,11 +9,13 @@ Communication to piremote app via SQL database
 """
 
 import os
+import posix
+import select
 import signal
 import time
 
 from PiBlaster3.settings import *
-if PIBLASTER_USE_GPIO:
+if PB_USE_GPIO:
     from workers.gpio import LED, Buttons
 
 
@@ -26,8 +28,8 @@ class PiBlasterGpioWorker:
         self.is_vassal = 'UWSGI_VASSAL' in os.environ
         self.led = None
         self.buttons = None
-        self.pipe_name = '/tmp/.piblaster_led_pipe'
-        if PIBLASTER_USE_GPIO:
+        self.pipe = None
+        if PB_USE_GPIO:
             self.led = LED(self)
             self.buttons = Buttons(self)
 
@@ -39,7 +41,7 @@ class PiBlasterGpioWorker:
         else:
             print('PiBlasterWorker running in debug or as vassal')
 
-        if PIBLASTER_USE_GPIO:
+        if PB_USE_GPIO:
             from workers.gpio import PB_GPIO
             PB_GPIO.init_gpio()
             self.led.init_leds()
@@ -48,7 +50,7 @@ class PiBlasterGpioWorker:
 
         self.daemon_loop()
 
-        if PIBLASTER_USE_GPIO:
+        if PB_USE_GPIO:
             self.buttons.join()
             self.led.join()
             PB_GPIO.cleanup(self)
@@ -58,10 +60,11 @@ class PiBlasterGpioWorker:
         
         :return: 
         """
-        if os.path.exists(self.pipe_name):
-            os.remove(self.pipe_name)
+        if os.path.exists(PB_GPIO_PIPE):
+            os.remove(PB_GPIO_PIPE)
         os.umask(0o000)
-        os.mkfifo(self.pipe_name, 0o666)
+        os.mkfifo(PB_GPIO_PIPE, 0o666)
+        self.pipe = posix.open(PB_GPIO_PIPE, posix.O_RDWR)
 
     def print_message(self, msg):
         """
@@ -91,7 +94,13 @@ class PiBlasterGpioWorker:
 
             time.sleep(50. / 1000.)  # 50ms default in config
 
-            if PIBLASTER_USE_GPIO:
+            # Check if we can read from pipe
+            r, w, x = select.select([self.pipe], [], [], 0)
+            if self.pipe in r:
+                line = os.read(self.pipe, 1024).decode('utf-8').split()
+                print('PIPE READ %s' % line)
+
+            if PB_USE_GPIO:
                 self.buttons.read_buttons()
                 if poll_count % 10 == 0:
                     self.led.play_leds(led_count)
@@ -99,7 +108,7 @@ class PiBlasterGpioWorker:
 
         self.print_message('LEAVING')
         # Flash red and yellow led after exit (to indicate shutdown process)
-        if PIBLASTER_USE_GPIO:
+        if PB_USE_GPIO:
             self.led.reset_leds()
             self.led.set_led_yellow()
             self.led.set_led_red()

@@ -24,13 +24,13 @@ class PB_GPIO:
 
     @staticmethod
     def init_gpio():
-        if PIBLASTER_USE_GPIO:
+        if PB_USE_GPIO:
             GPIO.setmode(GPIO.BCM)
             GPIO.setwarnings(False)
 
     @staticmethod
     def cleanup():
-        if PIBLASTER_USE_GPIO:
+        if PB_USE_GPIO:
             GPIO.cleanup()
 
 
@@ -52,7 +52,7 @@ class LEDThread(threading.Thread):
         """Initialize GPIO ports and set init_done to true, so LEDs may be set.
         """
 
-        self.leds = PIBLASTER_LEDS
+        self.leds = PB_LEDS
         self.state = [0]*len(self.leds)
 
         for led in self.leds:
@@ -106,7 +106,7 @@ class LEDThread(threading.Thread):
         self.main.print_message("[THREAD] LED driver leaving...")
         for i in range(len(self.leds)):
             self.set_led_by_gpio(i, 0)
-        self.set_led_by_gpio(PIBLASTER_LED_YELLOW, 1)
+        self.set_led_by_gpio(PB_LED_YELLOW, 1)
 
 
 class LED:
@@ -122,7 +122,7 @@ class LED:
         self.queue = queue.Queue()  # use one queue for all LEDS
         self.queue_lock = threading.Lock()
         self.led_thread = None
-        if PIBLASTER_USE_GPIO:
+        if PB_USE_GPIO:
             self.led_thread = LEDThread(self.main, self.queue, self.queue_lock)
 
     def init_leds(self):
@@ -287,10 +287,10 @@ class Buttons:
         Not called in __init__() because of later GPIO init in LED class.
         """
 
-        if PIBLASTER_USE_GPIO is False:
+        if PB_USE_GPIO is False:
             return
 
-        btns = PIBLASTER_BUTTONS
+        btns = PB_BUTTONS
         
         self.btn_thread = \
             ButtonThread(self.main, btns,
