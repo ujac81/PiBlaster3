@@ -193,13 +193,13 @@ class Rating(models.Model):
     Database is seeded by piblaster_worker process on any update of the MPD database.
     Ratings are read from file tags if such, ratings made by user here are stored in SQL database only.
     """
-    path = models.FilePathField(max_length=500)
+    path = models.FilePathField(db_index=True, max_length=500)
     title = models.CharField(max_length=256, default='')
-    artist = models.CharField(max_length=256, default='')
-    album = models.CharField(max_length=256, default='')
-    genre = models.CharField(max_length=256, default='unknown')
-    date = models.SmallIntegerField(default=0)
-    rating = models.SmallIntegerField(default=0)  # [0..5]
+    artist = models.CharField(db_index=True, max_length=256, default='')
+    album = models.CharField(db_index=True, max_length=256, default='')
+    genre = models.CharField(db_index=True, max_length=256, default='unknown')
+    date = models.SmallIntegerField(db_index=True, default=0)
+    rating = models.SmallIntegerField(db_index=True, default=0)  # [0..5]
     original = models.BooleanField(default=False)  # if rating came from file originally
 
     @staticmethod

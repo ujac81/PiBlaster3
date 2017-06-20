@@ -36,6 +36,7 @@ class ApplySmartPlaylist:
           
         :param plname: playlist to add to ('' for current).
         """
+        logger = PbLogger('PROFILE SMARTPL')
         try:
             s = SmartPlaylist.objects.get(id=self.filter_id)
         except ObjectDoesNotExist:
@@ -47,23 +48,29 @@ class ApplySmartPlaylist:
             itemtype=SmartPlaylistItem.EMPTY).order_by('position')
 
         # first apply all filters with weight 1 directly
+        logger.print_step('weight 1 filters init')
         q_list = []
         for filt in filters.filter(weight=1):
             q_item = self.get_q_item_from_filter(filt, plname)
             if q_item is not None:
                 q_list.append(q_item)
+            logger.print_step('weight 1 filter applied: {}'.format(filt.itemtype))
 
         raise_sql_led()
+
+        qrating = Rating.objects.all()
         if len(q_list) == 0:
-            qrating = Rating.objects.all().order_by('?')
+            qrating = qrating.order_by('?')
         else:
             # apply all weight = 1 filters
-            qrating = Rating.objects.filter(reduce(operator.and_, q_list)).order_by('?')
+            qrating = qrating.filter(reduce(operator.and_, q_list)).order_by('?')
 
         if len(qrating) == 0:
             self.error = True
             self.result_string = 'Filter deselected all media items -- Nothing to add!'
             return
+
+        logger.print_step('Objects after weight 1 filters selected')
 
         # Apply weighted filters on remaining items:
         # Select items matching the filter (in) and items not matching the filter (out)
@@ -72,11 +79,15 @@ class ApplySmartPlaylist:
         # Collect all ids and set current query to a randomized list of the
         # selected ids. Then apply next filter on remaining set and so on.
         for filt in filters.exclude(weight=1).exclude(weight=0):
+            logger.print_step('weighted filter: {}'.format(filt.itemtype))
             q_item = self.get_q_item_from_filter(filt, plname)
+            logger.print_step('query generated')
             if q_item is None:
                 continue
-            q_in = qrating.filter(q_item).order_by('?')
-            q_out = qrating.exclude(q_item).order_by('?')
+            q_in = qrating.filter(q_item).order_by('?').values('id')
+            logger.print_step('IN filtered')
+            q_out = qrating.exclude(q_item).order_by('?').values('id')
+            logger.print_step('OUT filtered')
             len_in = len(q_in)
             len_out = int(len_in/filt.weight * (1-filt.weight))
             if len_out > len(q_out):
@@ -84,8 +95,8 @@ class ApplySmartPlaylist:
                 len_out = len(q_out)
                 len_in = int(len_out/(1-filt.weight)*filt.weight)
 
-            ids1 = [x.id for x in q_in[:len_in]]
-            ids2 = [x.id for x in q_out[:len_out]]
+            ids1 = [x['id'] for x in q_in[:len_in]]
+            ids2 = [x['id'] for x in q_out[:len_out]]
             # ids now holds a list of random ids in rating table with a mixture of the current filter.
             ids = ids1 + ids2
 
@@ -94,9 +105,14 @@ class ApplySmartPlaylist:
                 self.result_string = 'Filter deselected all media items -- Nothing to add!'
                 return
 
+            logger.print_step('ids selected')
+
             qrating = Rating.objects.filter(id__in=ids).order_by('?')
+            logger.print_step('filter applied')
 
             # END for filt in filters with weight < 1 #
+
+        logger.print_step('All SQL filters applied')
 
         mpc = MPC()
 
@@ -126,9 +142,12 @@ class ApplySmartPlaylist:
                 files.append(item.path)
                 if len(files) == self.amount:
                     break
+
             clear_mpd_led()
+            logger.print_step('prevent intros filter applied')
         else:
             files = [x.path for x in qrating[:self.amount]]
+            logger.print_step('SQL selected')
 
         clear_sql_led()
         if len(files) == 0:
@@ -137,6 +156,7 @@ class ApplySmartPlaylist:
             return
 
         self.result_string = mpc.playlist_action('append', plname, files)
+        logger.print('apply_filters() done.')
 
     @staticmethod
     def get_q_item_from_filter(filt, plname=''):

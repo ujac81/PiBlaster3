@@ -36,9 +36,13 @@ PiRemote.do_ajax = (req) ->
             req.success(data) if req.success
             return
         error: (jqXHR) ->
-            console.log 'AJAX ERROR'
-            console.log jqXHR
-            PiRemote.setErrorText 'AJAX communication error! You might want to reload.'
+            # Call error function if given, otherwise indicate AJAX error
+            if req.error
+                req.error()
+            else
+                console.log 'AJAX ERROR'
+                console.log jqXHR
+                PiRemote.setErrorText 'AJAX communication error! You might want to reload.'
             return
     return
 

@@ -112,15 +112,23 @@ PiRemote.get_playlist_by_name = (plname) ->
 # Invoke AJAX post of changes in playlist.
 # Called if playlist version has changed.
 PiRemote.get_playlist_changes = (last_version) ->
-    PiRemote.playlist_poll_started = false
-    PiRemote.do_ajax
-        url: 'plchanges'
-        method: 'GET'
-        data:
-            version: last_version
-        success: (data) ->
-            PiRemote.pl_apply_changes data   # <-- change playlist
-            return
+    window.setTimeout ( ->
+        PiRemote.playlist_poll_started = false
+        PiRemote.do_ajax
+            url: 'plchanges'
+            method: 'GET'
+            data:
+                version: last_version
+            success: (data) ->
+                PiRemote.pl_apply_changes data   # <-- change playlist
+                return
+            error: (data) ->
+                # If any error occurs (mpd fucks up to read changes or so), reload whole playlist
+                PiRemote.pl_build_home()
+                return
+        return
+    ), 200  # <-- wait for MPD to finish operations (e.g. deleteallbutcur is two operations)
+    
     return
 
 

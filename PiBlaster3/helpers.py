@@ -2,6 +2,52 @@
 from PiBlaster3.settings import *
 
 import os
+import time
+
+
+class PbLogger:
+    """Logging object with integrated time duration measurement
+    """
+
+    def __init__(self, head='PROFILE'):
+        """
+        
+        """
+        self.head = head
+        if PROFILE:
+            self.start_time = time.time()
+            self.start_interval = self.start_time
+
+    def print_step(self, msg):
+        """
+        
+        :param msg: 
+        :return: 
+        """
+        if PROFILE:
+            now = time.time()
+            interval = int((now-self.start_interval)*1e3)
+            total = int((now-self.start_time) * 1e3)
+            self.start_interval = now
+            print('[{}]: {} ({} ms step, {} ms total)'.format(self.head, msg, interval, total))
+
+    def print(self, msg):
+        """
+        
+        :param msg: 
+        :return: 
+        """
+        if PROFILE:
+            now = time.time()
+            total = int((now-self.start_time) * 1e3)
+            if total > 1000 and self.head == 'PROFILE VIEW':
+                print('!!! Critical response time > 1s !!!')
+            print('[{}]: {} ({} ms)'.format(self.head, msg, total))
+
+
+def print_debug(msg):
+    if DEBUG:
+        print('[DEBUG] {}'.format(msg))
 
 
 def write_gpio_pipe(msg):

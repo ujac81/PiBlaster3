@@ -2,12 +2,13 @@
 
 """
 
-from mpd import MPDClient, ConnectionError, CommandError
+from mpd import MPDClient, ConnectionError, CommandError, ProtocolError
 import os
 import random
 import re
 import time
 
+from django.db.models import Q
 from django.conf import settings
 from PiBlaster3.translate_genre import translate_genre, all_genres
 from .helpers import *
@@ -24,34 +25,43 @@ class MPC:
 
     def __init__(self):
         """Create MPDClient and connect."""
+        logger = PbLogger('PROFILE MPD')
         self.connected = False
         self.error = False
         self.client = MPDClient()
         self.client.timeout = 10
         self.reconnect()
         self.truncated = 0  # set to the truncate value if truncated (search, list, ...)
+        logger.print('__init__')
+
+    def __del__(self):
+        """Disconect if deleted by middleware and print debug"""
+        print_debug('MPD DEL')
 
     def reconnect(self):
         """Try connect 5 times, if not successful self.connected will be False."""
 
+        logger = PbLogger('PROFILE MPD')
         self.connected = False
         self.error = False
 
         try:
             self.client.disconnect()
-        except ConnectionError:
+        except (ConnectionError, BrokenPipeError, ValueError):
             pass
 
         for i in range(5):
             try:
                 self.client.connect('localhost', 6600)
                 self.connected = True
-            except ConnectionError:
+            except (ConnectionError, BrokenPipeError, ValueError):
                 time.sleep(0.1)
             if self.connected:
+                logger.print('reconnect()')
                 return True
 
         self.error = True
+        logger.print('reconnect() [FAIL!]')
         return False
 
     def get_stats(self):
@@ -105,7 +115,8 @@ class MPC:
         for i in range(5):
             try:
                 res = self.client.status()
-            except (ConnectionError, CommandError):
+            except (ConnectionError, CommandError, ProtocolError, BrokenPipeError, ValueError):
+                print_debug('MPD RECONNECT')
                 self.reconnect()
         res['error_str'] = self.error
         return res
@@ -229,6 +240,8 @@ class MPC:
         :return: {version=N, length=N, data=[[pos, title, artist, album, length, id, file, rating]]}
         """
 
+        logger = PbLogger('PROFILE MPD')
+
         pl_len = self.get_status_int('playlistlength')
         pl_ver = self.get_status_int('playlist')
         result = {'version': pl_ver, 'data': [], 'length': pl_len}
@@ -246,10 +259,15 @@ class MPC:
 
         items = self.client.playlistinfo("%d:%d" % (start, end))
 
+        logger.print_step('items')
+
         # make sure we only do 1 SQL query for all ratings.
+        raise_sql_led()
         files = [x['file'] for x in items]
-        q = Rating.objects.values('path', 'rating').filter(path__in=files)
+        q = Rating.objects.filter(Q(path__in=files)).values('path', 'rating').all()
         rat_d = dict([(x['path'], x['rating']) for x in q])
+        logger.print_step('sql')
+        clear_sql_led()
 
         data = []
         for item in items:
@@ -270,6 +288,7 @@ class MPC:
             data.append(res)
         result['data'] = data
         clear_mpd_led()
+        logger.print('playlistinfo() done.')
         return result
 
     def playlistinfo_by_name(self, plname):
@@ -350,7 +369,7 @@ class MPC:
 
         # make fast query for all ratings
         files = [x['file'] for x in changes]
-        q = Rating.objects.values('path', 'rating').filter(path__in=files)
+        q = Rating.objects.filter(Q(path__in=files)).values('path', 'rating').all()
         rat_d = dict([(x['path'], x['rating']) for x in q])
 
         result = []
@@ -438,6 +457,8 @@ class MPC:
         :return: Array of ['1', title, '', '', '', directory] for dirs
                  Array of ['2', title, artist, album, length, file, ext, date, rating] for audio files
         """
+        logger = PbLogger('PROFILE MPD')
+
         if path is None:
             return None
 
@@ -465,10 +486,16 @@ class MPC:
                         mixed_artists = True
                         break
 
+        logger.print_step('browse mpd done')
+
         # query all ratings at once
+        raise_sql_led()
         files = [x['file'] for x in lsdir if 'file' in x]
-        q = Rating.objects.values('path', 'rating').filter(path__in=files)
+        q = Rating.objects.filter(Q(path__in=files)).values('path', 'rating').all()
         rat_d = dict([(x['path'], x['rating']) for x in q])
+        clear_sql_led()
+
+        logger.print_step('browse sql done')
 
         for item in lsdir:
             if 'directory' in item:
@@ -503,6 +530,7 @@ class MPC:
                 result.append(res)
 
         clear_mpd_led()
+        logger.print('browse() done')
         return result
 
     def playlist_action(self, cmd, plname, items):
@@ -540,16 +568,16 @@ class MPC:
             return 'Playlist cleared.'
         elif cmd == 'deleteallbutcur':
             flash_mpd_led()
-            now_id = self.get_status_int('songid', -1)
-            all_ids = [int(x['id']) for x in self.client.playlistinfo() if int(x['id']) != now_id]
-            for song_id in all_ids:
-                try:
-                    self.client.deleteid(song_id)
-                except CommandError:
-                    clear_mpd_led()
-                    return 'Delete error'
+            now_pos = self.get_status_int('song', -1)
+            now_len = self.get_status_int('playlistlength', -1)
+            if now_pos == -1:
+                self.client.clear()
+            else:
+                self.client.delete((0, now_pos))
+                self.client.delete((1,))
+            new_len = self.get_status_int('playlistlength', -1)
             clear_mpd_led()
-            return 'Deleted {} items from playlist.'.format(len(all_ids))
+            return 'Deleted {} items from playlist.'.format(now_len-new_len)
         elif cmd == 'deleteid' or cmd == 'deleteids':
             # Remove items from playlist
             for i in sorted([int(x) for x in items], reverse=True):
@@ -653,6 +681,7 @@ class MPC:
         :return: {status: '', error: '', result: [title, artist, album, length, '', filename]}
                     Dummy element added at position #4 to have filename at position #5
         """
+        logger = PbLogger('PROFILE MPD')
         if arg is None or len(arg) < 3:
             return {'error_str': 'Search pattern must contain at least 3 characters!'}
 
@@ -672,6 +701,8 @@ class MPC:
             clear_mpd_led()
         except CommandError as e:
             return {'error_str': 'Command error in search: %s' % e}
+
+        logger.print_step('search init done.')
 
         has_files = []
         for item in search:
@@ -716,6 +747,8 @@ class MPC:
             res.append(0)  # ratings placeholder
             result.append(res)
 
+        logger.print_step('search items filtered.')
+
         # truncate to N results
         trunc_res = result[:limit]
         self.truncated = 0
@@ -726,11 +759,14 @@ class MPC:
         # query all ratings at once
         raise_sql_led()
         files = sorted(set([x[5] for x in trunc_res]))
-        q = Rating.objects.values('path', 'rating').filter(path__in=files)
+        q = Rating.objects.filter(Q(path__in=files)).values('path', 'rating').all()
         rat_d = dict([(x['path'], x['rating']) for x in q])
         clear_sql_led()
         for item in trunc_res:
             item[6] = rat_d[item[5]] if item[5] in rat_d else 0
+
+        logger.print_step('search SQL done.')
+        logger.print('search() done.')
 
         return {'status_str': '%d items found %s' % (len(result), trunc_str),
                 'search': trunc_res,
@@ -810,6 +846,7 @@ class MPC:
         :return: List of results for browse view for next category:
                 if what == 'genre' results will be artists and so on.
         """
+        logger = PbLogger('PROFILE MPD')
         self.ensure_connected()
 
         seek = 'file' if file_mode or what == 'song' else what
@@ -855,36 +892,48 @@ class MPC:
 
         raise_sql_led()
         q = Rating.objects.all().order_by('path')
+        logger.print_step('list_by: SQL select all')
         if len(ratings) > 0:
             q = q.filter(rating__in=ratings)
+            logger.print_step('list_by: ratings filtered')
         if what in ['genre', 'artist', 'album', 'song'] and len(dates) > 0:
             q = q.filter(date__in=dates)
+            logger.print_step('list_by: dates filtered')
         if what in ['artist', 'album', 'song'] and len(in_genres) > 0 and in_genres[0] != 'All':
             q = q.filter(genre__in=in_genres)
+            logger.print_step('list_by: genres filtered')
         if what in ['album', 'song'] and len(in_artists) > 0 and in_artists[0] != 'All':
             q = q.filter(artist__in=in_artists)
+            logger.print_step('list_by: artists filtered')
         if what in ['song'] and len(in_albums) > 0 and in_albums[0] != 'All':
             q = q.filter(album__in=in_albums)
+            logger.print_step('list_by: albums filtered')
         clear_sql_led()
 
+        res = []
         if file_mode:
-            return [x.path for x in q]
+            res = [x.path for x in q]
         if what == 'date':
-            return sorted(set([x.date for x in q]))
+            q2 = q.order_by('date').distinct('date')
+            res = [x.date for x in q2]
         if what == 'genre':
-            return sorted(set([x.genre for x in q]))
+            q2 = q.order_by('genre').distinct('genre')
+            res = [x.genre for x in q2]
         if what == 'artist':
-            return sorted(set([x.artist for x in q]))
+            q2 = q.order_by('artist').distinct('artist')
+            res = [x.artist for x in q2]
         if what == 'album':
-            return sorted(set([x.album for x in q]))
+            q2 = q.order_by('album').distinct('album')
+            res = [x.album for x in q2]
         if what == 'song':
-            res = []
             for x in q:
                 if x.artist != '':
                     res.append([x.path, x.artist + ' - ' + x.title, x.rating])
                 else:
                     res.append([x.path, x.title, x.rating])
-            return res
+
+        logger.print('list_by() done.')
+        return res
 
     def seed_by(self, count, plname, what, ratings, dates, genres, artists, albums):
         """Random add items to playlist from browse view.
