@@ -191,14 +191,10 @@ class MPC:
         data = {}
         if len(current) == 0:
             current = {'album': '', 'artist': '', 'title': 'Not Playing!', 'time': 0, 'file': ''}
-        if 'title' in current:
-            data['title'] = current['title']
-        else:
-            no_ext = os.path.splitext(current['file'])[0]
-            data['title'] = os.path.basename(no_ext).replace('_', ' ')
+        data['title'] = save_item(current, 'title')
         data['time'] = current['time'] if 'time' in current else 0
         for key in ['album', 'artist', 'date', 'id', 'file']:
-            data[key] = current[key] if key in current else ''
+            data[key] = save_item(current, key)
         for key in ['elapsed', 'random', 'repeat', 'volume', 'state', 'playlist', 'playlistlength']:
             data[key] = status[key] if key in status else '0'
         data['rating'] = Rating.get_rating(current['file'])
@@ -272,14 +268,10 @@ class MPC:
         data = []
         for item in items:
             file = item['file'] if 'file' in item else ''
-            res = [item['pos']]
-            if 'title' in item:
-                res.append(item['title'])
-            elif 'file' in item:
-                no_ext = os.path.splitext(item['file'])[0]
-                res.append(os.path.basename(no_ext).replace('_', ' '))
-            res.append(item['artist'] if 'artist' in item else '')
-            res.append(item['album'] if 'album' in item else '')
+            res = list([item['pos']])
+            res.append(save_title(item))
+            res.append(save_item(item, 'artist'))
+            res.append(save_item(item, 'album'))
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append(item['id'])
@@ -307,15 +299,8 @@ class MPC:
         result = []
         pos = 0
         for item in info:
-            res = ''
-            if 'artist' in item:
-                res += item['artist'] + ' - '
-            if 'title' in item:
-                res += item['title']
-            else:
-                no_ext = os.path.splitext(item['file'])[0]
-                res = os.path.basename(no_ext).replace('_', ' ')
-            result.append([item['file'], res, pos])
+            title = save_artist_title(item)
+            result.append([item['file'], title, pos])
             pos += 1
         return result
 
@@ -347,10 +332,12 @@ class MPC:
         res = self.client.find('file', file)
         for item in res:
             if 'genre' in item:
-                m = re.match(r"^\((\d+)", item['genre'])
+                m = re.match(r"^\((\d+)", save_item(item, 'genre'))
                 if m:
                     item['genre'] = translate_genre(int(m.group(1)))
             item['rating'] = Rating.get_rating(item['file'])
+            for check in ['title', 'artist', 'album']:
+                item[check] = save_item(item, check)
         return res
 
     def playlist_changes(self, version):
@@ -376,14 +363,10 @@ class MPC:
         for change in changes:
             item = self.client.playlistinfo(change['pos'])[0]
             file = item['file'] if 'file' in item else ''
-            res = [item['pos']]
-            if 'title' in item:
-                res.append(item['title'])
-            elif 'file' in item:
-                no_ext = os.path.splitext(item['file'])[0]
-                res.append(os.path.basename(no_ext).replace('_', ' '))
-            res.append(item['artist'] if 'artist' in item else '')
-            res.append(item['album'] if 'album' in item else '')
+            res = list([item['pos']])
+            res.append(save_title(item))
+            res.append(save_item(item, 'artist'))
+            res.append(save_item(item, 'album'))
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append(item['id'])
@@ -481,8 +464,8 @@ class MPC:
             if 'file' in item:
                 if 'artist' in item:
                     if last_artist is None:
-                        last_artist = item['artist']
-                    elif last_artist != item['artist']:
+                        last_artist = save_item(item, 'artist')
+                    elif last_artist != save_item(item, 'artist'):
                         mixed_artists = True
                         break
 
@@ -506,15 +489,15 @@ class MPC:
                 res = ['2']
                 if 'title' in item:
                     if mixed_artists and 'artist' in item:
-                        res.append(item['artist'] + ' - ' + item['title'])
+                        res.append(save_artist_title(item))
                     else:
-                        res.append(item['title'])
+                        res.append(save_title(item))
                 else:
                     no_ext = os.path.splitext(item['file'])[0]
                     res.append(os.path.basename(no_ext).replace('_', ' '))
 
-                res.append(item['artist'] if 'artist' in item else '')
-                res.append(item['album'] if 'album' in item else '')
+                res.append(save_item(item, 'artist'))
+                res.append(save_item(item, 'album'))
                 length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
                 res.append(length)
                 res.append(item['file'])
@@ -733,13 +716,9 @@ class MPC:
                     continue
 
             res = []
-            if 'title' in item:
-                res.append(item['title'])
-            else:
-                no_ext = os.path.splitext(item['file'])[0]
-                res.append(os.path.basename(no_ext).replace('_', ' '))
-            res.append(item['artist'] if 'artist' in item else '')
-            res.append(item['album'] if 'album' in item else '')
+            res.append(save_title(item))
+            res.append(save_item(item, 'artist'))
+            res.append(save_item(item, 'album'))
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append('')  # dummy to push file to pos #5

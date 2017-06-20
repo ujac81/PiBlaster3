@@ -160,6 +160,14 @@ class PlaylistTests(TestCase):
         # check that files are ok
         self.assertTrue(os.path.isfile(response['data'][0]))
 
+        # delete all but running song
+        response = client.post('/piremote/ajax/plaction/', {'cmd': 'deleteallbutcur', 'plname': ''}).json()
+        self.assertTrue('status_str' in response and 'error_str' not in response)
+
+        # seed again
+        response = client.post('/piremote/ajax/plaction/', {'cmd': 'seed', 'plname': '', 'list[]': [seed_n, '']}).json()
+        self.assertTrue('status_str' in response and 'error_str' not in response)
+
 
 class PlaylistsTests(TestCase):
     """Tests on other playlists"""
@@ -511,5 +519,51 @@ class HistoryTests(TestCase):
         self.assertTrue(response['history'][0][1] == title)
 
 
+class SmartPlaylistTests(TestCase):
+    """tests for browse by tags view"""
 
+    def test_smartpl(self):
+        client = Client()
+
+        # Seed some stuff into playlist to fill ratings db from it
+        response = client.post('/piremote/ajax/plaction/',
+                               {'cmd': 'seed', 'plname': '', 'list[]': [100, '']}).json()
+        self.assertTrue('status_str' in response and 'error_str' not in response)
+        response = client.get('/piremote/ajax/plinfo/').json()
+        files = [x[6] for x in response['pl']['data']]
+        for file in files:
+            response = client.get('/piremote/ajax/fileinfo/', {'file': file}).json()
+            info = response['info'][0]
+            path = info['file']
+            title = info['title']
+            artist = info['artist'] if 'artist' in info else ''
+            album = info['album'] if 'artist' in info else ''
+            genre = info['genre'] if 'genre' in info else ''
+            date = info['date'] if 'date' in info else ''
+            rating = info['rating'] if 'rating' in info else 0
+            try:
+                r = Rating(path=path, title=title, artist=artist, album=album, genre=genre, date=date, rating=rating)
+                r.save()
+            except TypeError:
+                print('TYPE ERROR: {}'.format(info[0]))
+
+        # try list -- should be zero length
+        response = client.get('/piremote/ajax/list/smart_playlists/').json()
+        self.assertTrue('error_str' not in response)
+        self.assertTrue(len(response['data']) == 0)
+        self.assertTrue(len(response['choices']) > 0)
+        self.assertTrue(len(response['genres']) > 0)
+        self.assertTrue(len(response['dates']) > 0)
+        self.assertTrue(len(response['artists']) > 0)
+
+        # new smart pl
+        response = client.post('/piremote/ajax/smartpl/create/', dict(id=0, name='__test_smart_pl')).json()
+        self.assertTrue('status_str' in response and 'error_str' not in response)
+        self.assertTrue('name' in response)
+
+        # list smart pls to get id
+        response = client.get('/piremote/ajax/list/smart_playlists/').json()
+        plid = response['data'][0][0]
+
+        # TODO more tests
 

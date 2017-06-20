@@ -5,6 +5,38 @@ import os
 import time
 
 
+def save_item(item, key):
+    if key not in item:
+        return ''
+    res = item[key]
+    if type(res) == str:
+        return res
+    if type(res) == list and len(res) > 0:
+        return res[0]
+    return ''
+
+
+def save_artist_title(item):
+    res = ''
+    if 'artist' in item:
+        res += save_item(item, 'artist') + ' - '
+    if 'title' in item:
+        res += save_item(item, 'title')
+    else:
+        no_ext = os.path.splitext(item['file'])[0]
+        res = os.path.basename(no_ext).replace('_', ' ')
+    return res
+
+
+def save_title(item):
+    if 'title' in item:
+        res = save_item(item, 'title')
+    else:
+        no_ext = os.path.splitext(item['file'])[0]
+        res = os.path.basename(no_ext).replace('_', ' ')
+    return res
+
+
 class PbLogger:
     """Logging object with integrated time duration measurement
     """
