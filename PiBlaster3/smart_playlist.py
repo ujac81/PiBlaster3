@@ -28,13 +28,14 @@ class ApplySmartPlaylist:
         self.error = False
         self.result_string = 'No filter applied'
 
-    def apply_filters(self, plname):
+    def apply_filters(self, plname, preview=False):
         """Iteratively select items from rating database using the given filters.
           
           After application of all filters add max self.amount items to playlist
           given by plname.
           
         :param plname: playlist to add to ('' for current).
+        :param preview: if set to True just return a list of items that would have been added.
         """
         logger = PbLogger('PROFILE SMARTPL')
         try:
@@ -155,8 +156,20 @@ class ApplySmartPlaylist:
             self.result_string = 'Filter deselected all media items -- Nothing to add!'
             return
 
-        self.result_string = mpc.playlist_action('append', plname, files)
+        if not preview:
+            self.result_string = mpc.playlist_action('append', plname, files)
+            result = None
+        else:
+            logger.print('read preview')
+            q = Rating.objects.filter(Q(path__in=files)).all().order_by('?')
+            # Same order as MPC.search_file()
+            # [title, artist, album, length, '', filename, rating]
+            result = [(x.title, x.artist, x.album, '', '', x.path, x.rating) for x in q]
+            self.result_string = '{} items selected for preview.'.format(len(result))
+            logger.print('preview done.')
+
         logger.print('apply_filters() done.')
+        return result
 
     @staticmethod
     def get_q_item_from_filter(filt, plname=''):

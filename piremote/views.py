@@ -740,6 +740,16 @@ def smartplaction_ajax(request, id, action):
             response['error_str'] = a.result_string
         else:
             response['status_str'] = a.result_string
+    elif action == 'preview':
+        count = int(request.POST.get('count'))
+        playlist = request.POST.get('playlist', '')
+        a = ApplySmartPlaylist(id, count)
+        # we reuse the 'search' view to display results
+        response['search'] = a.apply_filters(playlist, preview=True)
+        if a.error:
+            response['error_str'] = a.result_string
+        else:
+            response['status_str'] = a.result_string
     else:
         response['success'] = False
         response['error_str'] = 'Unknown smart pl action {0}'.format(action)

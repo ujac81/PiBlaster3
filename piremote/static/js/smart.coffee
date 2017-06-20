@@ -170,6 +170,8 @@ PiRemote.smart_pl_build = (name, id, data) ->
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary').html('Add')
     seedother = pseed.append('span')
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary').html('Add to other')
+    preview = pseed.append('span')
+        .append('button').attr('type', 'button').attr('class', 'btn btn-primary').html('Preview')
     
     # move up
     upspan.on 'click', ->
@@ -236,6 +238,20 @@ PiRemote.smart_pl_build = (name, id, data) ->
                 $('#modalSmall').modal('hide')
                 return
         return
+        
+    # Preview
+    preview.on 'click', ->
+        PiRemote.smart_pl_do_action
+            action: 'preview'
+            id: id
+            data:
+                count: $('input#seedspin')[0].value
+                playlist: ''
+            success: (data) ->
+                PiRemote.smart_pl_build_preview data
+                return
+        return
+        
     return
         
     
@@ -704,3 +720,15 @@ PiRemote.smart_upload_filter = ->
     
     return
     
+    
+# Display filter preview table
+PiRemote.smart_pl_build_preview = (data) ->
+    $('h3#heading').html('Smart Playlist Preview').show()
+    
+    root = d3.select('.piremote-content')
+    root.html('')
+    bl = root.append('div').attr('id', 'search-list')
+    tb = bl.append('table').attr('id', 'tbsearch').attr('class', 'table table-striped')
+    tb.append('tbody').attr('id', 'search')
+    PiRemote.search_rebuild data
+    return

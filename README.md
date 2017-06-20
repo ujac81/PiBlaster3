@@ -166,6 +166,7 @@ To see full debugging output and interact with django server:
     $ sudo service piblaster stop
     $ cd /opt/PiBlaster3
     $ export DEBUG=1
+    $ export PROFILE=1
     $ uwsgi --ini conf/piblaster.ini
 
 

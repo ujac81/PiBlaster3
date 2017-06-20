@@ -678,7 +678,7 @@ class MPC:
         """ Search in MPD data base using 'any' and 'file' tag.
         :param arg: search pattern
         :param limit: max amount of results
-        :return: {status: '', error: '', result: [title, artist, album, length, '', filename]}
+        :return: {status: '', error: '', result: [title, artist, album, length, '', filename, rating]}
                     Dummy element added at position #4 to have filename at position #5
         """
         logger = PbLogger('PROFILE MPD')
