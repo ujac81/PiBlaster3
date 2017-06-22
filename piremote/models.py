@@ -212,6 +212,7 @@ class Rating(models.Model):
     date = models.SmallIntegerField(db_index=True, default=0)
     rating = models.SmallIntegerField(db_index=True, default=0)  # [0..5]
     original = models.BooleanField(default=False)  # if rating came from file originally
+    length = models.IntegerField(default=0)
 
     @staticmethod
     def get_rating(uri):

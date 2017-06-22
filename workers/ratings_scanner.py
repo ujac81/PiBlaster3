@@ -18,6 +18,8 @@ class RatingsScanner:
         """keep reference to main to know when to stop scanning loop.
         """
         self.main = main
+        self.to_add = []  # store scanned result if insertion fails after scan
+        self.to_remove = []  # store result if deletion fails after scan
 
     def rescan(self):
         """Check if new items in MPD database which are not in SQL database.
@@ -29,50 +31,94 @@ class RatingsScanner:
         Does not block too much, will leave scanning loop if keep_run is False in main.
         """
         self.main.print_message("RESCANNING RATINGS")
-        write_gpio_pipe("1 1\n3 1")  # raise yellow and blue led
 
-        mpd_files = self.get_mpd_files()
-        if mpd_files is None or len(mpd_files) == 0:
-            # there was a mpd connect error, retry next loop
-            return
+        if len(self.to_add) == 0 and len(self.to_remove) == 0:
 
-        # Get mpd files which are not in database
-        not_in_db = self.get_db_files(not_in_database=mpd_files)
-        if not_in_db is None:
-            # there was an db read error, retry next loop
-            return
+            write_gpio_pipe("1 1\n3 1")  # raise yellow and blue led
 
-        music_path = self.get_music_path()
-        if music_path is None:
-            # there was an mpd error, retry next loop
-            return
-        to_add = []
-        for item in not_in_db:
-            filename = os.path.join(music_path, item)
-            to_add.append(self.scan_file(item, filename))
+            mpd_files = self.get_mpd_files()
+            if mpd_files is None or len(mpd_files) == 0:
+                # there was a mpd connect error, retry next loop
+                return
+
+            # Get mpd files which are not in database
+            not_in_db = self.get_db_files(not_in_database=mpd_files)
+            if not_in_db is None:
+                # there was an db read error, retry next loop
+                return
+
+            music_path = self.get_music_path()
+            if music_path is None:
+                # there was an mpd error, retry next loop
+                return
+            self.to_add = []
+            for item in not_in_db:
+                filename = os.path.join(music_path, item)
+                self.to_add.append(self.scan_file(item, filename))
+                if not self.main.keep_run:
+                    # worker shut down in the meantime
+                    return
+
+            too_many = self.get_db_files(not_in_list=mpd_files)
+            self.to_remove = []
+            for item in too_many:
+                self.to_remove.append((item,))
+
             if not self.main.keep_run:
                 # worker shut down in the meantime
                 return
 
-        too_many = self.get_db_files(not_in_list=mpd_files)
-        to_remove = []
-        for item in too_many:
-            to_remove.append((item,))
+            if DEBUG:
+                self.main.print_message('FOUND %d new files in mpd db' % len(self.to_add))
+                self.main.print_message('FOUND %d files in db which are not in mpd db' % len(self.to_remove))
 
-        if not self.main.keep_run:
-            # worker shut down in the meantime
-            return
+            write_gpio_pipe("1 0\n3 0")  # clear yellow and blue led
 
-        if DEBUG:
-            self.main.print_message('FOUND %d new files in mpd db' % len(to_add))
-            self.main.print_message('FOUND %d files in db which are not in mpd db' % len(to_remove))
+            # Files to_add scanned and to_remove found #
 
-        write_gpio_pipe("1 0\n3 0")  # clear yellow and blue led
-        write_gpio_pipe("3 1")  # raise blue led
-        self.alter_db('insert_many', to_add)
-        self.alter_db('remove_many', to_remove)
-        self.main.rescan_ratings = False
-        write_gpio_pipe("3 0")  # clear blue led
+        if len(self.to_add) > 0:
+            # read times from MPD database for new items
+            to_add_times = []
+            write_gpio_pipe("1 1")  # raise yellow led
+            client = MPDClient()
+            client.timeout = 10
+            try:
+                client.connect('localhost', 6600)
+            except ConnectionError:
+                self.main.print_message("ERROR: CONNECT")
+                return  # retry next loop
+            for add_item in self.to_add:
+                if not self.main.keep_run:
+                    # worker shut down in the meantime
+                    return
+                add = list(add_item)
+                try:
+                    mpd_item = client.find('file', add_item[0])
+                except (ConnectionError, CommandError):
+                    self.main.print_message("ERROR: CONNECT")
+                    return  # retry next loop
+                if len(mpd_item) == 1 and 'time' in mpd_item[0]:
+                    try:
+                        length = int(mpd_item[0]['time'])
+                    except ValueError:
+                        length = 0
+                    add[8] = length
+                to_add_times.append(add)
+            self.to_add = to_add_times
+            write_gpio_pipe("1 0")  # clear yellow led
+
+            # times scanned from MPD #
+
+        if len(self.to_add) > 0 or len(self.to_remove) > 0:
+            # apply to SQL
+            write_gpio_pipe("3 1")  # raise blue led
+            self.alter_db('insert_many', self.to_add)
+            self.alter_db('remove_many', self.to_remove)
+            write_gpio_pipe("3 0")  # clear blue led
+
+        self.main.rescan_ratings = False  # do not rerun only on successful run
+        self.to_add = []  # required to not block rating scanner for next run
+        self.to_remove = []
 
     def get_mpd_files(self):
         """Fetch list of uri names from MPD databse.
@@ -125,7 +171,7 @@ class RatingsScanner:
             conn.close()
         except psycopg2.OperationalError as e:
             self.main.print_message('PSQL ERROR {0}'.format(e))
-            return None
+            return []
 
         return res
 
@@ -138,11 +184,11 @@ class RatingsScanner:
 
             if what == 'insert_many':
                 try:
-                    cur.executemany('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating, original) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', payload)
+                    cur.executemany('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating, original, length) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)', payload)
                 except (psycopg2.DataError, psycopg2.InterfaceError):
                     for item in payload:
                         try:
-                            cur.execute('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating, original) VALUES (%s, %s, %s, %s, %s, %s, %s, %s)', item)
+                            cur.execute('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating, original, length) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)', item)
                         except (psycopg2.DataError, psycopg2.InterfaceError, psycopg2.InternalError) as e:
                             self.main.print_message('INSERT ERROR: {0}'.format(e))
                             self.main.print_message(e.pgerror)
@@ -193,7 +239,7 @@ class RatingsScanner:
 
         :param item: MPD uri descriptor (path without local music path)
         :param file: full file name
-        :return: (uri, title, artist, album, genre, date, rating)
+        :return: (uri, title, artist, album, genre, date, rating, original, time-dummy)
         """
         write_gpio_pipe('2 flash 0.2')
 
@@ -226,7 +272,7 @@ class RatingsScanner:
 
         if m is None:
             self.main.print_message('NO TAGS FOR ' + file)
-            return item, self.plain_filename(file), '', '', '', 0, 0, True,
+            return item, self.plain_filename(file), '', '', '', 0, 0, True, 0,
         elif type(m) == mutagen.mp3.MP3:
             return self.parse_mp3(item, m, file)
         elif type(m) == mutagen.oggvorbis.OggVorbis:
@@ -243,7 +289,7 @@ class RatingsScanner:
         self.main.print_message('UNKNOWN TYPE: ' + file)
         self.main.print_message(file)
         self.main.print_message(m)
-        return item, self.plain_filename(file), '', '', '', 0, 0, True,
+        return item, self.plain_filename(file), '', '', '', 0, 0, True, 0,
 
     def parse_mp3(self, item, m, file):
         """Try to extract tags from MP3 file.
@@ -260,7 +306,7 @@ class RatingsScanner:
         except HeaderNotFoundError as e:
             self.main.print_message(file)
             self.main.print_message('MUTAGEN ERROR {0}'.format(e))
-            return item, self.plain_filename(file), '', '', '', 0, 0, True,
+            return item, self.plain_filename(file), '', '', '', 0, 0, True, 0,
 
         title, artist, album = ['']*3
         genre = 'unknown'
@@ -284,7 +330,7 @@ class RatingsScanner:
             fmps = m.tags.getall('TXXX:FMPS_Rating')
         except AttributeError:
             # file type does not support tags
-            return item, self.plain_filename(file), '', '', '', 0, 0, True,
+            return item, self.plain_filename(file), '', '', '', 0, 0, True, 0,
 
         tot_rat = 0
         rat_count = 0
@@ -310,7 +356,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0,
 
     def parse_ogg(self, item, m, file):
         """Try to extract tags from ogg / flac file.
@@ -349,7 +395,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0,
 
     def parse_mpc(self, item, m, file):
         """Try to extract tags from MPC file.
@@ -380,7 +426,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0,
 
     def parse_m4a(self, item, m, file):
         """Try to extract tags from M4A file.
@@ -411,7 +457,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0,
 
     def parse_wma(self, item, m, file):
         """Try to extract tags from WMA/ASF file.
@@ -451,7 +497,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating / 51), True,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating / 51), True, 0,
 
     def conv_save_date(self, date, item):
         """Save conversion of date string (date could be like '2015-03-07T00:00:01')
