@@ -557,6 +557,22 @@ def download_history(request):
     return response
 
 
+def download_history_day(request, date):
+    """GET /download/history
+    """
+    logger = PbLogger('PROFILE VIEW')
+    raise_sql_led()
+    raise_working_led()
+    q = History.get_by_day(date)
+    clear_sql_led()
+    data = serializers.serialize("xml", q)
+    clear_working_led()
+    response = HttpResponse(data, content_type="application/xml")
+    response['Content-Disposition'] = 'attachment; filename=history-{}.xml'.format(date)
+    logger.print('download_history_day()')
+    return response
+
+
 def download_playlist(request):
     """GET /download/playlist
     """

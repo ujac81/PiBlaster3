@@ -122,6 +122,10 @@ PiRemote.hist_raise_date_actions = (date) ->
     navul.append('li').attr('role', 'presentation')
         .append('span').attr('class', 'browse-action-file')
         .attr('data-action', 'saveas').html('Save as playlist')
+    navul.append('li').attr('role', 'presentation')
+        .append('a').attr('class', 'browse-action-link')
+        .attr('href', '/piremote/download/history/'+date+'/')
+        .html('Download')
     
     # Callback for click actions on navigation.
     $(document).off 'click', 'span.browse-action-file'

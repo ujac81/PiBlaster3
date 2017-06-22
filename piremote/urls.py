@@ -44,6 +44,7 @@ urlpatterns = [
     url(r'^download/ratings/$', views.download_ratings, name='download_ratings'),
     url(r'^download/ratings/(?P<mode>[-\w]+)/$', views.download_ratings, name='download_ratings'),
     url(r'^download/history/$', views.download_history, name='download_history'),
+    url(r'^download/history/(?P<date>[-\d]+)/$', views.download_history_day, name='download_history_day'),
     url(r'^ajax/download/smartpl/(?P<idx>\d+)/$', views.download_smartpl, name='download_smartpl'),
     url(r'^ajax/download/playlist/$', views.download_playlist, name='download_playlist'),
 ]

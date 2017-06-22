@@ -149,11 +149,22 @@ class History(models.Model):
             return [[i, datetime.datetime.strptime(i, '%Y-%m-%d').strftime('%a %d %b %Y')]
                     for i in sorted(set(dates), reverse=True)]
 
-        d1 = timezone.make_aware(datetime.datetime.strptime(mode, '%Y-%m-%d'))
-        d2 = d1 + datetime.timedelta(days=1, seconds=-1)
-        q = History.objects.filter(time__gte=timezone.localtime(d1)).filter(time__lte=timezone.localtime(d2)).order_by('-time')
+        q = History.get_by_day(mode)
         # put dummies on position 3 and 4 to have file item at position 5.
         return [[timezone.localtime(i.time).strftime('%H:%M'), i.title, None, None, None, i.path] for i in q]
+
+    @staticmethod
+    def get_by_day(date):
+        """Return history entries for date, taking UTC-local timezone differences into account. 
+        
+        :param date: YYYY-MM-DD
+        :return: query filtered for date (aware of local timezone)
+        """
+        d1 = timezone.make_aware(datetime.datetime.strptime(date, '%Y-%m-%d'))
+        d2 = d1 + datetime.timedelta(days=1, seconds=-1)
+        q = History.objects.filter(time__gte=timezone.localtime(d1)).filter(time__lte=timezone.localtime(d2)).order_by(
+            '-time')
+        return q
 
     @staticmethod
     def search_history(pattern):
