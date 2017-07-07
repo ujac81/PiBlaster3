@@ -112,7 +112,7 @@ PiRemote.secToHMS = (secs) ->
     res += "0" if minutes < 10
     res += minutes + ':'
     res += '0' if seconds < 10
-    res = seconds
+    res += seconds
 
 
 # Calculate font width for string element.

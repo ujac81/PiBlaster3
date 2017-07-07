@@ -38,7 +38,8 @@ class RatingsScanner:
 
             mpd_files = self.get_mpd_files()
             if mpd_files is None or len(mpd_files) == 0:
-                # there was a mpd connect error, retry next loop
+                # There was a mpd connect error, retry next loop.
+                # Or: the music db was completely wiped out. Do nothing until there are files again.
                 return
 
             # Get mpd files which are not in database

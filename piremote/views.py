@@ -607,7 +607,7 @@ def upload_ratings(request):
     if request.method == 'POST':
         raise_working_led()
         form = UploadRatingsForm(request.POST, request.FILES)
-        context = dict(title='Upload History File', text='History uploaded')
+        context = dict(title='Upload Ratings File', text='Ratings uploaded')
 
         if form.is_valid():
             raise_upload_led()

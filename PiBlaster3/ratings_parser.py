@@ -28,65 +28,72 @@ class RatingsParser:
         self.filename = name
         self.tree = ET.ElementTree(ET.fromstring(data))
         self.root = self.tree.getroot()
+        self.q_all = Rating.objects.all()
 
+        raise_sql_led()
         if self.root.tag == 'django-objects' and 'version' in self.root.attrib and self.root.attrib['version'] == '1.0':
             self.parse_django()
         else:
             self.errors.append('UNKNOWN XML File Type: %s' % self.root.tag)
 
+        clear_sql_led()
+
     def parse_django(self):
         """Parser for XML files exported by PiBlaster3"""
-        q_all = Rating.objects.all()
-        raise_sql_led()
+
         for o in [x for x in self.root if x.tag == 'object']:
             path = o.find("field[@name='path']").text
             rating = int(o.find("field[@name='rating']").text) or 0
             artist = o.find("field[@name='artist']").text or ''
             album = o.find("field[@name='album']").text or ''
             title = o.find("field[@name='title']").text or ''
-            parsed = False
-            skipped = False
-            try:
-                q = Rating.objects.get(path=path)
-                if q.rating != rating:
-                    q.rating = rating
-                    q.original = False
-                    q.save()
-                else:
-                    skipped = True
-                parsed = True
-            except ObjectDoesNotExist:
-                pass
+            self.apply_rating(path, artist, album, title, rating)
 
-            if not parsed:
-                # Check for last_dir/filename.mp3 match
-                reminder = '/'.join(path.split('/')[-2:])
-                q = q_all.filter(path__iendswith=reminder)
-                if len(q) > 0:
-                    q2 = q.exclude(rating=rating)
-                    if len(q2) > 0:
-                        q2.update(rating=rating, original=False)
-                    else:
-                        skipped = True
-                    parsed = True
-
-            if not parsed and title != '' and artist != '':
-                # Check if album/artist/title matches
-                q = q_all.filter(artist__iexact=artist).filter(title__icontains=title)
-                if len(q) > 0:
-                    q2 = q.exclude(rating=rating)
-                    if len(q2) > 0:
-                        q.update(rating=rating, original=False)
-                else:
-                    skipped = True
-                parsed = True
-
-            add = [artist, album, title, path, rating]
-            if parsed and not skipped:
-                self.parsed_ratings.append(add)
-            elif parsed and skipped:
-                self.skipped_ratings.append(add)
+    def apply_rating(self, path, artist, album, title, rating):
+        """Try to apply rating to SQL db.
+        
+        :param path: as found in db -- django db might start with local music path, others with absolute paths.
+        :param artist: tag 
+        :param album: tag
+        :param title: tag 
+        :param rating: [0-5]
+        """
+        try:
+            q = Rating.objects.get(path=path)
+            if q.rating != rating:
+                q.rating = rating
+                q.original = False
+                q.save()
+                self.parsed_ratings.append(['{} [{}]'.format(path, rating)])
             else:
-                self.not_parsed_ratings.append(add)
+                self.skipped_ratings.append(['{} [{}]'.format(path, rating)])
+            return
+        except ObjectDoesNotExist:
+            pass
 
-        clear_sql_led()
+        # Check for last_dir/filename.mp3 match
+        reminder = '/'.join(path.split('/')[-2:])
+        q = self.q_all.filter(path__iendswith=reminder)
+        if len(q) > 0:
+            q2 = q.exclude(rating=rating)
+            if len(q2) > 0:
+                q2.update(rating=rating, original=False)
+                self.parsed_ratings.append(['{} [{}]'.format(reminder, rating)])
+            else:
+                self.skipped_ratings.append(['{} [{}]'.format(reminder, rating)])
+            return
+
+        if title != '' and artist != '':
+            # Check if album/artist/title matches
+            q = self.q_all.filter(artist__iexact=artist).filter(title__icontains=title)
+            if len(q) > 0:
+                q2 = q.exclude(rating=rating)
+                if len(q2) > 0:
+                    q.update(rating=rating, original=False)
+                    self.parsed_ratings.append(['{} - {} [{}]'.format(artist, title, rating)])
+            else:
+                self.skipped_ratings.append(['{} - {} [{}]'.format(artist, title, rating)])
+            return
+
+        # reached if rating cannot be applied
+        self.not_parsed_ratings.append([path])
