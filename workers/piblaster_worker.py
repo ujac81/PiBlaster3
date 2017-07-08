@@ -12,6 +12,7 @@ import os
 import signal
 import time
 
+from PiBlaster3.settings import *
 from workers.uploader import Uploader
 from workers.partymode import MPDService
 

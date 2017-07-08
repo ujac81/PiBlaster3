@@ -113,9 +113,9 @@ If any errors occur here, fix them, or nothing will work.
 
     $ sudo systemctl daemon-reload
 
-    $ systemctl enable piblaster.service
-    $ systemctl enable piblaster.websocket.service
-    $ systemctl enable piblaster.worker.service
+    $ sudo systemctl enable piblaster.service
+    $ sudo systemctl enable piblaster.websocket.service
+    $ sudo systemctl enable piblaster.worker.service
 
 ## MPD
 Link directories to scan to mpd library and update it.
