@@ -2,14 +2,17 @@
 
 """
 
-from mpd import MPDClient, ConnectionError, CommandError
+from mpd import MPDClient, ConnectionError, CommandError, ProtocolError
 import os
 import random
 import re
 import time
 
+from django.db.models import Q
 from django.conf import settings
 from PiBlaster3.translate_genre import translate_genre, all_genres
+from .helpers import *
+from piremote.models import Rating, History
 
 
 class MPC:
@@ -22,35 +25,43 @@ class MPC:
 
     def __init__(self):
         """Create MPDClient and connect."""
+        logger = PbLogger('PROFILE MPD')
         self.connected = False
         self.error = False
         self.client = MPDClient()
         self.client.timeout = 10
         self.reconnect()
         self.truncated = 0  # set to the truncate value if truncated (search, list, ...)
+        logger.print('__init__')
+
+    def __del__(self):
+        """Disconect if deleted by middleware and print debug"""
+        print_debug('MPD DEL')
 
     def reconnect(self):
         """Try connect 5 times, if not successful self.connected will be False."""
 
+        logger = PbLogger('PROFILE MPD')
         self.connected = False
         self.error = False
 
         try:
             self.client.disconnect()
-        except ConnectionError:
+        except (ConnectionError, BrokenPipeError, ValueError):
             pass
 
         for i in range(5):
             try:
                 self.client.connect('localhost', 6600)
                 self.connected = True
-            except ConnectionError:
+            except (ConnectionError, BrokenPipeError, ValueError):
                 time.sleep(0.1)
-                pass
             if self.connected:
+                logger.print('reconnect()')
                 return True
 
         self.error = True
+        logger.print('reconnect() [FAIL!]')
         return False
 
     def get_stats(self):
@@ -104,9 +115,9 @@ class MPC:
         for i in range(5):
             try:
                 res = self.client.status()
-            except (ConnectionError, CommandError):
+            except (ConnectionError, CommandError, ProtocolError, BrokenPipeError, ValueError):
+                print_debug('MPD RECONNECT')
                 self.reconnect()
-                pass
         res['error_str'] = self.error
         return res
 
@@ -180,16 +191,13 @@ class MPC:
         data = {}
         if len(current) == 0:
             current = {'album': '', 'artist': '', 'title': 'Not Playing!', 'time': 0, 'file': ''}
-        if 'title' in current:
-            data['title'] = current['title']
-        else:
-            no_ext = os.path.splitext(current['file'])[0]
-            data['title'] = os.path.basename(no_ext).replace('_', ' ')
+        data['title'] = save_item(current, 'title')
         data['time'] = current['time'] if 'time' in current else 0
         for key in ['album', 'artist', 'date', 'id', 'file']:
-            data[key] = current[key] if key in current else ''
+            data[key] = save_item(current, key)
         for key in ['elapsed', 'random', 'repeat', 'volume', 'state', 'playlist', 'playlistlength']:
             data[key] = status[key] if key in status else '0'
+        data['rating'] = Rating.get_rating(current['file'])
         return data
 
     def volume(self):
@@ -225,8 +233,10 @@ class MPC:
         """Get playlist items in interval [start, end)
         :param start: start index in playlist (start = 0)
         :param end: end index in playlist (excluded)
-        :return: [[pos, title, artist, album, length, id, file]]
+        :return: {version=N, length=N, data=[[pos, title, artist, album, length, id, file, rating]]}
         """
+
+        logger = PbLogger('PROFILE MPD')
 
         pl_len = self.get_status_int('playlistlength')
         pl_ver = self.get_status_int('playlist')
@@ -241,23 +251,36 @@ class MPC:
         if start >= pl_len:
             return result
 
+        raise_mpd_led()
+
         items = self.client.playlistinfo("%d:%d" % (start, end))
+
+        logger.print_step('items')
+
+        # make sure we only do 1 SQL query for all ratings.
+        raise_sql_led()
+        files = [x['file'] for x in items]
+        q = Rating.objects.filter(Q(path__in=files)).values('path', 'rating').all()
+        rat_d = dict([(x['path'], x['rating']) for x in q])
+        logger.print_step('sql')
+        clear_sql_led()
+
         data = []
         for item in items:
-            res = [item['pos']]
-            if 'title' in item:
-                res.append(item['title'])
-            elif 'file' in item:
-                no_ext = os.path.splitext(item['file'])[0]
-                res.append(os.path.basename(no_ext).replace('_', ' '))
-            res.append(item['artist'] if 'artist' in item else '')
-            res.append(item['album'] if 'album' in item else '')
+            file = item['file'] if 'file' in item else ''
+            res = list([item['pos']])
+            res.append(save_title(item))
+            res.append(save_item(item, 'artist'))
+            res.append(save_item(item, 'album'))
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append(item['id'])
-            res.append(item['file'])
+            res.append(file)
+            res.append(rat_d[file] if file in rat_d else 0)
             data.append(res)
         result['data'] = data
+        clear_mpd_led()
+        logger.print('playlistinfo() done.')
         return result
 
     def playlistinfo_by_name(self, plname):
@@ -269,19 +292,15 @@ class MPC:
         :return: [[file, artist - title, pos]]
         """
         self.ensure_connected()
-        info = self.client.listplaylistinfo(plname)
+        try:
+            info = self.client.listplaylistinfo(plname)
+        except CommandError:
+            return []  # no such playlist
         result = []
         pos = 0
         for item in info:
-            res = ''
-            if 'artist' in item:
-                res += item['artist'] + ' - '
-            if 'title' in item:
-                res += item['title']
-            else:
-                no_ext = os.path.splitext(item['file'])[0]
-                res = os.path.basename(no_ext).replace('_', ' ')
-            result.append([item['file'], res, pos])
+            title = save_artist_title(item)
+            result.append([item['file'], title, pos])
             pos += 1
         return result
 
@@ -313,9 +332,12 @@ class MPC:
         res = self.client.find('file', file)
         for item in res:
             if 'genre' in item:
-                m = re.match(r"^\((\d+)", item['genre'])
+                m = re.match(r"^\((\d+)", save_item(item, 'genre'))
                 if m:
                     item['genre'] = translate_genre(int(m.group(1)))
+            item['rating'] = Rating.get_rating(item['file'])
+            for check in ['title', 'artist', 'album']:
+                item[check] = save_item(item, check)
         return res
 
     def playlist_changes(self, version):
@@ -325,27 +347,31 @@ class MPC:
 
         :param version: diff version of playlist.
         :return: {version: new version
-                  changes: [[pos, title, artist, album, length, id, file]]
+                  changes: [[pos, title, artist, album, length, id, file, rating]]
                   length: new playlist length}
         """
         pl_len = self.get_status_int('playlistlength')
         pl_ver = self.get_status_int('playlist')
         changes = self.client.plchanges(version)
+
+        # make fast query for all ratings
+        files = [x['file'] for x in changes]
+        q = Rating.objects.filter(Q(path__in=files)).values('path', 'rating').all()
+        rat_d = dict([(x['path'], x['rating']) for x in q])
+
         result = []
         for change in changes:
             item = self.client.playlistinfo(change['pos'])[0]
-            res = [item['pos']]
-            if 'title' in item:
-                res.append(item['title'])
-            elif 'file' in item:
-                no_ext = os.path.splitext(item['file'])[0]
-                res.append(os.path.basename(no_ext).replace('_', ' '))
-            res.append(item['artist'] if 'artist' in item else '')
-            res.append(item['album'] if 'album' in item else '')
+            file = item['file'] if 'file' in item else ''
+            res = list([item['pos']])
+            res.append(save_title(item))
+            res.append(save_item(item, 'artist'))
+            res.append(save_item(item, 'album'))
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append(item['id'])
-            res.append(item['file'])
+            res.append(file)
+            res.append(rat_d[file] if file in rat_d else 0)
             result.append(res)
         return {'version': pl_ver, 'changes': result, 'length': pl_len}
 
@@ -358,28 +384,37 @@ class MPC:
         self.ensure_connected()
         try:
             if cmd == 'back':
+                flash_mpd_led()
                 self.client.previous()
             elif cmd == 'playpause':
+                flash_mpd_led()
                 status = self.get_status()
                 if status['state'] == 'play':
                     self.client.pause()
                 else:
                     self.client.play()
             elif cmd == 'stop':
+                flash_mpd_led()
                 self.client.stop()
             elif cmd == 'next':
+                flash_mpd_led()
                 self.client.next()
             elif cmd == 'decvol':
+                flash_mpd_led()
                 self.change_volume(-3)
             elif cmd == 'incvol':
+                flash_mpd_led()
                 self.change_volume(3)
             elif cmd == 'random':
+                flash_mpd_led()
                 rand = self.get_status_int('random')
                 self.client.random(1 if rand == 0 else 0)
             elif cmd == 'repeat':
+                flash_mpd_led()
                 rep = self.get_status_int('repeat')
                 self.client.repeat(1 if rep == 0 else 0)
             elif cmd.startswith('seekcur'):
+                flash_mpd_led()
                 pct = float(cmd.split()[1])
                 cur = self.get_currentsong()
                 jump = 0.0
@@ -390,10 +425,8 @@ class MPC:
                 success = False
         except CommandError:
             success = False
-            pass
         except ConnectionError:
             success = False
-            pass
 
         data = self.get_status_data()
         data['cmd'] = cmd
@@ -405,8 +438,10 @@ class MPC:
 
         :param path: Directory to list.
         :return: Array of ['1', title, '', '', '', directory] for dirs
-                 Array of ['2', title, artist, album, length, file, ext, date] for audio files
+                 Array of ['2', title, artist, album, length, file, ext, date, rating] for audio files
         """
+        logger = PbLogger('PROFILE MPD')
+
         if path is None:
             return None
 
@@ -414,9 +449,12 @@ class MPC:
 
         result = []
 
+        raise_mpd_led()
+
         try:
             lsdir = self.client.lsinfo(path)
         except CommandError:
+            clear_mpd_led()
             return None
 
         # check if we have differing artists in directory
@@ -426,10 +464,21 @@ class MPC:
             if 'file' in item:
                 if 'artist' in item:
                     if last_artist is None:
-                        last_artist = item['artist']
-                    elif last_artist != item['artist']:
+                        last_artist = save_item(item, 'artist')
+                    elif last_artist != save_item(item, 'artist'):
                         mixed_artists = True
                         break
+
+        logger.print_step('browse mpd done')
+
+        # query all ratings at once
+        raise_sql_led()
+        files = [x['file'] for x in lsdir if 'file' in x]
+        q = Rating.objects.filter(Q(path__in=files)).values('path', 'rating').all()
+        rat_d = dict([(x['path'], x['rating']) for x in q])
+        clear_sql_led()
+
+        logger.print_step('browse sql done')
 
         for item in lsdir:
             if 'directory' in item:
@@ -440,15 +489,15 @@ class MPC:
                 res = ['2']
                 if 'title' in item:
                     if mixed_artists and 'artist' in item:
-                        res.append(item['artist'] + ' - ' + item['title'])
+                        res.append(save_artist_title(item))
                     else:
-                        res.append(item['title'])
+                        res.append(save_title(item))
                 else:
                     no_ext = os.path.splitext(item['file'])[0]
                     res.append(os.path.basename(no_ext).replace('_', ' '))
 
-                res.append(item['artist'] if 'artist' in item else '')
-                res.append(item['album'] if 'album' in item else '')
+                res.append(save_item(item, 'artist'))
+                res.append(save_item(item, 'album'))
                 length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
                 res.append(length)
                 res.append(item['file'])
@@ -458,11 +507,13 @@ class MPC:
                 if ext not in ['mp3', 'wma', 'ogg', 'wav', 'flac', 'mp4']:
                     ext = 'audio'
                 res.append(ext)
-
                 res.append(item['date'] if 'date' in item else '')
+                res.append(rat_d[item['file']] if item['file'] in rat_d else 0)
 
                 result.append(res)
 
+        clear_mpd_led()
+        logger.print('browse() done')
         return result
 
     def playlist_action(self, cmd, plname, items):
@@ -478,6 +529,7 @@ class MPC:
 
         if (cmd == 'append') or (cmd == 'insert' and 'pos' not in self.get_currentsong()):
             # append at end if command is append or insert and not playing
+            raise_mpd_led()
             for item in items:
                 try:
                     if len(plname):
@@ -485,8 +537,9 @@ class MPC:
                     else:
                         self.client.add(item)
                 except CommandError:
+                    clear_mpd_led()
                     return 'Add error'
-                    pass
+            clear_mpd_led()
             return '%d' % len(items) + ' items appended to playlist ' + plname
         elif cmd == 'clear':
             # clear playlist
@@ -494,8 +547,20 @@ class MPC:
                 self.client.clear()
             except CommandError:
                 return 'Clear error'
-                pass
+            flash_mpd_led()
             return 'Playlist cleared.'
+        elif cmd == 'deleteallbutcur':
+            flash_mpd_led()
+            now_pos = self.get_status_int('song', -1)
+            now_len = self.get_status_int('playlistlength', -1)
+            if now_pos == -1:
+                self.client.clear()
+            else:
+                self.client.delete((0, now_pos))
+                self.client.delete((1,))
+            new_len = self.get_status_int('playlistlength', -1)
+            clear_mpd_led()
+            return 'Deleted {} items from playlist.'.format(now_len-new_len)
         elif cmd == 'deleteid' or cmd == 'deleteids':
             # Remove items from playlist
             for i in sorted([int(x) for x in items], reverse=True):
@@ -503,7 +568,7 @@ class MPC:
                     self.client.deleteid(i)
                 except CommandError:
                     return 'Delete error'
-                    pass
+            flash_mpd_led()
             return '%d items removed from playlist' % len(items)
         elif cmd == 'insert':
             # insert (list of) song(s) after current song
@@ -513,12 +578,13 @@ class MPC:
                     self.client.addid(item, pos)
                 except CommandError:
                     return 'Add error'
-                    pass
+            flash_mpd_led()
             return '%d' % len(items) + ' items inserted into playlist ' + plname
         elif cmd == 'playid':
             # Play song with #id now.
             self.client.playid(int(items[0]))
             title = self.get_status_data()['title']
+            flash_mpd_led()
             return 'Playing ' + title
         elif cmd == 'playidnext':
             # Move song with #id after current song
@@ -526,7 +592,7 @@ class MPC:
                 self.client.moveid(int(items[0]), -1)
             except CommandError:
                 return 'Move error'
-                pass
+            flash_mpd_led()
             return 'Moved 1 song after current song'
         elif cmd == 'playidsnext':
             # Move songs with [#id] after current song
@@ -535,7 +601,7 @@ class MPC:
                     self.client.moveid(int(item), -1)
                 except CommandError:
                     return 'Move error'
-                    pass
+            flash_mpd_led()
             return 'Moved %d songs after current song' % len(items)
         elif cmd == 'moveid':
             # move song(s) with id(s) to end
@@ -543,7 +609,7 @@ class MPC:
                 self.client.moveid(items[0], items[1])
             except CommandError:
                 return 'Move error'
-                pass
+            flash_mpd_led()
             return 'Moved song to position %d' % (int(items[1])+1)
         elif cmd == 'moveidend' or cmd == 'moveidsend':
             # move song(s) with id(s) to end
@@ -553,7 +619,7 @@ class MPC:
                     self.client.moveid(i, move_to)
                 except CommandError:
                     return 'Move error'
-                    pass
+            flash_mpd_led()
             return 'Moved %d songs to end' % len(items)
         elif cmd == 'randomize':
             # clear playlist
@@ -561,7 +627,7 @@ class MPC:
                 self.client.shuffle()
             except CommandError:
                 return 'Shuffle error'
-                pass
+            flash_mpd_led()
             return 'Playlist randomized.'
         elif cmd == 'randomize-rest':
             # clear playlist
@@ -571,9 +637,10 @@ class MPC:
                 self.client.shuffle("%d:%d" % (song_pos, pl_len))
             except CommandError:
                 return 'Shuffle error'
-                pass
+            flash_mpd_led()
             return 'Playlist randomized after current song.'
         elif cmd == 'seed':
+            raise_mpd_led()
             n = int(items[0])
             random.seed()
             db_files = self.client.list('file')
@@ -585,17 +652,19 @@ class MPC:
             add = []
             for i in range(n):
                 add.append(db_files[random.randrange(0, len(db_files))])
+            clear_mpd_led()
             return self.playlist_action('append', plname, add)
 
         return 'Unknown command '+cmd
 
-    def search_file(self, arg, limit=200):
+    def search_file(self, arg, limit=500):
         """ Search in MPD data base using 'any' and 'file' tag.
         :param arg: search pattern
         :param limit: max amount of results
-        :return: {status: '', error: '', result: [title, artist, album, length, '', filename]}
+        :return: {status: '', error: '', result: [title, artist, album, length, '', filename, rating]}
                     Dummy element added at position #4 to have filename at position #5
         """
+        logger = PbLogger('PROFILE MPD')
         if arg is None or len(arg) < 3:
             return {'error_str': 'Search pattern must contain at least 3 characters!'}
 
@@ -609,18 +678,17 @@ class MPC:
         other_args = [s.lower() for s in arg.split(' ')[1:] if len(s)]
 
         try:
+            raise_mpd_led()
             search = self.client.search('any', first_arg)
             search += self.client.search('file', first_arg)
+            clear_mpd_led()
         except CommandError as e:
             return {'error_str': 'Command error in search: %s' % e}
 
+        logger.print_step('search init done.')
+
         has_files = []
-
-        self.truncated = 0
-        if len(search) > limit:
-                self.truncated = len(search) - limit
-
-        for item in search[:limit]:
+        for item in search:
             if 'file' not in item:
                 continue
             if item['file'] in has_files:
@@ -648,22 +716,39 @@ class MPC:
                     continue
 
             res = []
-            if 'title' in item:
-                res.append(item['title'])
-            elif 'file' in item:
-                no_ext = os.path.splitext(item['file'])[0]
-                res.append(os.path.basename(no_ext).replace('_', ' '))
-            res.append(item['artist'] if 'artist' in item else '')
-            res.append(item['album'] if 'album' in item else '')
+            res.append(save_title(item))
+            res.append(save_item(item, 'artist'))
+            res.append(save_item(item, 'album'))
             length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
             res.append(length)
             res.append('')  # dummy to push file to pos #5
             res.append(item['file'])
+            res.append(0)  # ratings placeholder
             result.append(res)
 
+        logger.print_step('search items filtered.')
+
+        # truncate to N results
+        trunc_res = result[:limit]
+        self.truncated = 0
+        if len(result) > limit:
+            self.truncated = len(result) - limit
         trunc_str = '(truncated)' if self.truncated else ''
+
+        # query all ratings at once
+        raise_sql_led()
+        files = sorted(set([x[5] for x in trunc_res]))
+        q = Rating.objects.filter(Q(path__in=files)).values('path', 'rating').all()
+        rat_d = dict([(x['path'], x['rating']) for x in q])
+        clear_sql_led()
+        for item in trunc_res:
+            item[6] = rat_d[item[5]] if item[5] in rat_d else 0
+
+        logger.print_step('search SQL done.')
+        logger.print('search() done.')
+
         return {'status_str': '%d items found %s' % (len(result), trunc_str),
-                'search': result,
+                'search': trunc_res,
                 'truncated': self.truncated}
 
     def playlists_action(self, cmd, plname, payload):
@@ -677,11 +762,13 @@ class MPC:
         self.ensure_connected()
         if cmd == 'clear':
             self.client.playlistclear(plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s cleared' % plname}
         if cmd == 'delete':
             positions = sorted([int(i) for i in payload], reverse=True)
             for pos in positions:
                 self.client.playlistdelete(plname, pos)
+            flash_mpd_led()
             return {'status_str': '%d items removed from playlist %s' % (len(positions), plname)}
         if cmd == 'list':
             pls = sorted([i['playlist'] for i in self.client.listplaylists() if 'playlist' in i])
@@ -691,37 +778,44 @@ class MPC:
             positions = sorted([int(i) for i in payload], reverse=True)
             for pos in positions:
                 self.client.playlistmove(plname, pos, pl_len-1)
+            flash_mpd_led()
             return {'status_str': '%d items moved to end in playlist %s' % (len(positions), plname)}
         if cmd == 'new':
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
                 return {'error_str': 'Playlist %s exists' % plname, 'plname': ''}
             self.client.save(plname)
             self.client.playlistclear(plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s created' % plname, 'plname': plname}
         if cmd == 'load':
             self.client.load(plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s added to playlist' % plname}
         if cmd == 'rename':
             plname_old = payload[0]
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
                 return {'error_str': 'Playlist %s already exists.' % plname}
             self.client.rename(plname_old, plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s renamed to %s' % (plname_old, plname)}
         if cmd == 'rm':
             self.client.rm(plname)
+            flash_mpd_led()
             return {'status_str': 'Playlist %s removed' % plname}
         if cmd == 'saveas':
             if plname in [i['playlist'] for i in self.client.listplaylists() if 'playlist' in i]:
                 return {'error_str': 'Playlist %s already exists.' % plname}
             self.client.save(plname)
+            flash_mpd_led()
             return {'status_str': 'Current playlist saved to %s.' % plname}
 
         return {'error_str': 'No such command: %s' % cmd}
 
-    def list_by(self, what, in_dates, in_genres, in_artists, in_albums, file_mode=False):
+    def list_by(self, what, in_ratings, in_dates, in_genres, in_artists, in_albums, file_mode=False):
         """Create content data for browse view.
 
         :param what: category of results [date, genre, artist, album, song]
+        :param in_ratings: list of ratings for filter ['All'] for all ratings
         :param in_dates: list of dates for filter ['All'] for all dates
         :param in_genres: list of genres for filter ['All'] for all
         :param in_artists: list of artists for filter ['All'] for all
@@ -731,151 +825,102 @@ class MPC:
         :return: List of results for browse view for next category:
                 if what == 'genre' results will be artists and so on.
         """
+        logger = PbLogger('PROFILE MPD')
         self.ensure_connected()
 
         seek = 'file' if file_mode or what == 'song' else what
 
-        # request is date --> return all available dates
-        if what == 'date':
-            return self.client.list(seek)
+        ratings_avail = {'All': [0, 1, 2, 3, 4, 5],
+                         '5': [5],
+                         'at least 4': [4, 5],
+                         'at least 3': [3, 4, 5],
+                         'at least 2': [2, 3, 4, 5],
+                         'at least 1': [1, 2, 3, 4, 5],
+                         'exactly 4': [4],
+                         'exactly 3': [3],
+                         'exactly 2': [2],
+                         'exactly 1': [1],
+                         'unrated': [0]
+                         }
+
+        if what == 'rating':
+            if seek != 'file':
+                return ['All', '5', 'at least 4', 'at least 3', 'at least 2', 'at least 1',
+                        'exactly 4', 'exactly 3', 'exactly 2', 'exactly 1', 'unrated']
+            else:
+                return self.client.list(seek)
+
+        # unroll ratings
+        ratings = []
+        if len(in_ratings) > 0 and in_ratings[0] != 'All':
+            for rating in in_ratings:
+                ratings += ratings_avail[rating]
+            ratings = sorted(set(ratings))
 
         # Unroll special dates (decades like '1971-1980' or '2010-today')
         dates = []
         if len(in_dates) > 0 and in_dates[0] != 'All':
-            all_dates = self.client.list('date')
             for date in in_dates:
                 if '-' in date:
-                    m = re.match(r'(\d+)-(\d+)', date.replace('today', '3000'))
+                    m = re.match(r'(\d+)-(\d+)', date.replace('today', '2020'))
                     if m:
-                        for y in range(int(m.group(1)), int(m.group(2))+1):
-                            if '%d' % y in all_dates:
-                                dates.append('%d' % y)
+                        for y in range(int(m.group(1)), int(m.group(2)) + 1):
+                            dates.append(y)
                 else:
-                    dates.append(date)
+                    dates.append(int(date))
 
-        # Unroll genres (some genres have number instead of string)
-        genres = []
-        if len(in_genres) > 0 and in_genres[0] != 'All':
-            inv_genres = {v: k for k, v in all_genres().items()}
-            for genre in in_genres:
-                genres.append(genre)
-                if genre in inv_genres:
-                    genres.append('(%s)' % inv_genres[genre])
-
-        artists = [] if len(in_artists) == 1 and in_artists[0] == 'All' else in_artists
-        albums = [] if len(in_albums) == 1 and in_albums[0] == 'All' else in_albums
-
-        # Build hierarchical filter classes.
-        # Hierarchy is date->genre->artist->album->song
-        # Only add filter if what category is above itself.
-        # E.g. artist filter will only apply for album and song listings.
-        filters = {}
+        raise_sql_led()
+        q = Rating.objects.all().order_by('path')
+        logger.print_step('list_by: SQL select all')
+        if len(ratings) > 0:
+            q = q.filter(rating__in=ratings)
+            logger.print_step('list_by: ratings filtered')
         if what in ['genre', 'artist', 'album', 'song'] and len(dates) > 0:
-            filters['date'] = dates
-        if what in ['artist', 'album', 'song'] and len(genres) > 0:
-            filters['genre'] = genres
-        if what in ['album', 'song'] and len(artists) > 0:
-            filters['artist'] = artists
-        if what in ['song'] and len(albums) > 0:
-            filters['album'] = albums
-        filter_keys = list(filters.keys())
+            q = q.filter(date__in=dates)
+            logger.print_step('list_by: dates filtered')
+        if what in ['artist', 'album', 'song'] and len(in_genres) > 0 and in_genres[0] != 'All':
+            q = q.filter(genre__in=in_genres)
+            logger.print_step('list_by: genres filtered')
+        if what in ['album', 'song'] and len(in_artists) > 0 and in_artists[0] != 'All':
+            q = q.filter(artist__in=in_artists)
+            logger.print_step('list_by: artists filtered')
+        if what in ['song'] and len(in_albums) > 0 and in_albums[0] != 'All':
+            q = q.filter(album__in=in_albums)
+            logger.print_step('list_by: albums filtered')
+        clear_sql_led()
 
         res = []
-        if len(filter_keys) == 0:
-            # Zero filters installed -- return full database.
-            res = self.client.list(seek)
-        elif len(filter_keys) == 1:
-            # One filter type installed, collect all results for one filter.
-            key = filter_keys[0]
-            vals = filters[key]
-            for val in vals:
-                res += self.client.list(seek, key, val)
-        elif len(filter_keys) == 2:
-            # 2 filter types installed, collect all combinations of results for 2 filters.
-            key1 = filter_keys[0]
-            vals1 = filters[key1]
-            key2 = filter_keys[1]
-            vals2 = filters[key2]
-            for val1 in vals1:
-                for val2 in vals2:
-                    res += self.client.list(seek, key1, val1, key2, val2)
-        elif len(filter_keys) == 3:
-            # 3 filter types installed, collect all combinations of results for 3 filters.
-            key1 = filter_keys[0]
-            vals1 = filters[key1]
-            key2 = filter_keys[1]
-            vals2 = filters[key2]
-            key3 = filter_keys[2]
-            vals3 = filters[key3]
-            for val1 in vals1:
-                for val2 in vals2:
-                    for val3 in vals3:
-                        res += self.client.list(seek, key1, val1, key2, val2, key3, val3)
-        elif len(filter_keys) == 4:
-            # 4 filter types installed, collect all combinations of results for 4 filters.
-            # NOTE: this might be slow, but no better idea so far.
-            # Possible solution: cache possible combinations in database.
-            key1 = filter_keys[0]
-            vals1 = filters[key1]
-            key2 = filter_keys[1]
-            vals2 = filters[key2]
-            key3 = filter_keys[2]
-            vals3 = filters[key3]
-            key4 = filter_keys[3]
-            vals4 = filters[key4]
-            for val1 in vals1:
-                for val2 in vals2:
-                    for val3 in vals3:
-                        for val4 in vals4:
-                            res += self.client.list(seek, key1, val1, key2, val2, key3, val3, key4, val4)
-
-        # If we are in file_mode (used by seed_by), return result directly.
         if file_mode:
-            return sorted(set(res))
-
-        # Translate back numeric to string genres.
+            res = [x.path for x in q]
+        if what == 'date':
+            q2 = q.order_by('date').distinct('date')
+            res = [x.date for x in q2]
         if what == 'genre':
-            res2 = []
-            for genre in res:
-                add = genre
-                m = re.match(r"\((\d+)\)", genre)
-                if m:
-                    add = translate_genre(int(m.group(1)))
-                if add not in res2:
-                    res2.append(add)
-            return sorted(res2)
-
-        # If we are in song mode, truncate result and expand title and artist information.
+            q2 = q.order_by('genre').distinct('genre')
+            res = [x.genre for x in q2]
+        if what == 'artist':
+            q2 = q.order_by('artist').distinct('artist')
+            res = [x.artist for x in q2]
+        if what == 'album':
+            q2 = q.order_by('album').distinct('album')
+            res = [x.album for x in q2]
         if what == 'song':
-            res2 = []
-            res_in = sorted(set(res))
-            for item in res_in:
-                info = self.client.find('file', item)[0]
-                if 'artist' in info and 'title' in info:
-                    res2.append([item, '%s - %s' % (info['artist'], info['title'])])
-                elif 'title' in info:
-                    res2.append([item, info['title']])
+            for x in q:
+                if x.artist != '':
+                    res.append([x.path, x.artist + ' - ' + x.title, x.rating])
                 else:
-                    no_ext = os.path.splitext(item)[0]
-                    res2.append([item, os.path.basename(no_ext).replace('_', ' ')])
-                if len(res2) >= 200:
-                    break
+                    res.append([x.path, x.title, x.rating])
 
-            self.truncated = 0
-            if len(res_in) > len(res2):
-                self.truncated = len(res_in) - len(res2)
+        logger.print('list_by() done.')
+        return res
 
-            return res2
-
-        # Return all other results directly as sorted unique array.
-        return sorted(set(res))
-
-    def seed_by(self, count, plname, what, dates, genres, artists, albums):
+    def seed_by(self, count, plname, what, ratings, dates, genres, artists, albums):
         """Random add items to playlist from browse view.
 
         :param count: number of items to add
         :param plname: playlist name ('' for current)
         :param what: [date, genre, artist, album, song]
+        :param ratings: see list_by()
         :param dates: see list_by()
         :param genres: see list_by()
         :param artists: see list_by()
@@ -883,7 +928,7 @@ class MPC:
         :return: status string.
         """
 
-        files = self.list_by(what, dates, genres, artists, albums, file_mode=True)
+        files = self.list_by(what, ratings, dates, genres, artists, albums, file_mode=True)
 
         if len(files) == 0:
             return 'Zero results, nothing added.'
@@ -897,3 +942,40 @@ class MPC:
             add.append(files[random.randrange(0, len(files))])
 
         return self.playlist_action('append', plname, add)
+
+    def get_m3u(self, source, name):
+        """Return list uris to save as m3u file
+        
+        :param source: one of [current, saved, history]
+        :param name: name of saved playlist or date for history
+        :return: ['/path/to/mp31.mp3', '/path/to/next.ogg', ...]
+        """
+        res = []
+        client = MPDClient()
+        client.timeout = 10
+        try:
+            client.connect(settings.PB_MPD_SOCKET, 0)
+            path_prefix = client.config()
+        except ConnectionError:
+            print("ERROR: CONNECT SOCKET")
+            return dict(error_str='Failed to connect to MPD socket!', data=[])
+        except CommandError:
+            print("ERROR: COMMAND SOCKET")
+            return dict(error_str='Failed to connect to MPD socket!', data=[])
+
+        self.ensure_connected()
+        if source == 'current':
+            items = self.client.playlistinfo()
+            res = [os.path.join(path_prefix, x['file']) for x in items]
+        elif source == 'saved':
+            try:
+                items = self.client.listplaylistinfo(name)
+                res = [os.path.join(path_prefix, x['file']) for x in items]
+            except CommandError:
+                return dict(error_str='Playlist not found: '+name, data=[])
+        elif source == 'history':
+            items = History.get_history(name)
+            res = [os.path.join(path_prefix, x[5]) for x in items]
+
+        return dict(status_str='Downloading %s playlist with %d items' % (source, len(res)),
+                    data=res, prefix=path_prefix)

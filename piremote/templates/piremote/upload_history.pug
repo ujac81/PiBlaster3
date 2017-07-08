@@ -1,0 +1,27 @@
+//-
+    upload_history.pug -- provide upload form for XML history file.
+
+    GET /piremote/upload/history
+
+!!!5
+html(lang="en")
+    head
+        meta(charset="utf-8")
+        meta(name="viewport", content="width=device-width, maximum-scale=1.0, user-scalable=yes")
+        meta(http-equiv="Cache-control", content="no-cache")
+        meta(http-equiv="Expires", content="-1")
+        title PiBlater3 Remote
+    body
+        h1 Upload History File
+        p.
+            Uploaded history files must be XML files exported by PiBlaster software.
+            All items found in the XML files are merged with the current history database.
+            If no full match for path is found, removal of leading directories is tried to match a path from local database.
+            Items already found in history are not inserted.
+
+        form(action='/piremote/upload/history/', method='POST', enctype='multipart/form-data')
+            -csrf_token
+            label(for='historyfile') History XML file:
+            input(type='file', name='historyfile', accept='application/xml', required='', placeholder='history.xml')
+            input(type='submit', value='Upload')
+

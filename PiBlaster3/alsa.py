@@ -8,6 +8,7 @@ from subprocess import Popen, PIPE
 from django.conf import settings
 
 from .mpc import MPC
+from .helpers import flash_command_led
 
 
 class AlsaMixer:
@@ -63,6 +64,7 @@ class AlsaMixer:
             cmd = ['amixer', '-M', 'set', "\"%s\"" % self.volume_channels[mixer_id-1], '%d%%' % val]
             if len(self.sudo_prefix):
                 cmd = [self.sudo_prefix] + cmd
+            flash_command_led()
             channels = Popen(' '.join(cmd), shell=True, stdout=PIPE, stderr=PIPE).communicate()[0].decode('utf-8').split('\n')
             for chan in channels:
                 m = re.search(r"\[(\d+)%\]", chan)
@@ -107,6 +109,7 @@ class AlsaMixer:
         cmd = ["amixer", "-D", "equal", "cset", "numid=%d" % (chan+1), "%s" % val]
         if len(self.sudo_prefix):
             cmd = [self.sudo_prefix] + cmd
+        flash_command_led()
         Popen(cmd, stdout=PIPE, stderr=PIPE).communicate()
 
         cmd = ['amixer', '-D', 'equal', 'cget', "numid=%d" % (chan+1)]

@@ -5,33 +5,35 @@
 PiRemote.load_browse_page = ->
 
     # Insert buttons
-    PiRemote.add_navbar_button 'browse_left', 'chevron-left', true, false
-    PiRemote.add_navbar_button 'browse_right', 'chevron-right', true, false
+    btn_left = PiRemote.add_navbar_button 'browse_left', 'chevron-left', true, false
+    btn_right = PiRemote.add_navbar_button 'browse_right', 'chevron-right', true, false
 
-    $('button#navbutton_browse_left').off 'click'
-    $('button#navbutton_browse_left').on 'click', ->
+    btn_left.on 'click', ->
         if PiRemote.browse_current_page_index > 0
             PiRemote.browse_current_page_index -= 1
         PiRemote.do_browse PiRemote.select_classes[PiRemote.browse_current_page_index]
         return
 
-    $('button#navbutton_browse_right').off 'click'
-    $('button#navbutton_browse_right').on 'click', ->
-        if PiRemote.browse_current_page_index < 4
+    btn_right.on 'click', ->
+        if PiRemote.browse_current_page_index < 5
             PiRemote.browse_current_page_index += 1
         PiRemote.do_browse PiRemote.select_classes[PiRemote.browse_current_page_index]
         return
 
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'browse-list')
-    bl.append('h3').attr('id', 'browse-head')
     tb = bl.append('table').attr('id', 'tbbrowse').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'browse')
 
-    if PiRemote.last_browse isnt null
+    if PiRemote.should_browse isnt null
+        # should browse should not be 'song'
+        PiRemote.browse_current_page_index = PiRemote.select_indexes[PiRemote.should_browse] + 1
+        PiRemote.should_browse = null
+        PiRemote.do_browse PiRemote.select_classes[PiRemote.browse_current_page_index]
+    else if PiRemote.last_browse isnt null
         PiRemote.build_browse PiRemote.last_browse
     else
-        PiRemote.do_browse 'date'
+        PiRemote.do_browse 'rating'
     return
 
 
@@ -51,17 +53,18 @@ PiRemote.do_browse = (what) ->
         for key, val of selected_lists
             if val.length == 1 and val[0] == 'All' and key != 'song'
                 all_all += 1
-        if all_all >= 4
+        if all_all >= 5
             PiRemote.error_message 'Error', "Browsing of all files prevented for performance reasons. Please select at least one category not equal to 'all'."
             # Stay at album view
-            PiRemote.browse_current_page_index = 3
+            PiRemote.browse_current_page_index = 4
             return
 
     PiRemote.do_ajax
-        url: 'list'
+        url: 'listby'
         method: 'GET'
         data:
             what: what
+            ratings: selected_lists['rating']
             dates: selected_lists['date']
             genres: selected_lists['genre']
             artists: selected_lists['artist']
@@ -75,12 +78,11 @@ PiRemote.do_browse = (what) ->
 
 # Build table result from all categories except 'song'
 PiRemote.build_browse = (data) ->
-
     PiRemote.last_browse = data
 
     mode = data.what
     title = PiRemote.select_class_names[PiRemote.browse_current_page_index]
-    d3.select('h3#browse-head').html('Browse by '+title)
+    $('h3#heading').html('Browse by <em>'+title+'</em>').show()
 
     # clean table
     tbody = d3.select('tbody#browse')
@@ -92,8 +94,10 @@ PiRemote.build_browse = (data) ->
 
     if mode == 'date'
         browse_data = ['All', '0-1970', '1971-1980', '1981-1990', '1991-2000', '2001-2010', '2010-today'].concat(data.browse)
-    else
+    else if mode != 'rating'
         browse_data = ['All'].concat(data.browse)
+    else
+        browse_data = data.browse
 
     # Append dirs
     tbody.selectAll('tr')
@@ -117,7 +121,6 @@ PiRemote.build_browse = (data) ->
         PiRemote.selected[mode] = {'All': true}
 
     # single-click on selectable items toggles select
-    $('div.browse-list > table > tbody > tr.selectable').off 'click'
     $('div.browse-list > table > tbody > tr.selectable').on 'click', (event) ->
         tr = $(this)
         if tr.data('index') == 0 and tr.data('item') == 'All'
@@ -167,13 +170,12 @@ PiRemote.build_browse_song = (data) ->
         .attr('class', 'selectable')
         .attr('data-index', (d, i) -> i)
         .selectAll('td')
-        .data((d, i) -> [i+1, d[1], action_span]).enter()
+        .data((d, i) -> [i+1, PiRemote.make_float_rating(d[1], d[2]), action_span]).enter()
         .append('td')
             .attr('class', (d, i)-> 'browse-td'+i)
             .html((d) -> d)
 
     # single-click on index raises file info dialog
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-td0').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td0').on 'click', (event) ->
         i = $(this).parent().data('index')
         file = PiRemote.last_browse.browse[i][0]
@@ -181,13 +183,11 @@ PiRemote.build_browse_song = (data) ->
         return
 
     # single-click on selectable items toggles select
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td1').on 'click', (event) ->
         $(this).parent().toggleClass 'selected'
         return
 
     # single-click on action span toggles action dialog
-    $('div.browse-list > table > tbody > tr.selectable > td.browse-td2').off 'click'
     $('div.browse-list > table > tbody > tr.selectable > td.browse-td2').on 'click', (event) ->
         i = $(this).parent().data('index')
         d = PiRemote.last_browse.browse[i]
@@ -301,7 +301,6 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
             .attr('id', 'confirmbutton').html('Seed')
 
-    $('button#confirmbutton').off 'click'
     $('button#confirmbutton').on 'click', ->
         selected_lists = {}
         for mode in PiRemote.select_classes
@@ -316,6 +315,7 @@ PiRemote.browse_raise_seed_dialog = (mode, plname, title, items) ->
                 what: PiRemote.select_classes[PiRemote.browse_current_page_index+1]
                 count: $('input#seedspin').val()
                 plname: plname
+                ratings: selected_lists['rating']
                 dates: selected_lists['date']
                 genres: selected_lists['genre']
                 artists: selected_lists['artist']
@@ -376,4 +376,11 @@ PiRemote.browse_raise_add_files_dialog = ->
 
     # Raise dialog.
     $('#modalSmall').modal('show')
+    return
+
+    
+# Set selection to 'All' for all classes
+PiRemote.browse_reset_selection = ->
+    for item in PiRemote.select_classes
+        PiRemote.selected[item] = {'All': true, 'Unknown': false}
     return

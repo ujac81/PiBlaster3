@@ -1,0 +1,49 @@
+//-
+    upload_result.pug -- show upload result
+
+    POST /piremote/upload/UPLOAD
+
+!!!5
+html(lang="en")
+    head
+        meta(charset="utf-8")
+        meta(name="viewport", content="width=device-width, maximum-scale=1.0, user-scalable=yes")
+        meta(http-equiv="Cache-control", content="no-cache")
+        meta(http-equiv="Expires", content="-1")
+        title PiBlater3 Remote
+    body
+        h1 {{title}}
+        p
+            a(href='/piremote/') Return to PiRemote
+        p.
+            {{text}}
+
+        if error_str
+            h4.error Error:
+            p.error {{error_str}}
+
+        if errors
+            h4.error XML Errors:
+            each error in errors
+                p.error {{error}}
+
+        if status_str
+            p.status {{status_str}}
+
+        if unparsed
+            h4.status Items not found in local database:
+            ol
+                each item in unparsed
+                    li {{item.0}}
+
+        if parsed
+            h4.status Parsed and applied items:
+            ol
+                each item in parsed
+                    li {{item.0}}
+
+        if skipped
+            h4.status Skipped (already applied) items:
+            ol
+                each item in skipped
+                    li {{item.0}}

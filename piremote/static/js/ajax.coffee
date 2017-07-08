@@ -36,11 +36,14 @@ PiRemote.do_ajax = (req) ->
             req.success(data) if req.success
             return
         error: (jqXHR) ->
-            console.log 'AJAX ERROR'
-            console.log jqXHR
-            PiRemote.setErrorText 'AJAX communication error! You might want to reload.'
+            # Call error function if given, otherwise indicate AJAX error
+            if req.error
+                req.error()
+            else
+                console.log 'AJAX ERROR'
+                console.log jqXHR
+                PiRemote.setErrorText 'AJAX communication error! You might want to reload.'
             return
-
     return
 
 
@@ -57,7 +60,6 @@ PiRemote.pl_action = (cmd, plname, list, type='file', req={}) ->
         success: (data) ->
             req.success data if req.success
             return
-
     return
 
 
@@ -76,7 +78,6 @@ PiRemote.pls_action = (cmd, plname, req={}) ->
         success: (data) ->
             req.success(data) if req.success
             return
-
     return
 
 
@@ -88,3 +89,22 @@ PiRemote.do_command = (cmd, payload=[]) ->
         data:
             cmd: cmd
             payload: payload
+    return
+
+    
+# AJAX GET of downloadable content (JSON data.data as array) and create download blob.
+PiRemote.do_download_as_text = (req) ->
+    PiRemote.do_ajax
+        url: req.url
+        method: 'GET'
+        data: req.data
+        success: (data) ->
+            URL = window.URL || window.webkitURL
+            blob = new Blob([data.data.join('\r\n')], {type: 'text/plain; charset=utf-8'})
+            download_url = URL.createObjectURL blob
+            a = $('a#download')[0]
+            a.href = download_url
+            a.download = req.filename
+            a.click()
+            return
+    return

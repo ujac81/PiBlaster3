@@ -5,8 +5,9 @@ imported at the end of settings.py
 DO NOT OVERWRITE DJANGO SETTINGS HERE
 """
 
-# input required for confirm dialogs (delete playlist, etc)
-PB_CONFIRM_PASSWORD = 'ulli'
+# Input required for confirm dialogs (delete playlist, etc).
+# Set to '' to disable, do not just remove this line.
+PB_CONFIRM_PASSWORD = 'piremote'
 
 # Directory to store uploaded files inside.
 # Make sure this one is scanned by MPD or songs won't appear in player.
@@ -32,3 +33,28 @@ PB_MEDIA_EXT = ('.mp3', '.flac', '.ogg', '.wma', '.wav', '.mp4', '.m4a', '.mpc')
 
 # Set this to true if you want to set the system time via client time
 PB_SET_TIME = False
+
+# MPD socket file (required to read mpd config)
+PB_MPD_SOCKET = '/run/mpd/socket'
+
+# Pipe for GPIO LED thread to set leds while updating, uploading, ...
+# Set to None to disable inter process communication for LEDs.
+PB_GPIO_PIPE = '/tmp/.piblaster_led_pipe'
+
+PB_USE_GPIO = True
+
+PB_LEDS = [24, 16, 17, 5, 13]
+
+PB_LED_GREEN=24
+PB_LED_YELLOW=16
+PB_LED_RED=17
+PB_LED_BLUE=5
+PB_LED_WHITE=13
+
+PB_BUTTONS = [23, 12, 27, 6, 26]
+
+PB_BUTTON_GREEN=23
+PB_BUTTON_YELLOW=12
+PB_BUTTON_RED=27
+PB_BUTTON_BLUE=6
+PB_BUTTON_WHITE=26

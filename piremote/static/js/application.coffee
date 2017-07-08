@@ -3,10 +3,7 @@
 # Run on document.ready event.
 $ ->
     PiRemote.init_variables()
-
-    # Build selection classes
-    for item in PiRemote.select_classes
-        PiRemote.selected[item] = {'All': true, 'Unknown': false}
+    PiRemote.browse_reset_selection()
 
     # disable caching for AJAX
     PiRemote.ajax_setup()
@@ -21,7 +18,6 @@ $ ->
             payload: [new Date().getTime()]
 
     # Top menu action -- invoke load_page() on data-action value.
-    $(document).off 'click', 'a[data-toggle="menu"]'
     $(document).on 'click', 'a[data-toggle="menu"]', (event) ->
         action = event.target.dataset.action
         event.preventDefault()
@@ -33,8 +29,9 @@ $ ->
 
     # Disable polling while focus is lost.
     # Load blur page on focus loss and reload page on focus return.
-    unless PiRemote.debug
+    unless PiRemote.debug  # and false  # TODO blur always, also in DEBUG mode
         $(window).blur ->
+            # Blurring the window stops the short poll loop
             PiRemote.safe_page = PiRemote.current_page
             PiRemote.safe_sub_page = PiRemote.current_sub_page
             PiRemote.load_page 'blur'
@@ -64,16 +61,16 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
     PiRemote.current_page = page
     PiRemote.current_sub_page = sub_page
 
-    # Reset max poll counter for enforced page reloads.
-    PiRemote.tot_poll_count = 0
-
     # remove page specific classes from body
     $('body').removeClass()
+    $('#searchbardiv').hide()
 
     # clean main page node
     PiRemote.clear_navbar_buttons()
     d3.select('.piremote-content').html('')
+    $('#minussign').hide()
     $('#addsign').hide()
+    $('h3#heading').hide()
 
     if page == 'index'
         PiRemote.load_index_page()
@@ -83,6 +80,8 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
         PiRemote.load_files_page()
     else if page == 'playlist'
         PiRemote.load_playlist_page()
+    else if page == 'smart'
+        PiRemote.load_smart_playlist_page()
     else if page == 'search'
         PiRemote.load_search_page()
     else if page == 'history'

@@ -27,6 +27,12 @@ DEBUG = bool(os.environ.get('DEBUG', False))
 if DEBUG:
     print('DEBUG ENABLED')
 
+
+# SECURITY WARNING: don't run with debug turned on in production!
+PROFILE = bool(os.environ.get('PROFILE', False))
+if PROFILE:
+    print('PROFILING ENABLED')
+
 ALLOWED_HOSTS = ['localhost', 'pi.blaster', '0.0.0.0', '*']
 
 COMPRESS_ENABLED = not DEBUG
@@ -106,8 +112,12 @@ WSGI_APPLICATION = 'PiBlaster3.wsgi.application'
 
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.postgresql_psycopg2',
+        'NAME': 'piremote',
+        'USER': 'piremote',
+        'PASSWORD': 'piremote',
+        'HOST': 'localhost',
+        'PORT': '',
     }
 }
 

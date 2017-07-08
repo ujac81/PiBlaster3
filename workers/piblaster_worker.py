@@ -13,8 +13,10 @@ import signal
 import time
 
 from PiBlaster3.settings import *
+from PiBlaster3.helpers import write_gpio_pipe
 from workers.uploader import Uploader
 from workers.partymode import MPDService
+from workers.ratings_scanner import RatingsScanner
 
 
 class PiBlasterWorker:
@@ -25,23 +27,47 @@ class PiBlasterWorker:
         self.keep_run = True  # run daemon as long as True
         self.uploader = Uploader(self)
         self.idler = MPDService(self)
+        self.scanner = RatingsScanner(self)
+        self.rescan_ratings = False  # do not rescan ratings on boot
+        self.is_vassal = 'UWSGI_VASSAL' in os.environ
 
     def run(self):
         """daemonize, start threads and enter daemon loop."""
-        if not DEBUG:
+        if not DEBUG and not self.is_vassal:
+            # No fork in debug mode and not in uwsgi vassal mode.
             self.daemonize()
+        else:
+            print('PiBlasterWorker running in debug or as vassal')
         self.uploader.start()
         self.idler.start()
         self.daemon_loop()
         MPDService.stop_idler()
 
+    def print_message(self, msg):
+        """
+
+        :param msg:
+        :return:
+        """
+        if DEBUG or self.is_vassal:
+            print('[WORKER] {0}'.format(msg))
+
     def daemon_loop(self):
-        """Empty loop, idle until terminated."""
+        """Main daemon loop.
+
+        uploader and party mode threaded,
+        ratings scanner activated if idler found database update.
+
+        :return:
+        """
+
         while self.keep_run:
 
-            time.sleep(50. / 1000.)  # 50ms
+            time.sleep(100. / 1000.)  # 100ms
+            if self.rescan_ratings:
+                self.scanner.rescan()  # won't block too long
 
-        print('LEAVING')
+        self.print_message('LEAVING')
 
     def term_handler(self, *args):
         """ Signal handler to stop daemon loop"""

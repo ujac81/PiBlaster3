@@ -5,22 +5,36 @@
 Install instructions -- updated 2016/12/16
 
 # Set up Raspberry Pi
-Install latest raspbian
+Install latest raspbian, like told on the website.
+After first boot run
+
+    $ sudo raspi-config
+
+Enable ssh, set locale, set timezone, disable waiting for network at boot.
+
+## Hifiberry AMP
+If using PiBlaster with hifiberry amp, follow instructions on the website: https://www.hifiberry.com/build/documentation/configuring-linux-3-18-x/
+Don't forget to set up the equalizer if desired: https://support.hifiberry.com/hc/en-us/articles/205311292-Adding-equalization-using-alsaeq
 
 ## Access Point Mode
+To access the PiBlaster 3 interface via WiFi, you can either use the onboard WiFi device which comes with newer versions of raspberry Pi or you can attach a usb WiFi-dongle.
+If using another dongle, please check if you need to set wlan0 or wlan1 here.
+
+**Note:** other devices require other drivers for hostapd.conf!!! There are some dongles which require drivers that are not shipped with the default version of hostapd. You will have to find another distribution of hostapd or patch the sources or whatever...
+
 Example set for net 192.168.207.0
 
-**Note:** settings configured for wlan1 -- if you have no raspi model #3, you might want to switch to wlan0.
+**Note:** settings configured for wlan0 -- if you have no raspi model #3, you might want to switch to wlan0.
 
-    $ sudo aptitude install hostapd dnsmasq
+    $ sudo apt install hostapd dnsmasq
 
 Prevent dhcpd on wlan interface. At the bottom of /etc/dhcpcd.conf add
 
-    denyinterfaces wlan1
+    denyinterfaces wlan0
 
 /etc/network/interfaces
 
-    iface wlan1 inet static
+    iface wlan0 inet static
       address 192.168.207.1
       network 192.168.207.0
       netmask 255.255.255.0
@@ -32,7 +46,7 @@ Use hostapd.conf from PiBlaster3 installation to /etc/default/hostapd make sure 
 
 /etc/hosts
 
-    192.168.207.1 pi.blaster pi
+    192.168.207.1 blaster.local blaster
 
 /etc/resolv.conf
 
@@ -55,28 +69,40 @@ Use hostapd.conf from PiBlaster3 installation to /etc/default/hostapd make sure 
 
 Enable services at boot
 
-    $ sudo update-rc.d hostapd enable
-    $ sudo update-rc.d dnsmasq enable
+    $ sudo systemctl enable nginx hostapd
+    $ sudo systemctl enable nginx dnsmasq
 
 ## Reverse Proxy
 Nginx will be used as revere proxy and delivery of mp3 files.
 Configuration will be done, when PiBlaster3 is installed.
 
-    $ sudo aptitude install nginx
-    $ sudo update-rc.d nginx enable
+    $ sudo apt install nginx
+    $ sudo systemctl enable nginx
+
+## PostgreSQL Database
+PiBlaster 3 software uses pSQL database to store settings and other things like upload queue.
+
+    $ sudo apt-get install libpq-dev python-dev postgresql postgresql-contrib
+
+    $ sudo su - postgres
+    createdb piremote
+    createuser -P piremote
+    psql
+    GRANT ALL PRIVILEGES ON DATABASE piremote TO piremote
+    \q
+    logout
+
+Note: the password assigned for the database here has to match the one set in settings.py
 
 ## Required Packages
 
-    $ sudo aptitude install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git libasound2-dev redis-server
+    $ sudo apt install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git libasound2-dev redis-server
     $ sudo pip3 install django==1.10.5
 
 At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might use this directly)
 
     $ sudo pip3 install git+https://github.com/matannoam/pypugjs.git@master
-    $ sudo pip3 install django_compressor
-    $ sudo pip3 install uwsgi
-    $ sudo pip3 install python-mpd2
-    $ sudo pip3 install django-websocket-redis
+    $ sudo pip3 install django_compressor uwsgi python-mpd2 django-websocket-redis mutagen psycopg2
 
 ## PiBlaster3 software
 
@@ -86,11 +112,13 @@ At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might u
 
 Create local settings
 
+    $ cd /opt/PiBlaster3
     $ cp PiBlaster3/settings_piremote.py.example PiBlaster3/settings_piremote.py
 
 And update settings inside this file.
 
 Make sure DEBUG is not set in your environment, otherwise set DEBUG to FALSE in settings.py.
+Also make sure you have correct settings for the SQL database in settings.py.
 
     $ cd /opt/PiBlaster3
     $ python3 manage.py migrate
@@ -108,14 +136,8 @@ If any errors occur here, fix them, or nothing will work.
 ## UWSGI and Worker
 
     $ sudo cp /opt/PiBlaster3/conf/piblaster.service /etc/systemd/system
-    $ sudo cp /opt/PiBlaster3/conf/piblaster.websocket.service /etc/systemd/system
-    $ sudo cp /opt/PiBlaster3/conf/piblaster.worker.service /etc/systemd/system
-
     $ sudo systemctl daemon-reload
-
     $ sudo systemctl enable piblaster.service
-    $ sudo systemctl enable piblaster.websocket.service
-    $ sudo systemctl enable piblaster.worker.service
 
 ## MPD
 Link directories to scan to mpd library and update it.
@@ -128,21 +150,15 @@ Link directories to scan to mpd library and update it.
 # Developer Notes
 
 ## Database
-We use sqlite3 database for communication between workers and app here.
-This is safe because sqlite3 database allows concurrent access.
-No need for elaborate SQL server for this app.
-
-## Create new django project
-
-    $ sudo pip3 install django=x
-    See version list
-    $ sudo pip3 install django=1.10.5
+PostgreSQL database is used in this project.
+For trying out some things and playing with the functionalities of the app, you might revert to sqlite3 database, however concurrent access is not easy for sqlite3.
+In theory it should work, but tests on Raspberry Pi showed that the database seems locked the whole time for the worker.
+To roll back to sqlite3 change settings.py and exchange all psycopg2 to sqlite3 in the worker modules and check that connect is correct.
+Also replace all %s with ? in the SQL commands.
 
 ## Restart service
 
     $ sudo service piblaster restart
-    $ sudo servie piblaster.worker restart
-    $ sudo servie piblaster.websocket restart
 
 ## Run piblaster3 server from command line
 To see full debugging output and interact with django server:
@@ -150,25 +166,9 @@ To see full debugging output and interact with django server:
     $ sudo service piblaster stop
     $ cd /opt/PiBlaster3
     $ export DEBUG=1
+    $ export PROFILE=1
     $ uwsgi --ini conf/piblaster.ini
 
-Run websockets:
-
-    $ sudo service piblaster.websocket stop
-    $ cd /opt/PiBlaster3
-    $ export DEBUG=1
-    $ uwsgi --ini conf/piblaster_websocket.ini
-
-Run workers:
-
-    $ sudo servie piblaster.worker stop
-    $ cd /opt/PiBlaster3
-    $ export DEBUG=1
-    $ sudo workers/piblater_worker.py
-
-Note: running the workers as root might be necessary if GPIOs activated.
-You may also run the web application piremote via uwsgi without workers,
-however features implemented in the workers like party mode (auto append items to playlist) or file upload via usb won't work.
 
 Connect to http://YOUR_PI_HOST
 
@@ -181,3 +181,58 @@ Use pypugjs file.pug to check output.
 Javascript and CSS files are compiled by django_compress http://django-compressor.readthedocs.io/en/latest/ .
 Sass/coffeescript files are handled via COMPRESS_PRECOMPILERS in settings.py.
 
+## Upgrading
+
+### Python Packages
+Upgrade all python packages installed via pip
+
+    # pip3 install --force pip
+    # pip3 list --outdated --format=freeze | grep -v '^\-e' | cut -d = -f 1 | xargs -n1 pip3 install -U
+    # pip3 list --outdated --format=legacy | grep -v '^\-e' | cut -d ' ' -f 1 | xargs -n1 pip3 install -U
+    
+**NOTE:** If you used sudo to install pip packages, you might need sudo again here before the pip3 commands.
+     
+### PostgreSQL
+Upgrade PostgreSQL databases to new version (after distupgrade or such).
+
+    Assumption: new psql version installed by dist upgrade, old running.
+    $ sudo service postgres stop
+    $ sudo su - postgres
+    $ cd
+    Create Backup
+    $ pg_dumpall > backup.sql
+    Remove newly created cluster for the upgraded version (NOT YOUR OLD ONE)
+    $ pg_dropcluster 9.6 main
+    $ pg_upgradecluster 9.5 main
+    $ pg_dropcluster 9.5 main
+    $ logout
+    $ sudo apt remove postgresql-9.5 postgresql-client-9.5 postgresql-contrib-9.5
+    $ sudo systemctl daemon-reload
+    $ sudo service postgresql start
+
+## Testing
+
+### Create test database
+
+    $ sudo su - postgres
+    createdb test_piremote
+    psql
+    GRANT ALL PRIVILEGES ON DATABASE test_piremote TO piremote;
+    ALTER DATABASE test_piremote OWNER TO piremote;
+    ALTER USER piremote CREATEDB;
+    \q
+    logout
+
+### Run tests
+Make sure DEBUG is not set in env!
+
+    $ ./manage.py compress --extension=pug
+    $ ./manage.py test
+
+### Count code lines
+
+    $ sudo apt install cloc
+    $ cd PIBLASTER3_MAIN_FOLDER
+    $ cloc --counted=counts.txt --exclude-dir=CACHE,vendor --exclude-lang=JavaScript  piadmin PiBlaster3 piremote workers
+
+Check counts.txt file for files taken into account.

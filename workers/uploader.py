@@ -1,12 +1,12 @@
 """uploader.py -- threaded upload worker or piremote"""
 
-import sqlite3
+import psycopg2
 import os
 import shutil
 import threading
 from time import sleep
 from mpd import MPDClient, ConnectionError, CommandError
-
+from PiBlaster3.helpers import write_gpio_pipe
 from PiBlaster3.settings import *
 
 
@@ -34,12 +34,9 @@ class UploadIdler:
         Leave check loop if keep_run set to False in PiBlasterWorker.
         Remove uploaded files from database.
         Invoke MPD update if any uploads performed.
-
-        Note: Concurrent access to sqlite3 database is safe if database is stored on local device.
-        (file locks might fail on network file systems).
         """
         db = DATABASES['default']
-        conn = sqlite3.connect(database=db['NAME'], timeout=15)
+        conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
         cur = conn.cursor()
 
         got_file = True
@@ -53,7 +50,7 @@ class UploadIdler:
                 remove = res[1]
                 if self.do_upload(remove):
                     did_upload = True
-                cur.execute("DELETE FROM piremote_upload WHERE path=(?)", (remove,))
+                cur.execute("DELETE FROM piremote_upload WHERE path=(%s)", (remove,))
                 conn.commit()
 
             sleep(0.1)  # don't block CPU too much if this thread goes insane here.
@@ -75,13 +72,15 @@ class UploadIdler:
         :return: True if file uploaded
         """
 
+        self.main.print_message('Uploading %s' % filename)
+
         # Check if
         src_size = os.path.getsize(filename)
         s = os.statvfs(self.upload_path)
         free = s.f_bavail * s.f_frsize
         # keep at least 200MB (logs, cache, whatever)
         if src_size > free - 1024 * 1024 * 200:
-            print('DRIVE FULL, NOT UPLOADING')
+            self.main.print_message('DRIVE FULL, NOT UPLOADING')
             return False
 
         name = filename
@@ -107,17 +106,21 @@ class UploadIdler:
             try:
                 os.makedirs(dirname)
             except OSError as e:
-                print('MKDIR FAILED: '+dirname)
-                print("OSError: {0}".format(e))
+                self.main.print_message('MKDIR FAILED: '+dirname)
+                self.main.print_message("OSError: {0}".format(e))
                 return False
+
+        write_gpio_pipe('2 1')  # raise red led
 
         # perform copy
         try:
             shutil.copy(filename, dest)
         except IOError as e:
-            print('COPY FAILED: ' + dest)
-            print("IOError: {0}".format(e))
+            self.main.print_message('COPY FAILED: ' + dest)
+            self.main.print_message("IOError: {0}".format(e))
             return False
+
+        write_gpio_pipe('2 0')  # clear red led
 
         return True
 
@@ -167,11 +170,11 @@ class Uploader(threading.Thread):
 
         Note: make sure this thread does not throw uncaught exceptions, or upload thread will be dead.
         """
+        self.parent.print_message('UPLOADER RUNNING')
         while self.parent.keep_run:
             ui = UploadIdler(self.parent)
             try:
                 ui.check_for_uploads()
-            except sqlite3.OperationalError as e:
-                print('SQLITE ERROR {0}'.format(e))
-                pass
+            except psycopg2.OperationalError as e:
+                self.parent.print_message('PSQL ERROR {0}'.format(e))
             sleep(1)

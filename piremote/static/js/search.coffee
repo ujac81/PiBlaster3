@@ -3,53 +3,27 @@
 # Build search page.
 # Loaded via PiRemote.load_page('search') every time 'Search' is selected in menu
 PiRemote.load_search_page = ->
-
-    $('body').addClass 'search'
-
+    PiRemote.show_search_header (pattern) ->
+        PiRemote.last_search = pattern
+        PiRemote.do_ajax
+            url: 'search'
+            method: 'POST'
+            data:
+                pattern: pattern
+            success: (data) ->
+                PiRemote.search_rebuild data  # <-- rebuild table callback
+                return
+        return
+        
     root = d3.select('.piremote-content')
-
-    dsearch = root.append('div').attr('id', 'searchbardiv')
-
-    trsearch = dsearch
-        .append('table').attr('id', 'searchbar').attr('class', 'table')
-        .append('tr').attr('id', 'searchbartr')
-    trsearch
-        .append('td').attr('id', 'searchbarlabel').html('Search:')
-    trsearch
-        .append('td').attr('id', 'searchbarinput')
-        .append('input').attr('type', 'text').attr('id', 'searchfield').attr('placeholder', PiRemote.last_search)
-    trsearch
-        .append('td').attr('id', 'searchbarbutton')
-        .append('button').attr('type', 'submit').attr('class', 'btn btn-default').attr('id', 'gosearch').html('Go')
-
-
     bl = root.append('div').attr('id', 'search-list')
     tb = bl.append('table').attr('id', 'tbsearch').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'search')
 
-    $('button#gosearch').off 'click'
-    $('button#gosearch').on 'click', ->
-        PiRemote.do_search $('input#searchfield').val()
-        return
-
     PiRemote.search_rebuild PiRemote.last_search_data
     return
 
-
-# Perform search via AJAX POST
-PiRemote.do_search = (pattern) ->
-    PiRemote.last_search = pattern
-    PiRemote.do_ajax
-        url: 'search'
-        method: 'POST'
-        data:
-            pattern: pattern
-        success: (data) ->
-            PiRemote.search_rebuild data  # <-- rebuild table callback
-            return
-    return
-
-
+    
 # Callback for AJAX POST on /piremote/ajax/search.
 # Rebuild results table
 PiRemote.search_rebuild = (data) ->
@@ -59,17 +33,17 @@ PiRemote.search_rebuild = (data) ->
     PiRemote.last_search_data = data
 
     # no search result so far
-    return if data.status is `undefined` and data.error is `undefined`
+    return if data.status_str is `undefined` and data.error_str is `undefined`
 
     tbody = d3.select('tbody#search')
     tbody.selectAll('tr').remove()
 
-    if data.error
-        tbody.append('tr').append('td').html(data.error)
+    if data.error_str
+        tbody.append('tr').append('td').html(data.error_str)
         return
 
     if data.search isnt `undefined` and data.search.length == 0
-        tbody.append('tr').append('td').html(data.status)
+        tbody.append('tr').append('td').html(data.status_str)
         return
 
     # Rebuild results table
@@ -89,13 +63,13 @@ PiRemote.search_rebuild = (data) ->
         .attr('data-filename', (d)->d[5])
         .attr('data-title', (d)->d[0])
         .attr('class', 'mainrow selectable file-item')
-        .selectAll('td.searchtdmain').data((d)->[d])
+        .selectAll('td.searchtdmain').data((d) -> [d])
 
     subtables = maincells.enter().append('td').attr('class', 'searchtdmain')
-        .selectAll('table.searchtbsub').data((d)->[d])
+        .selectAll('table.searchtbsub').data((d) -> [d])
 
     subrows = subtables.enter().append('table').attr('class', 'searchtbsub')
-        .selectAll('tr').data((d, i)->[[i+1, d[0], d[3], span_item], ['', d[1]+' - '+d[2], '']])
+        .selectAll('tr').data((d, i) -> [[i+1, d[0], d[3], span_item], ['', d[1]+' - '+d[2], PiRemote.pl_make_ratings(d[6])]])
 
     subcells = subrows.enter().append('tr').attr('class', (d, i) -> 'searchtr-'+i)
         .selectAll('td').data((d)->d)
@@ -126,20 +100,17 @@ PiRemote.search_rebuild = (data) ->
         return
 
     # single-click on selectable items toggles select
-    $('table#tbsearch > tbody > tr.selectable > td > table > tr > td.selectable').off 'click'
     $('table#tbsearch > tbody > tr.selectable > td > table > tr > td.selectable').on 'click', (event) ->
         $(this).parent().parent().parent().parent().toggleClass 'selected'
         return
 
     # single click on action raises action dialog
-    $('td.search-action').off 'click'
     $('td.search-action').on 'click', (event) ->
         e =  $(this).parent().parent().parent().parent()
         PiRemote.raise_file_actions e.data('title'), e.data('filename')
         return
 
     # single click on index column raises info dialog
-    $('td.searchtd-0').off 'click'
     $('td.searchtd-0').on 'click', (event) ->
         file = $(this).parent().parent().parent().parent().data('filename')
         PiRemote.search_raise_info_dialog file
@@ -172,9 +143,57 @@ PiRemote.search_raise_info_dialog = (file) ->
                         if item == 'Time'
                             res = PiRemote.secToMin res
                         p.append('strong').html(item+': ')
-                        p.append('span').html(res)
+                        p.append('span').attr('data-item', item.toLowerCase()).classed('choose', item in ['Title', 'Artist', 'Album', 'Date', 'Genre']).html(res)
                         p.append('br')
+                
+                # browse if clicked on choose item
+                $('span.choose').on 'click', ->
+                    $('#modalSmall').modal('hide')
+                    mode = $(this).data('item')
+                    if mode == 'title'
+                        pattern = $(this).text().replace(/[(\[].*[\[)]/g, "").replace(/[. \-_\d]*$/, "")
+                        $('input#searchfield').val(pattern)
+                        PiRemote.load_page 'search'
+                        $('button#gosearch').click()
+                    else
+                        PiRemote.browse_reset_selection()
+                        PiRemote.selected[mode]['All'] = false
+                        PiRemote.selected[mode][$(this).text()] = true
+                        PiRemote.last_browse = null
+                        PiRemote.should_browse = mode
+                        PiRemote.load_page 'browse'
+                    return
 
+                # show rating
+                p.append('strong').html('Rating: ')
+                idxrate = p.append('span').attr('class', 'idxrate')
+                idxrate.append('span').attr('class', 'norate')
+                for i in [1..5]
+                    idxrate.append('span')
+                        .attr('class', 'ratespan glyphicon')
+                        .attr('data-idx', i)
+                        .classed('glyphicon-star-empty', i > info.rating)
+                        .classed('glyphicon-star', i <= info.rating)
+                idxrate.append('span').attr('class', 'norate')
+                p.append('br')
+
+                # rate song
+                $('span.idxrate span').on 'click', ->
+                    rate = 0
+                    if $(this).hasClass('ratespan')
+                        rate = $(this).data('idx')
+                    PiRemote.do_ajax
+                        url: 'rate'
+                        method: 'POST'
+                        data:
+                            filename: info.file
+                            rating: rate
+                            success: (data) ->
+                                PiRemote.index_set_rating 'span.idxrate', rate
+                                return
+                    return
+
+                # show filename and parent dirs
                 filename = info.file.split('/').slice(-1)[0]
                 dirs = info.file.split('/').slice(0, -1)
 
@@ -208,5 +227,8 @@ PiRemote.search_raise_info_dialog = (file) ->
                 audio.append('source').attr('src', '/music/'+file)
 
                 $('#modalSmall').modal()
+                PiRemote.index_set_rating 'span.idxrate', info.rating
+            else
+                PiRemote.error_message 'File not found', 'File info for this file cannot be found. Maybe the file was removed. Full path was: '+file
             return
     return

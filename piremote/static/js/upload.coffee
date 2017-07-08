@@ -5,19 +5,17 @@ PiRemote.load_upload_page = ->
 
     # Insert buttons
     PiRemote.add_navbar_button 'up_upload_file', 'upload', true, false
-
-    $('button#navbutton_up_upload_file').off 'click'
     $('button#navbutton_up_upload_file').on 'click', ->
         PiRemote.up_upload_file()
         return
 
     if PiRemote.upload_message
-        if PiRemote.upload_message.error
+        if PiRemote.upload_message.error_str
             d3.select('#smallModalLabel').html('Upload Error')
-            cont = d3.select('#smallModalMessage').html('').append('p').attr('class', 'error').html(PiRemote.upload_message.error)
-        if PiRemote.upload_message.status
+            cont = d3.select('#smallModalMessage').html('').append('p').attr('class', 'error').html(PiRemote.upload_message.error_str)
+        if PiRemote.upload_message.status_str
             d3.select('#smallModalLabel').html('File Uploaded')
-            cont = d3.select('#smallModalMessage').html('').append('p').html(PiRemote.upload_message.status)
+            cont = d3.select('#smallModalMessage').html('').append('p').html(PiRemote.upload_message.status_str)
             cont.append('p').html('Database update running -- it might take a few moments for your uploaded file to appear in database.')
 
         $('#modalSmall').modal('show')
@@ -28,6 +26,7 @@ PiRemote.load_upload_page = ->
     bl = root.append('div').attr('class', 'upload-list')
     tb = bl.append('table').attr('id', 'tbupload').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'upload')
+    $('h3#heading').html('Browse Uploadable Files').show()
 
     $('#addsign').show()
     $('#addsign').off 'click'
@@ -92,6 +91,7 @@ PiRemote.upload_browse = (dir) ->
             return
     return
 
+
 # Build dir listing on upload
 PiRemote.rebuild_upload = (data) ->
 
@@ -141,38 +141,32 @@ PiRemote.rebuild_upload = (data) ->
             .html((d) -> d)
 
     # single-click on selectable items toggles select
-    $('div.upload-list > table > tbody > tr.selectable > td.selectable').off 'click'
-    $('div.upload-list > table > tbody > tr.selectable > td.selectable').on 'click', (event) ->
+    $('div.upload-list > table > tbody > tr.selectable > td.selectable').on 'click', ->
         $(this).parent().toggleClass 'selected'
         return
 
     # move up by single-click
-    $('#trupdir').off
-    $('#trupdir').on 'click', (event) ->
+    $('#trupdir').on 'click', ->
         PiRemote.upload_browse $(this).data('path')
         return
 
     # single click on folder or folder td enters folder
-    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-0').off
-    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-0').on 'click', (event) ->
+    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-0').on 'click', ->
         PiRemote.upload_browse $(this).parent().data('path')
         return
 
     # single click on dir name enters folder
-    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-1').off
-    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-1').on 'click', (event) ->
+    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-1').on 'click', ->
         PiRemote.upload_browse $(this).parent().data('path')
         return
 
     # dir action triggered
-    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-2').off
-    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-2').on 'click', (event) ->
+    $('div.upload-list > table > tbody > tr.dir-item > td.tdup-2').on 'click', ->
         PiRemote.up_dir_dialog $(this).parent()
         return
 
     # file action triggered
-    $('div.upload-list > table > tbody > tr.selectable > td.tdup-2').off
-    $('div.upload-list > table > tbody > tr.selectable > td.tdup-2').on 'click', (event) ->
+    $('div.upload-list > table > tbody > tr.selectable > td.tdup-2').on 'click', ->
         PiRemote.up_file_dialog $(this).parent()
         return
 
@@ -250,7 +244,6 @@ PiRemote.up_file_dialog = (item) ->
         return
 
     $('#modalSmall').modal()
-
     return
 
 

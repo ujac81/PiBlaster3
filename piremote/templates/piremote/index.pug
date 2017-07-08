@@ -44,6 +44,7 @@ html(lang="en")
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/playlist.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/search.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/settings.coffee')
+        script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/smart.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/websocket.coffee')
         script(type='text/coffeescript', charset='utf-8', src='/piremote/static/js/upload.coffee')
         //-
@@ -57,6 +58,7 @@ html(lang="en")
         script.
             PiRemote.current_page = "{{page}}";
             PiRemote.debug = {{debug}};
+            PiRemote.has_user_pw = {{has_pw}};
         -if upload
             -autoescape off
                 script.
@@ -93,6 +95,8 @@ html(lang="en")
                         li
                             a(href='#', data-toggle='menu', data-action='playlist') Playlist
                         li
+                            a(href='#', data-toggle='menu', data-action='smart') Smart Playlists
+                        li
                             a(href='#', data-toggle='menu', data-action='files') Browse Files
                         li
                             a(href='#', data-toggle='menu', data-action='browse') Browse by Tags
@@ -119,13 +123,27 @@ html(lang="en")
                 .modal-body(id="smallModalMessage") Message not set!
 
         .container-fluid(id='basecont')
+            #searchbardiv
+                table#searchbar.table
+                    tr#searchbartr
+                        td#searchbarlabel Search:
+                        td#searchbarinput
+                            input#searchfield(type="text")
+                        td#searchbarbutton
+                            button#gosearch.btn.btn-default(type="submit") Go
+            h3#heading
             .piremote-content
                 //- content here built via PiRemote.load_page()
 
         //-
             hidden by default, raised for pages with add action.
+        #minusdiv
+            span#minussign.glyphicon.glyphicon-minus-sign
         #adddiv
             span#addsign.glyphicon.glyphicon-plus-sign
+
+        //- download blobs received by AJAX
+        a#download
 
         //-
             draggable item in playlist view.

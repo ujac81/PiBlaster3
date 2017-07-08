@@ -30,22 +30,24 @@ PiRemote.init_variables = ->
     PiRemote.last_search = ''  # remember last search pattern
     PiRemote.last_search_data = []  # keep data of last search
 
-    PiRemote.select_classes = ['date', 'genre', 'artist', 'album', 'song']
-    PiRemote.select_class_names = ['Year', 'Genre', 'Artist', 'Album', 'Files']
+    
+    PiRemote.select_indexes = {'rating': 0, 'date': 1, 'genre': 2, 'artist': 3, 'album': 4, 'song' :5}
+    PiRemote.select_classes = $.map(PiRemote.select_indexes, (v, k) -> k)
+    PiRemote.select_class_names = ['Rating', 'Year', 'Genre', 'Artist', 'Album', 'Files']
     PiRemote.selected = {}  # per class array of selected items
     PiRemote.browse_current_page_index = 0  # current class index in browse by tag
     PiRemote.last_browse = null  # last received data in browse by tag
+    PiRemote.should_browse = null  # set by info dialog if should browse genre/artist/album
 
     PiRemote.dragging = false  # true while element is dragged in playlist
 
-    PiRemote.tot_poll_count = 0  # enforce reload if polled too much
-    PiRemote.enforce_reload_poll_count = 1000  # if polled this much, reload (browser mem could explode if poll loop runs hours and hours)
-
     PiRemote.poll_interval = 1000  # poll interval in ms
     PiRemote.poll_interval_min = 500  # prevent polling if last poll time smaller than this
-
+    
     PiRemote.update_instance_id = 0  # keep number of calls of update_time() to break recursion.
     PiRemote.pl_update_instance_id = 0  # same for playlist view
+    
+    PiRemote.action_span = '<span class="glyphicon glyphicon-option-vertical" aria-hidden="true"></span>'
 
     return
 
@@ -53,9 +55,10 @@ PiRemote.init_variables = ->
 # Fade in status bar, set text and start fade out timer.
 # NOTE: If you are using differing fade times, the fade-out might not work
 # if you send differing messages in short time.
-PiRemote.setStatus = (text, error, fade) ->
+PiRemote.setStatus = (text, error, warning, fade) ->
     $('#footer').toggleClass('error', error)
-    $('#footer').toggleClass('status', ! error)
+    $('#footer').toggleClass('warning', not error and warning)
+    $('#footer').toggleClass('status', not error and not warning)
 
     if text == ''
         $('#footer').fadeTo('fast', 0)
@@ -74,13 +77,19 @@ PiRemote.setStatus = (text, error, fade) ->
 
 # Fade in status bar, set text and start fade out timer.
 PiRemote.setStatusText = (text, fade=5000) ->
-    PiRemote.setStatus text, false, fade
+    PiRemote.setStatus text, false, false, fade
     return
 
 
 # Fade in status red bar, set text and start fade out timer.
 PiRemote.setErrorText = (text, fade=5000) ->
-    PiRemote.setStatus text, true, fade
+    PiRemote.setStatus text, true, false, fade
+    return
+
+
+# Fade in status red bar, set text and start fade out timer.
+PiRemote.setWarningText = (text, fade=5000) ->
+    PiRemote.setStatus text, false, true, fade
     return
 
 
@@ -103,7 +112,7 @@ PiRemote.secToHMS = (secs) ->
     res += "0" if minutes < 10
     res += minutes + ':'
     res += '0' if seconds < 10
-    res = seconds
+    res += seconds
 
 
 # Calculate font width for string element.
@@ -119,6 +128,7 @@ String::width = (font_size) ->
     o.remove()
     w
 
+    
 # Clear nav-bar button area.
 PiRemote.clear_navbar_buttons = ->
     d3.select('#button-line').html('')
@@ -141,12 +151,11 @@ PiRemote.add_navbar_button = (sub_page, text, glyphicon=false, sub_page_event=tr
 
     if sub_page_event
         # Load corresponding sub page on click.
-        $('button#navbutton_'+sub_page).off 'click'
-        $('button#navbutton_'+sub_page).on 'click', ->
+        btn.on 'click', ->
             PiRemote.load_page PiRemote.current_page, $(this).data('subpage')
             return
 
-    return
+    btn
 
 
 # Raise a dialog box including confirm button.
@@ -157,7 +166,7 @@ PiRemote.confirm_dialog = (req) ->
     cont = d3.select('#smallModalMessage')
     cont.html('')
 
-    need_pw = req.requirepw isnt `undefined` and req.requirepw
+    need_pw = req.requirepw isnt `undefined` and req.requirepw and PiRemote.has_user_pw
     if need_pw
         cont.append('p').attr('class', 'confirmpassword')
             .append('input').attr('type', 'text').attr('id', 'confirmpw').attr('placeholder', 'Confirm Password')
@@ -168,7 +177,6 @@ PiRemote.confirm_dialog = (req) ->
         .append('button').attr('type', 'button').attr('class', 'btn btn-primary')
             .attr('id', 'confirmbutton').html('Confirm')
 
-    $('button#confirmbutton').off 'click'
     $('button#confirmbutton').on 'click', ->
         if need_pw
             do_confirm = false
@@ -204,3 +212,33 @@ PiRemote.error_message = (title, message) ->
     cont.append('p').html(message)
     $('#modalSmall').modal('show')
     return
+
+
+# Display the search bar on top of the page.
+PiRemote.show_search_header = (search_fun) ->
+    $('body').addClass 'search'
+    $('#searchbardiv').show()
+    $('button#gosearch').off 'click'
+    $('button#gosearch').on 'click', ->
+        search_fun $('input#searchfield').val()
+        return
+    return
+    
+    
+# Raise a dialog with stacked actions.
+PiRemote.raise_selection_dialog = (title, text, items) ->
+    d3.select('#smallModalLabel').html(title)
+    cont = d3.select('#smallModalMessage')
+    cont.html('')
+    cont.append('p').html(text)
+
+    navul = cont.append('ul').attr('class', 'nav nav-pills nav-stacked')
+    for elem in items
+        navul.append('li').attr('role', 'presentation')
+            .append('span').attr('class', 'browse-action-file')
+            .attr('data-action', elem[0])
+            .html(elem[1])
+    $(document).off 'click', 'span.browse-action-file'
+    $('#modalSmall').modal('show')
+    return
+    

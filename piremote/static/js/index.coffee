@@ -34,6 +34,15 @@ PiRemote.index_build_main = ->
     idxshow.append('h3').attr('id', 'idxartist')
     idxshow.append('h4').attr('id', 'idxalbum')
 
+    idxrate = root.append('div').attr('class', 'idxrate')
+    idxrate.append('span').attr('class', 'norate')
+    for i in [1..5]
+        idxrate.append('span')
+            .attr('class', 'ratespan glyphicon glyphicon-star-empty')
+            .attr('data-idx', i)
+    idxrate.append('span').attr('class', 'norate')
+    PiRemote.last_rating = 0
+
     # POSITION INDICATOR
     idxpos = root.append('div').attr('id', 'idxpos')
     idxpos.append('div').attr('id', 'idxposfill')
@@ -69,12 +78,70 @@ PiRemote.index_build_main = ->
     row3.append('span').attr('data-action', 'repeat').attr('id', 'repeat')
                        .attr('class', 'glyphicon glyphicon-repeat')
 
-    PiRemote.install_index_actions()
+    
+    # Resize position indicator on window resize
+    $(window).resize ->
+        PiRemote.resize_index()
+        return
+
+    # Position action
+    $('#idxpos').on 'click', (event) ->
+        x_off = $(this).offset().left
+        pct = (event.pageX-x_off)/$(this).width()*100.0
+        PiRemote.do_ajax
+            url: 'cmd'
+            method: 'POST'
+            data:
+                'cmd': 'seekcur '+pct
+            success: (data) ->
+                if data.success
+                    PiRemote.update_status data
+                return
+
+    # Button actions
+    $('.idxbuttons span').on 'click', ->
+        PiRemote.do_ajax
+            url: 'cmd'
+            method: 'POST'
+            data:
+                'cmd': $(this).data('action')
+            success: (data) ->
+                if data.success
+                    PiRemote.update_status data
+                return
+        return
+
+    # rate song
+    $('div.idxrate span').on 'click', ->
+        if PiRemote.last_index_data isnt null and PiRemote.last_index_data.file and PiRemote.last_index_data.file isnt ''
+            rate = 0
+            if $(this).hasClass('ratespan')
+                rate = $(this).data('idx')
+            PiRemote.do_ajax
+                url: 'rate'
+                method: 'POST'
+                data:
+                    filename: PiRemote.last_index_data.file
+                    rating: rate
+                    success: (data) ->
+                        PiRemote.index_refresh_status()
+                        return
+        return
+
+    # click in title raises info dialog
+    $('#idxshow').on 'click', ->
+        if PiRemote.last_index_data isnt null and PiRemote.last_index_data.file and PiRemote.last_index_data.file isnt ''
+            PiRemote.search_raise_info_dialog PiRemote.last_index_data.file
+        return
+    
     PiRemote.poll_started = false
     PiRemote.polling = false
     PiRemote.resize_index()
     PiRemote.set_position(0)
-    PiRemote.start_status_poll()
+    
+    if PiRemote.use_short_polling and not PiRemote.poll_started
+        PiRemote.poll_started = true
+        PiRemote.do_status_poll()
     return
 
 
@@ -123,7 +190,6 @@ PiRemote.index_build_sliders = (data, slider_class) ->
 
     PiRemote.resize_sliders()
 
-    $('.slider').off 'click'
     $('.slider').on 'click', (event) ->
         return if PiRemote.on_slider_change
         PiRemote.on_slider_change = true
@@ -153,63 +219,6 @@ PiRemote.index_build_sliders = (data, slider_class) ->
     return
 
 
-# Install browse menu actions.
-PiRemote.install_index_actions = ->
-
-    # Resize position indicator on window resize
-    $(window).resize ->
-        PiRemote.resize_index()
-        return
-
-    # Position action
-    $('#idxpos').off 'click'
-    $('#idxpos').on 'click', (event) ->
-        x_off = $(this).offset().left
-        pct = (event.pageX-x_off)/$(this).width()*100.0
-        PiRemote.do_ajax
-            url: 'cmd'
-            method: 'POST'
-            data:
-                'cmd': 'seekcur '+pct
-            success: (data) ->
-                if data.success
-                    PiRemote.update_status data
-                return
-
-    # Button actions
-    $('.idxbuttons span').off 'click'
-    $('.idxbuttons span').on 'click', (event) ->
-        PiRemote.do_ajax
-            url: 'cmd'
-            method: 'POST'
-            data:
-                'cmd': $(this).data('action')
-            success: (data) ->
-                if data.success
-                    PiRemote.update_status data
-                return
-
-        return
-
-    $('#idxshow').off 'click'
-    $('#idxshow').on 'click', ->
-        if PiRemote.last_index_data isnt null and PiRemote.last_index_data.file and PiRemote.last_index_data.file isnt ''
-            PiRemote.search_raise_info_dialog PiRemote.last_index_data.file
-        return
-
-    return
-
-
-# Start the short polling loop.
-# Called by load_index_page().
-PiRemote.start_status_poll = ->
-    return unless PiRemote.use_short_polling
-    return if PiRemote.poll_started
-    PiRemote.poll_started = true
-    PiRemote.do_status_poll()
-    return
-
-
 # Short polling loop.
 # Recursively receive new status.
 # Callback on AJAX receive is update_status()
@@ -218,13 +227,6 @@ PiRemote.do_status_poll = ->
     return unless PiRemote.use_short_polling
     return if PiRemote.polling
     return if PiRemote.current_page != 'index'
-
-    PiRemote.tot_poll_count += 1
-    if PiRemote.tot_poll_count > PiRemote.enforce_reload_poll_count
-        PiRemote.setErrorText 'Reached max poll count, reload enforced!'
-        PiRemote.init_variables()
-        location.reload true
-        return
 
     # Remember last poll send time
     PiRemote.last_poll_time = new Date().getTime()
@@ -295,6 +297,10 @@ PiRemote.update_status = (data) ->
             album += ' ('+data.date+')'
     $('h4#idxalbum').html(album)
 
+    unless PiRemote.last_rating == data.rating
+        PiRemote.index_set_rating 'div.idxrate', data.rating
+        PiRemote.last_rating = data.rating
+
     # TIME
     PiRemote.index_set_time data.elapsed, data.time
 
@@ -356,4 +362,13 @@ PiRemote.index_refresh_status = ->
         success: (data) ->
             PiRemote.update_status data
             return
+    return
+
+
+# Toggle star/star-empty classes for stars depending on rating.
+PiRemote.index_set_rating = (parent, rating) ->
+    for i in [1..5]
+        star = $(parent+' > span.ratespan[data-idx='+i+']')
+        star.toggleClass('glyphicon-star-empty', i > rating)
+        star.toggleClass('glyphicon-star', i <= rating)
     return
