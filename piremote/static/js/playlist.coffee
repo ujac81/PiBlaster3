@@ -787,6 +787,7 @@ PiRemote.pl_raise_playlist_list_actions = (plname) ->
         ['load', 'Load to Current'],
         ['rename', 'Rename'],
         ['rm', 'Remove'],
+        ['info', 'Info']
         ]
     for elem in items
         navul.append('li').attr('role', 'presentation')
@@ -821,6 +822,12 @@ PiRemote.pl_raise_playlist_list_actions = (plname) ->
                     $('#modalSmall').modal('hide')
                     return
             return
+        else if action == 'info'
+            PiRemote.pls_action 'info', plname,
+                success: (data) ->
+                    console.log data
+                    $('#modalSmall').modal('hide')
+                    return
         return
 
     $('#modalSmall').modal('show')

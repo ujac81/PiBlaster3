@@ -277,11 +277,10 @@ class RatingsScanner:
             return None
 
     def scan_length_and_size(self, scan_file):
-        """
-        
-        :param self: 
-        :param scan_file: 
-        :return: 
+        """Fetch time of file from MPD database and file size form OS and update Rating table.
+         
+        Invoked by PiBlasterWorker in daemon_loop if there are unscanned files.
+        :param scan_file: MPD path via get_next_zero_field_path()
         """
         self.mpd_ensure_connected()
         try:
@@ -294,7 +293,10 @@ class RatingsScanner:
             return
 
         length = int(res[0]['time'])
-        filesize = os.path.getsize(os.path.join(self.get_music_path(), scan_file))
+        try:
+            filesize = os.path.getsize(os.path.join(self.get_music_path(), scan_file))
+        except FileNotFoundError:
+            return
 
         if not self.reconnect_db():
             return

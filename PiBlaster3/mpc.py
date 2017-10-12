@@ -754,7 +754,7 @@ class MPC:
     def playlists_action(self, cmd, plname, payload):
         """Perform actions on list of playlists.
 
-        :param cmd: [clear, delete, list, moveend, new, load,rename, saveas]
+        :param cmd: [clear, delete, list, moveend, new, load,rename, saveas, info]
         :param plname: name of playlist
         :param payload: array of payload data for command
         :return: dict including error or status message.
@@ -808,8 +808,31 @@ class MPC:
             self.client.save(plname)
             flash_mpd_led()
             return {'status_str': 'Current playlist saved to %s.' % plname}
+        if cmd == 'info':
+            return self.get_playlist_info(plname)
 
         return {'error_str': 'No such command: %s' % cmd}
+
+    def get_playlist_info(self, plname):
+        """Fetch full byte size and length in seconds for specific playlist form Ratings table.
+        
+        :param plname: name of playlist in MPD database
+        :return: {itmes: N, time: SECONDS, bytes: BYTES}
+        """
+        res = dict(items=0, time=0, bytes=0)
+        self.ensure_connected()
+        try:
+            info = self.client.listplaylistinfo(plname)
+        except CommandError:
+            return res
+        pl_files = [x['file'] for x in info]
+        q = Rating.objects.filter(Q(path__in=pl_files)).values('length', 'filesize').all()
+        times = 0
+        bytes = 0
+        for x in q:
+            times += x['length']
+            bytes += x['filesize']
+        return dict(items=len(q), time=times, bytes=bytes)
 
     def list_by(self, what, in_ratings, in_dates, in_genres, in_artists, in_albums, file_mode=False):
         """Create content data for browse view.
