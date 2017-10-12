@@ -229,6 +229,19 @@ Make sure DEBUG is not set in env!
     $ ./manage.py compress --extension=pug
     $ ./manage.py test
 
+## Migrations
+
+Modify piremote/models.py (add/remove data fields, add classes and so on),
+then create migration and apply it to database:
+
+    $ ./manage.py makemigrations
+    $ ./manage.py migrate
+
+Make sure you generate a meaningful default value when adding fields.
+If changes in Rating model made, you might use rating_scanner to seed the missing fields.
+
+## Misc
+
 ### Count code lines
 
     $ sudo apt install cloc

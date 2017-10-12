@@ -67,6 +67,10 @@ class PiBlasterWorker:
             if self.rescan_ratings:
                 self.scanner.rescan()  # won't block too long
 
+            scan_file = self.scanner.get_next_zero_field_path()
+            if scan_file is not None:
+                self.scanner.scan_length_and_size(scan_file)
+
         self.print_message('LEAVING')
 
     def term_handler(self, *args):

@@ -1,6 +1,6 @@
 """ratings_scanner.py -- scan ratings from new files"""
 
-from mpd import MPDClient, ConnectionError, CommandError
+from mpd import MPDClient, ConnectionError, CommandError, ProtocolError
 from mutagen.easyid3 import EasyID3
 from mutagen.mp3 import HeaderNotFoundError
 from mutagen.mp3 import MP3
@@ -9,6 +9,7 @@ from PiBlaster3.settings import *
 import mutagen
 import os
 import psycopg2
+import time
 
 
 class RatingsScanner:
@@ -20,6 +21,45 @@ class RatingsScanner:
         self.main = main
         self.to_add = []  # store scanned result if insertion fails after scan
         self.to_remove = []  # store result if deletion fails after scan
+        self.music_path = None  # store config query in get_music_path()
+        self.conn = None
+        self.cur = None
+        self.client = MPDClient()
+        self.client.timeout = 10
+        self.mpd_reconnect()
+        self.connected = False
+        self.error = False
+
+    def mpd_reconnect(self):
+        """Try connect 5 times, if not successful self.connected will be False."""
+
+        self.connected = False
+        self.error = False
+
+        try:
+            self.client.disconnect()
+        except (ConnectionError, BrokenPipeError, ValueError):
+            pass
+
+        for i in range(5):
+            try:
+                self.client.connect('localhost', 6600)
+                self.connected = True
+            except (ConnectionError, BrokenPipeError, ValueError):
+                time.sleep(0.1)
+            if self.connected:
+                return True
+
+        self.error = True
+        return False
+
+    def mpd_ensure_connected(self):
+        """Make sure we are connected to mpd"""
+        for i in range(5):
+            try:
+                self.client.status()
+            except (ConnectionError, CommandError, ProtocolError, BrokenPipeError, ValueError):
+                self.mpd_reconnect()
 
     def rescan(self):
         """Check if new items in MPD database which are not in SQL database.
@@ -77,7 +117,7 @@ class RatingsScanner:
 
             # Files to_add scanned and to_remove found #
 
-        if len(self.to_add) > 0:
+        if len(self.to_add) > 0 and False:  # does not work for large DBs.
             # read times from MPD database for new items
             to_add_times = []
             write_gpio_pipe("1 1")  # raise yellow led
@@ -212,16 +252,99 @@ class RatingsScanner:
             self.main.print_message(e.pgerror)
             return
 
+    def get_next_zero_field_path(self):
+        """Get next item's path from database where file size is zero.
+        
+        This is used in the worker loop of the rating scanner to slowly scan
+        length and file sizes of files that are new in the database.
+        
+        :return: None if no such item, path otherwise.
+        """
+        if not self.reconnect_db():
+            return None
+
+        try:
+            self.cur.execute('SELECT path FROM piremote_rating WHERE filesize=0')
+            res = self.cur.fetchone()
+            if res is None:
+                return None
+            if len(res) > 0:
+                return res[0]
+        except psycopg2.Error as e:
+            self.main.print_message('PSQL ERROR {0}'.format(e))
+            self.main.print_message(e.pgcode)
+            self.main.print_message(e.pgerror)
+            return None
+
+    def scan_length_and_size(self, scan_file):
+        """
+        
+        :param self: 
+        :param scan_file: 
+        :return: 
+        """
+        self.mpd_ensure_connected()
+        try:
+            res = self.client.find('file', scan_file)
+        except (ConnectionError, CommandError, ProtocolError, BrokenPipeError, ValueError):
+            # retry next loop
+            return
+
+        if len(res) < 1 or 'time' not in res[0]:
+            return
+
+        length = int(res[0]['time'])
+        filesize = os.path.getsize(os.path.join(self.get_music_path(), scan_file))
+
+        if not self.reconnect_db():
+            return
+
+        try:
+            self.cur.execute('UPDATE piremote_rating SET length=(%s), filesize=(%s) WHERE path=(%s)',
+                             (length, filesize, scan_file))
+            self.conn.commit()
+            print("UPDATE {}: len={}, size={}".format(scan_file, length, filesize))
+        except psycopg2.Error as e:
+            self.main.print_message('PSQL ERROR {0}'.format(e))
+            self.main.print_message(e.pgcode)
+            self.main.print_message(e.pgerror)
+            return
+
+    def reconnect_db(self):
+        """Try to reconnect to database.
+        Use this to reestablish connection to database if error occured.
+        
+        :return: True if connected without exception.
+        """
+        if self.cur is not None and self.cur.closed is False:
+            # connection is established -- do nothing
+            return True
+
+        try:
+            db = DATABASES['default']
+            self.conn = psycopg2.connect(dbname=db['NAME'], user=db['USER'], password=db['PASSWORD'], host=db['HOST'])
+            self.cur = self.conn.cursor()
+            return True
+        except psycopg2.Error as e:
+            self.main.print_message('PSQL ERROR {0}'.format(e))
+            self.main.print_message(e.pgcode)
+            self.main.print_message(e.pgerror)
+            return False
+
     def get_music_path(self):
         """Try to connect to MPD via socket to receive music path.
 
         :return: '/local/music/path'
         """
+        if self.music_path is not None:
+            return self.music_path
+
         client = MPDClient()
         client.timeout = 10
         try:
             client.connect(PB_MPD_SOCKET, 0)
-            return client.config()
+            self.music_path = client.config()
+            return self.music_path
         except ConnectionError:
             self.main.print_message("ERROR: CONNECT SOCKET")
         except CommandError:

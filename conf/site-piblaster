@@ -29,6 +29,8 @@ server {
                 uwsgi_pass piremote;
                 # There are some long operations like upload ratings or such.
                 uwsgi_read_timeout 600;
+		allow 127.0.0.1;
+		deny all;
         }
 
         location /piadmin {
@@ -36,11 +38,15 @@ server {
                 auth_basic_user_file /opt/PiBlaster3/conf/htpasswd;
                 include /etc/nginx/uwsgi_params;
                 uwsgi_pass piremote;
+		allow 127.0.0.1;
+		deny all;
         }
 
         location /music {
             alias /var/lib/mpd/music;
             disable_symlinks off;
+	    allow 127.0.0.1;
+	    deny all;
         }
 
         root /var/www/html;
