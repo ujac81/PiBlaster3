@@ -2,7 +2,7 @@
 """
 
 import xml.etree.ElementTree as ET
-
+from urllib.parse import unquote
 from piremote.models import Rating
 from django.core.exceptions import ObjectDoesNotExist
 
@@ -33,6 +33,8 @@ class RatingsParser:
         raise_sql_led()
         if self.root.tag == 'django-objects' and 'version' in self.root.attrib and self.root.attrib['version'] == '1.0':
             self.parse_django()
+        elif self.root.tag == 'rhythmdb' and 'version' in self.root.attrib and self.root.attrib['version'] == '2.0':
+            self.parse_rhythmdb()
         else:
             self.errors.append('UNKNOWN XML File Type: %s' % self.root.tag)
 
@@ -48,6 +50,18 @@ class RatingsParser:
             album = o.find("field[@name='album']").text or ''
             title = o.find("field[@name='title']").text or ''
             self.apply_rating(path, artist, album, title, rating)
+
+    def parse_rhythmdb(self):
+        """Parser for XML files of rhythmdb music player"""
+
+        for o in [x for x in self.root if x.attrib['type'] == 'song']:
+            path = unquote(o.find('location').text).replace('file://', '')
+            rating = int(o.find('rating') or -1)
+            artist = o.find('artist').text or ''
+            album = o.find('album').text or ''
+            title = o.find('title').text or ''
+            if rating != -1:
+                self.apply_rating(path, artist, album, title, rating)
 
     def apply_rating(self, path, artist, album, title, rating):
         """Try to apply rating to SQL db.
