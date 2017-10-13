@@ -285,20 +285,25 @@ class RatingsScanner:
         self.mpd_ensure_connected()
         try:
             res = self.client.find('file', scan_file)
-        except (ConnectionError, CommandError, ProtocolError, BrokenPipeError, ValueError):
+        except (ConnectionError, CommandError, ProtocolError, BrokenPipeError, ValueError) as e:
             # retry next loop
+            print('scan_length_and_size(): ERROR MPD: {}'.format(e))
             return
 
         if len(res) < 1 or 'time' not in res[0]:
-            return
+            length = 0
+            print('scan_length_and_size(): WARN no time entry')
+        else:
+            length = int(res[0]['time'])
 
-        length = int(res[0]['time'])
         try:
             filesize = os.path.getsize(os.path.join(self.get_music_path(), scan_file))
         except FileNotFoundError:
+            print('scan_length_and_size(): ERROR: no file: {}'.format(scan_file))
             return
 
         if not self.reconnect_db():
+            print('scan_length_and_size(): ERROR: No connect SQL')
             return
 
         try:

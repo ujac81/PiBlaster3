@@ -531,8 +531,9 @@ PiRemote.pl_raise_add_dialog = (minus=false) ->
         ['randomize-rest', 'Randomize Playlist After Current', false],
         ['deleteallbutcur', 'Delete All but Current', true],
         ['clear', 'Clear playlist', true],
-        ['seed', 'Random add songs', false]
-        ['download', 'Download Playlist', false]
+        ['seed', 'Random add songs', false],
+        ['download', 'Download Playlist', false],
+        ['info', 'Playlist Info', false]
         ]
     for elem in items
         if elem[2] is minus
@@ -602,6 +603,8 @@ PiRemote.pl_do_action = (action, id=-1) ->
                 source: 'current'
             filename: 'playlist.m3u'
         $('#modalSmall').modal('hide')
+    else if action == 'info'
+        PiRemote.raise_pl_info_dialog()
 
     return
 
@@ -823,14 +826,32 @@ PiRemote.pl_raise_playlist_list_actions = (plname) ->
                     return
             return
         else if action == 'info'
-            PiRemote.pls_action 'info', plname,
-                success: (data) ->
-                    console.log data
-                    $('#modalSmall').modal('hide')
-                    return
+            PiRemote.raise_pl_info_dialog plname
+            
         return
 
     $('#modalSmall').modal('show')
+    return
+    
+
+# Raise playlist info dialog to show total playlist length and bytes size.
+PiRemote.raise_pl_info_dialog = (plname='') ->
+    PiRemote.pls_action 'info', plname,
+        success: (data) ->
+            d3.select('#smallModalLabel').html('Info for Playlist')
+            cont = d3.select('#smallModalMessage')
+            cont.html('')
+            cont.append('p').html('Playlist: ').append('strong').html(plname)
+            cont.append('p').html('Items: ').append('strong').html(data.items)
+            cont.append('p').html('Bytes total: ').append('strong').html(PiRemote.separators_to_number(data.bytes))
+            cont.append('p').html('Length total: ').append('strong').html(PiRemote.secToHMS(data.time))
+            if data.misses.length
+                cont.append('p').html('Misses: ').append('strong').html(data.misses.length)
+                miss = cont.append('ul')
+                miss.append('li').html(item) for item in data.misses
+            $('#modalSmall').modal('show')
+            return
+    
     return
 
 
@@ -1007,8 +1028,9 @@ PiRemote.pl_raise_edit_add_dialog = (minus=false) ->
         ['selection-to-pl', 'Append Selection to Another Playlist', false],
         ['delete', 'Delete Selection', true],
         ['clear', 'Clear Playlist', true],
-        ['seed', 'Add random songs', false]
-        ['download', 'Download playlist', false]
+        ['seed', 'Add random songs', false],
+        ['download', 'Download playlist', false],
+        ['info', 'Playlist Info', false]
         ]
     for elem in items
         if elem[2] is minus
@@ -1057,6 +1079,8 @@ PiRemote.pl_raise_edit_add_dialog = (minus=false) ->
                     source: 'saved'
                     name: PiRemote.pl_edit_name
                 filename: PiRemote.pl_edit_name+'.m3u'
+        else if action == 'info'
+            PiRemote.raise_pl_info_dialog PiRemote.pl_edit_name
         return # action clicked
 
     $('#modalSmall').modal('show')

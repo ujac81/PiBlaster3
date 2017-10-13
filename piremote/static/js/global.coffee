@@ -113,6 +113,11 @@ PiRemote.secToHMS = (secs) ->
     res += minutes + ':'
     res += '0' if seconds < 10
     res += seconds
+    
+
+# Add thousand separators to number
+PiRemote.separators_to_number = (x) ->
+    x.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",")
 
 
 # Calculate font width for string element.

@@ -819,20 +819,25 @@ class MPC:
         :param plname: name of playlist in MPD database
         :return: {itmes: N, time: SECONDS, bytes: BYTES}
         """
-        res = dict(items=0, time=0, bytes=0)
+        res = dict(items=0, time=0, bytes=0, misses=list())
         self.ensure_connected()
         try:
-            info = self.client.listplaylistinfo(plname)
+            if plname == '':
+                info = self.client.playlistinfo()
+            else:
+                info = self.client.listplaylistinfo(plname)
         except CommandError:
             return res
         pl_files = [x['file'] for x in info]
-        q = Rating.objects.filter(Q(path__in=pl_files)).values('length', 'filesize').all()
+        q = Rating.objects.filter(Q(path__in=pl_files)).values('length', 'filesize', 'path').all()
         times = 0
         bytes = 0
         for x in q:
             times += x['length']
             bytes += x['filesize']
-        return dict(items=len(q), time=times, bytes=bytes)
+        db_files = [x['path'] for x in q]
+        miss = [x for x in pl_files if x not in db_files]
+        return dict(items=len(q), time=times, bytes=bytes, mpd_items=len(info), misses=miss)
 
     def list_by(self, what, in_ratings, in_dates, in_genres, in_artists, in_albums, file_mode=False):
         """Create content data for browse view.
