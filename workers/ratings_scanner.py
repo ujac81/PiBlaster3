@@ -71,6 +71,7 @@ class RatingsScanner:
         Does not block too much, will leave scanning loop if keep_run is False in main.
         """
         self.main.print_message("RESCANNING RATINGS")
+        rescan_broken = False  # set to True if add chunk is too large
 
         if len(self.to_add) == 0 and len(self.to_remove) == 0:
 
@@ -99,6 +100,10 @@ class RatingsScanner:
                 if not self.main.keep_run:
                     # worker shut down in the meantime
                     return
+                if len(self.to_add) > 499:
+                    # add in chunks of 500
+                    rescan_broken = True
+                    break
 
             too_many = self.get_db_files(not_in_list=mpd_files)
             self.to_remove = []
@@ -157,7 +162,7 @@ class RatingsScanner:
             self.alter_db('remove_many', self.to_remove)
             write_gpio_pipe("3 0")  # clear blue led
 
-        self.main.rescan_ratings = False  # do not rerun only on successful run
+        self.main.rescan_ratings = rescan_broken  # do not rerun on successful run
         self.to_add = []  # required to not block rating scanner for next run
         self.to_remove = []
 
@@ -225,11 +230,11 @@ class RatingsScanner:
 
             if what == 'insert_many':
                 try:
-                    cur.executemany('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating, original, length) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)', payload)
+                    cur.executemany('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating, original, length, filesize) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)', payload)
                 except (psycopg2.DataError, psycopg2.InterfaceError):
                     for item in payload:
                         try:
-                            cur.execute('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating, original, length) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s)', item)
+                            cur.execute('INSERT INTO piremote_rating (path, title, artist, album, genre, date, rating, original, length, filesize) VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s)', item)
                         except (psycopg2.DataError, psycopg2.InterfaceError, psycopg2.InternalError) as e:
                             self.main.print_message('INSERT ERROR: {0}'.format(e))
                             self.main.print_message(e.pgerror)
@@ -370,7 +375,7 @@ class RatingsScanner:
 
         :param item: MPD uri descriptor (path without local music path)
         :param file: full file name
-        :return: (uri, title, artist, album, genre, date, rating, original, time-dummy)
+        :return: (uri, title, artist, album, genre, date, rating, original, time-dummy, size-dummy)
         """
         write_gpio_pipe('2 flash 0.2')
 
@@ -403,7 +408,7 @@ class RatingsScanner:
 
         if m is None:
             self.main.print_message('NO TAGS FOR ' + file)
-            return item, self.plain_filename(file), '', '', '', 0, 0, True, 0,
+            return item, self.plain_filename(file), '', '', '', 0, 0, True, 0, 0,
         elif type(m) == mutagen.mp3.MP3:
             return self.parse_mp3(item, m, file)
         elif type(m) == mutagen.oggvorbis.OggVorbis:
@@ -420,7 +425,7 @@ class RatingsScanner:
         self.main.print_message('UNKNOWN TYPE: ' + file)
         self.main.print_message(file)
         self.main.print_message(m)
-        return item, self.plain_filename(file), '', '', '', 0, 0, True, 0,
+        return item, self.plain_filename(file), '', '', '', 0, 0, True, 0, 0,
 
     def parse_mp3(self, item, m, file):
         """Try to extract tags from MP3 file.
@@ -437,7 +442,7 @@ class RatingsScanner:
         except HeaderNotFoundError as e:
             self.main.print_message(file)
             self.main.print_message('MUTAGEN ERROR {0}'.format(e))
-            return item, self.plain_filename(file), '', '', '', 0, 0, True, 0,
+            return item, self.plain_filename(file), '', '', '', 0, 0, True, 0, 0,
 
         title, artist, album = ['']*3
         genre = 'unknown'
@@ -461,7 +466,7 @@ class RatingsScanner:
             fmps = m.tags.getall('TXXX:FMPS_Rating')
         except AttributeError:
             # file type does not support tags
-            return item, self.plain_filename(file), '', '', '', 0, 0, True, 0,
+            return item, self.plain_filename(file), '', '', '', 0, 0, True, 0, 0,
 
         tot_rat = 0
         rat_count = 0
@@ -487,7 +492,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0, 0,
 
     def parse_ogg(self, item, m, file):
         """Try to extract tags from ogg / flac file.
@@ -526,7 +531,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0, 0,
 
     def parse_mpc(self, item, m, file):
         """Try to extract tags from MPC file.
@@ -557,7 +562,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0, 0,
 
     def parse_m4a(self, item, m, file):
         """Try to extract tags from M4A file.
@@ -588,7 +593,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating/51), True, 0, 0,
 
     def parse_wma(self, item, m, file):
         """Try to extract tags from WMA/ASF file.
@@ -628,7 +633,7 @@ class RatingsScanner:
         if title == '':
             title = self.plain_filename(file)
 
-        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating / 51), True, 0,
+        return item, title, artist, album, genre, self.conv_save_date(date, item), int(rating / 51), True, 0, 0,
 
     def conv_save_date(self, date, item):
         """Save conversion of date string (date could be like '2015-03-07T00:00:01')

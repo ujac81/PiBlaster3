@@ -5,6 +5,12 @@ Enable party mode for music player daemon, perform uploads, read/write GPIOs.
 
 Communication to piremote app via SQL database
 
+For testing:
+
+    $ source venv/for/PiBlaster
+    $ export DEBUG=1
+    $ /path/to/piblaster_worker.py
+
 @Author Ulrich Jansen <ulrich.jansen@rwth-aachen.de>
 """
 
@@ -28,7 +34,7 @@ class PiBlasterWorker:
         self.uploader = Uploader(self)
         self.idler = MPDService(self)
         self.scanner = RatingsScanner(self)
-        self.rescan_ratings = False  # do not rescan ratings on boot
+        self.rescan_ratings = DEBUG  # do not rescan ratings on boot
         self.is_vassal = 'UWSGI_VASSAL' in os.environ
 
     def run(self):

@@ -444,7 +444,7 @@ def stats_ajax(request):
 
 
 def listby_ajax(request):
-    """GET /ajax/list
+    """GET /ajax/listby
     List items for browse by tags
     :return: JSON only -- use with ajax!
     """
