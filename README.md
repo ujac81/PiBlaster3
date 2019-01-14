@@ -97,12 +97,11 @@ Note: the password assigned for the database here has to match the one set in se
 ## Required Packages
 
     $ sudo apt install python3 python3-pip python3-virtualenv virtualenv nginx coffeescript ruby-sass mpd mpc usbmount git libasound2-dev redis-server
-    $ sudo pip3 install django==1.10.5
+    $ sudo pip3 install wheel django==1.10.5
 
 At least pypugjs 4.1 required (if pypugjs==4.1 installable via pip3, you might use this directly)
 
-    $ sudo pip3 install git+https://github.com/matannoam/pypugjs.git@master
-    $ sudo pip3 install django_compressor uwsgi python-mpd2 django-websocket-redis mutagen psycopg2
+    $ sudo pip3 install django_compressor uwsgi python-mpd2 django-websocket-redis mutagen psycopg2 pypugjs
 
 ## PiBlaster3 software
 
@@ -184,6 +183,10 @@ Sass/coffeescript files are handled via COMPRESS_PRECOMPILERS in settings.py.
 ## Upgrading
 
 ### Python Packages
+If using virtual environment use
+
+   # python3 -m venv --upgrade /path/to/venv
+
 Upgrade all python packages installed via pip
 
     # pip3 install --force pip

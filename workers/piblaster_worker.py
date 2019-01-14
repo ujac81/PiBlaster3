@@ -61,15 +61,20 @@ class PiBlasterWorker:
         :return:
         """
 
+        poll_count = -1
         while self.keep_run:
 
             time.sleep(100. / 1000.)  # 100ms
             if self.rescan_ratings:
                 self.scanner.rescan()  # won't block too long
 
-            scan_file = self.scanner.get_next_zero_field_path()
-            if scan_file is not None:
-                self.scanner.scan_length_and_size(scan_file)
+            poll_count += 1
+
+            if poll_count % 10 == 0:
+                scan_file = self.scanner.get_next_zero_field_path()
+                if scan_file is not None:
+                    self.scanner.scan_length_and_size(scan_file)
+                    poll_count = -1  # do not wait N times before next scan
 
         self.print_message('LEAVING')
 

@@ -843,8 +843,11 @@ PiRemote.raise_pl_info_dialog = (plname='') ->
             cont.html('')
             cont.append('p').html('Playlist: ').append('strong').html(plname)
             cont.append('p').html('Items: ').append('strong').html(data.items)
-            cont.append('p').html('Bytes total: ').append('strong').html(PiRemote.separators_to_number(data.bytes))
-            cont.append('p').html('Length total: ').append('strong').html(PiRemote.secToHMS(data.time))
+            cont.append('p').html('Bytes total: ')
+                .append('strong').html(PiRemote.separators_to_number(data.bytes))
+                .append('span').html(' ('+Math.floor(data.bytes/1024/1024)+' MiB)')
+            cont.append('p').html('Length total: ')
+                .append('strong').html(PiRemote.secToHMS(data.time))
             if data.misses.length
                 cont.append('p').html('Misses: ').append('strong').html(data.misses.length)
                 miss = cont.append('ul')

@@ -18,4 +18,6 @@ application = get_wsgi_application()
 try:
     import uwsgi
 except ImportError:
-    print('WORKER: {}'.format(uwsgi.worker_id()))
+    pass
+#    print('WORKER: {}'.format(uwsgi.worker_id()))
+

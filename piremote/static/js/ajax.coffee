@@ -100,7 +100,7 @@ PiRemote.do_download_as_text = (req) ->
         data: req.data
         success: (data) ->
             URL = window.URL || window.webkitURL
-            blob = new Blob([data.data.join('\r\n')], {type: 'text/plain; charset=utf-8'})
+            blob = new Blob([data.data.join('\n')], {type: 'text/plain; charset=utf-8'})
             download_url = URL.createObjectURL blob
             a = $('a#download')[0]
             a.href = download_url
