@@ -50,6 +50,8 @@ PiRemote.pl_build_home = ->
 
     PiRemote.pl_edit_name = ''
     PiRemote.playlist_poll_started = false
+    PiRemote.playlist_on_get_status = false
+    PiRemote.playlist_on_get_changes = false
     PiRemote.do_ajax
         url: 'plinfo'
         method: 'GET'
@@ -112,18 +114,22 @@ PiRemote.get_playlist_by_name = (plname) ->
 # Invoke AJAX post of changes in playlist.
 # Called if playlist version has changed.
 PiRemote.get_playlist_changes = (last_version) ->
+    return if PiRemote.playlist_on_get_changes
     window.setTimeout ( ->
         PiRemote.playlist_poll_started = false
+        PiRemote.playlist_on_get_changes = true
         PiRemote.do_ajax
             url: 'plchanges'
             method: 'GET'
             data:
                 version: last_version
             success: (data) ->
+                PiRemote.playlist_on_get_changes = false
                 PiRemote.pl_apply_changes data   # <-- change playlist
                 return
             error: (data) ->
                 # If any error occurs (mpd fucks up to read changes or so), reload whole playlist
+                PiRemote.playlist_on_get_changes = false
                 PiRemote.pl_build_home()
                 return
         return
@@ -357,12 +363,15 @@ PiRemote.do_pl_poll = ->
     return unless PiRemote.playlist_poll_started
     return if PiRemote.current_page != 'playlist'
     return if PiRemote.current_sub_page != 'home'
+    return if PiRemote.playlist_on_get_status
 
+    PiRemote.playlist_on_get_status = true
     PiRemote.do_ajax
         url: 'status'
         method: 'GET'
         data: {}
         success: (data) ->
+            PiRemote.playlist_on_get_status = false
             PiRemote.update_pl_status data  # <-- poll callback
             PiRemote.playlist_polling += 1
             window.setTimeout ( ->
@@ -370,6 +379,9 @@ PiRemote.do_pl_poll = ->
                 PiRemote.playlist_polling -= 1
                 return
             ), PiRemote.poll_interval # <-- short polling interval
+            return
+        error: (dummy) ->
+            PiRemote.playlist_on_get_status = false
             return
     return
 
@@ -1101,14 +1113,20 @@ PiRemote.pl_append_items_to_playlist = (items) ->
     return
 
 
-# Force refresh of current status (requ
+# Force refresh of current status (called by websocket on message and connect)
 PiRemote.pl_refresh_status =  ->
+    return if PiRemote.playlist_on_get_status
+    PiRemote.playlist_on_get_status = true
     PiRemote.do_ajax
         url: 'status'
         method: 'GET'
         data: {}
         success: (data) ->
+            PiRemote.playlist_on_get_status = false
             PiRemote.update_pl_status data
+            return
+        error: (dummy) ->
+            PiRemote.playlist_on_get_status = false
             return
     return
 

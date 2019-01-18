@@ -13,6 +13,9 @@ PiRemote.init_variables = ->
 
     PiRemote.playlist_poll_started = false  # true while polling in playlist view
     PiRemote.playlist_polling = false  # true if active poll in playlist view
+    
+    PiRemote.playlist_on_get_status = false  # true while waiting for status
+    PiRemote.playlist_on_get_changes = false  # true while waiting for pl changes
 
     PiRemote.last_index_data = null  # store received data in index view.
 
