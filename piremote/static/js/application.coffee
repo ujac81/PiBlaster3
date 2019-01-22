@@ -56,7 +56,7 @@ $ ->
 
 # Dynamic page loader -- pages built via d3.js.
 # For loader functions see browse.coffee, playlist.coffee, ....
-PiRemote.load_page = (page, sub_page='home', force=false) ->
+PiRemote.load_page = (page, sub_page='home', force=false, no_refresh=false) ->
     # return if page == PiRemote.current_page && ! force
     PiRemote.current_page = page
     PiRemote.current_sub_page = sub_page
@@ -73,23 +73,23 @@ PiRemote.load_page = (page, sub_page='home', force=false) ->
     $('h3#heading').hide()
 
     if page == 'index'
-        PiRemote.load_index_page()
+        PiRemote.load_index_page no_refresh
     else if page == 'browse'
-        PiRemote.load_browse_page()
+        PiRemote.load_browse_page no_refresh
     else if page == 'files'
-        PiRemote.load_files_page()
+        PiRemote.load_files_page no_refresh
     else if page == 'playlist'
-        PiRemote.load_playlist_page()
+        PiRemote.load_playlist_page no_refresh
     else if page == 'smart'
-        PiRemote.load_smart_playlist_page()
+        PiRemote.load_smart_playlist_page no_refresh
     else if page == 'search'
-        PiRemote.load_search_page()
+        PiRemote.load_search_page no_refresh
     else if page == 'history'
-        PiRemote.load_history_page()
+        PiRemote.load_history_page no_refresh
     else if page == 'settings'
-        PiRemote.load_settings_page()
+        PiRemote.load_settings_page no_refresh
     else if page == 'upload'
-        PiRemote.load_upload_page()
+        PiRemote.load_upload_page no_refresh
     else if page == 'blur'
         d3.select('.piremote-content').append('p').html('No focus on page')
     else

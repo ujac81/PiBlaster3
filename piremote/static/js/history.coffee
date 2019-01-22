@@ -1,7 +1,7 @@
 # history.coffee -- browse history table
 
 # build page for history browsing
-PiRemote.load_history_page = ->
+PiRemote.load_history_page = (no_refresh=false) ->
 
     # Back button should always return to browse dates mode.
     PiRemote.add_navbar_button 'home', 'chevron-left', true

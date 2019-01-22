@@ -2,7 +2,7 @@
 
 # Build search page.
 # Loaded via PiRemote.load_page('search') every time 'Search' is selected in menu
-PiRemote.load_search_page = ->
+PiRemote.load_search_page = (no_refresh=false) ->
     PiRemote.show_search_header (pattern) ->
         PiRemote.last_search = pattern
         PiRemote.do_ajax
@@ -214,6 +214,30 @@ PiRemote.search_raise_info_dialog = (file) ->
                         .html(dir)
                     full_path += dir + '/'
 
+                p = cont.append('p')
+                audio = p.append('audio').attr('controls', 'controls')
+                audio.append('source').attr('src', '/music/'+file)
+                
+                if info.in_playlists.length > 0
+                    p = cont.append('p')
+                    p.append('h5').html('File found in playlists:')
+                    ul = p.append('ul')
+                    for pl in info.in_playlists
+                        ul.append('li').append('span')
+                            .attr('class', 'playlist-span')
+                            .attr('data-plname', pl)
+                            .html(pl)
+                        
+                if info.in_paths.length > 0
+                    p = cont.append('p')
+                    p.append('h5').html('Filename found in paths:')
+                    ul = p.append('ul')
+                    for dir in info.in_paths
+                        ul.append('li').append('span')
+                            .attr('class', 'browse-span')
+                            .attr('data-dirname', dir)
+                            .html(dir)
+                        
                 # Callback function for clicks on dir items in header.
                 $(document).off 'click', 'span.browse-span'
                 $(document).on 'click', 'span.browse-span', () ->
@@ -221,10 +245,14 @@ PiRemote.search_raise_info_dialog = (file) ->
                     PiRemote.last_files = $(this).data('dirname')
                     PiRemote.load_page 'files'
                     return
-
-                p = cont.append('p')
-                audio = p.append('audio').attr('controls', 'controls')
-                audio.append('source').attr('src', '/music/'+file)
+                    
+                # Callback function for clicks on dir items in header.
+                $(document).off 'click', 'span.playlist-span'
+                $(document).on 'click', 'span.playlist-span', () ->
+                    $('#modalSmall').modal('hide')
+                    PiRemote.load_page 'playlist', 'home', false, true
+                    PiRemote.pl_build_edit_playlist false, $(this).data('plname')
+                    return
 
                 $('#modalSmall').modal()
                 PiRemote.index_set_rating 'span.idxrate', info.rating

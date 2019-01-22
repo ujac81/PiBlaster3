@@ -2,7 +2,7 @@
 
 # Build files page.
 # Loaded via PiRemote.load_page('files') every time 'Files' is selected in menu
-PiRemote.load_files_page = ->
+PiRemote.load_files_page = (no_refresh=false) ->
 
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'browse-list')

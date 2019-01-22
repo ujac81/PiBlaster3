@@ -2,7 +2,7 @@
 
 # Build browse page.
 # Loaded via PiRemote.load_page('browse') every time 'Browse' is selected in menu
-PiRemote.load_browse_page = ->
+PiRemote.load_browse_page = (no_refresh=false) ->
 
     # Insert buttons
     btn_left = PiRemote.add_navbar_button 'browse_left', 'chevron-left', true, false

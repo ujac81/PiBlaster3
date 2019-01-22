@@ -23,7 +23,7 @@ PiRemote.ajax_setup = ->
 # Perform AJAX post request
 PiRemote.do_ajax = (req) ->
     data = req.data or {}
-    data.timeStamp = new Date().getTime()  # avoid caching
+    data.timeStamp = new Date().getTime()  # avoid caching (make unique)
     data.csrfmiddlewaretoken = $('input[name=csrfmiddlewaretoken')[0].value
     $.ajax
         url: '/piremote/ajax/' + req.url + '/'

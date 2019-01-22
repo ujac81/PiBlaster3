@@ -2,7 +2,7 @@
 
 
 # Load list of smart playlists and build it.
-PiRemote.load_smart_playlist_page = ->
+PiRemote.load_smart_playlist_page = (no_refresh=false) ->
     
     PiRemote.add_navbar_button 'home', 'home', true
     btn_new = PiRemote.add_navbar_button 'new_file', 'file', true, false

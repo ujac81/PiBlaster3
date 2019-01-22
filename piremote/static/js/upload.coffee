@@ -1,7 +1,7 @@
 # upload.coffee -- install callbacks for upload view
 
 # Build upload page
-PiRemote.load_upload_page = ->
+PiRemote.load_upload_page = (no_refresh=false) ->
 
     # Insert buttons
     PiRemote.add_navbar_button 'up_upload_file', 'upload', true, false

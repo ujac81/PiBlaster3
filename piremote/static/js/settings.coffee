@@ -1,7 +1,7 @@
 # settings.coffee -- build settings page
 
 # AJAX receive settings from SQL and invoke build page callback.
-PiRemote.load_settings_page = ->
+PiRemote.load_settings_page = (no_refresh=false) ->
 
     PiRemote.do_ajax
         url: 'settings'

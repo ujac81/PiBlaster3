@@ -3,7 +3,7 @@
 
 # Build playlist page.
 # Loaded via PiRemote.load_page('playlist') every time 'Playlist' is selected in menu
-PiRemote.load_playlist_page = ->
+PiRemote.load_playlist_page = (no_refresh=false) ->
 
     btn_save = PiRemote.add_navbar_button 'pl_save_playlist', 'save-file', true, false
     PiRemote.add_navbar_button 'pl_playlists', 'open-file', true
@@ -11,11 +11,13 @@ PiRemote.load_playlist_page = ->
     btn_save.on 'click', ->
         PiRemote.pl_raise_save_dialog()
         return
+        
+    return if no_refresh  # prevent invocation of automatic actions
 
     # build main content for current sub page.
     if PiRemote.current_sub_page == 'pl_playlists'
         PiRemote.pl_build_load_playlist()
-    else if  PiRemote.current_sub_page == 'pl_edit_playlists'
+    else if PiRemote.current_sub_page == 'pl_edit_playlists'
         PiRemote.pl_build_edit_playlist()
     else
         PiRemote.pl_build_home()
@@ -81,19 +83,23 @@ PiRemote.pl_build_load_playlist = ->
 
 
 # Load edit playlist dialog and enter playlist edit mode.
-PiRemote.pl_build_edit_playlist = ->
+PiRemote.pl_build_edit_playlist = (raise_diag=true, plname='') ->
+    PiRemote.current_sub_page == 'pl_edit_playlists'
     root = d3.select('.piremote-content')
     bl = root.append('div').attr('class', 'play-list')
     tb = bl.append('table').attr('id', 'tbpledit').attr('class', 'table table-striped')
     tb.append('tbody').attr('id', 'pledit')
     root.append('p').attr('class', 'spacer')
 
-    PiRemote.pl_action_on_playlists
-        title: 'Choose Playlist to Edit'
-        success: (data) ->
-            PiRemote.get_playlist_by_name data
-            $('#modalSmall').modal('hide')
-            return
+    if raise_diag
+        PiRemote.pl_action_on_playlists
+            title: 'Choose Playlist to Edit'
+            success: (data) ->
+                PiRemote.get_playlist_by_name data
+                $('#modalSmall').modal('hide')
+                return
+    else if plname != ''
+        PiRemote.get_playlist_by_name plname
     return
 
 

@@ -4,7 +4,7 @@
 # Loaded via PiRemote.load_page('index') every time 'Play' is selected in menu
 # Start status short polling.
 # Install actions.
-PiRemote.load_index_page = ->
+PiRemote.load_index_page = (no_refresh=false) ->
 
     # Insert buttons
     PiRemote.add_navbar_button 'home', 'home', true

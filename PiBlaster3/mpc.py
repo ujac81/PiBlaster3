@@ -326,7 +326,10 @@ class MPC:
             'date': '1986',
             'track': '01/08',
             'albumartist': 'Metallica',
-            'genre': 'Thrash Metal'}]
+            'genre': 'Thrash Metal',
+            'in_playlists': [list of playlists],
+            'in_paths': [list of paths]
+            }]
         """
         self.ensure_connected()
         res = self.client.find('file', file)
@@ -338,6 +341,9 @@ class MPC:
             item['rating'] = Rating.get_rating(item['file'])
             for check in ['title', 'artist', 'album']:
                 item[check] = save_item(item, check)
+            item['in_playlists'] = [x['playlist'] for x in self.client.listplaylists()
+                                    if sum([1 for x2 in self.client.listplaylist(x['playlist']) if file in x2]) > 0]
+            item['in_paths'] = [os.path.dirname(x['file']) for x in self.client.search('file', os.path.basename(file))]
         return res
 
     def playlist_changes(self, version):
