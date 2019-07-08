@@ -96,7 +96,9 @@ class RatingsScanner:
             self.to_add = []
             for item in not_in_db:
                 filename = os.path.join(music_path, item)
-                self.to_add.append(self.scan_file(item, filename))
+                mp3_info = self.scan_file(item, filename)
+                if mp3_info is not None:
+                    self.to_add.append(mp3_info)
                 if not self.main.keep_run:
                     # worker shut down in the meantime
                     return
@@ -405,6 +407,9 @@ class RatingsScanner:
                 self.main.print_message(file)
                 self.main.print_message('MUTAGEN ERROR 2 {0}'.format(e))
                 m = None
+        except (FileNotFoundError, mutagen.MutagenError):
+            self.main.print_message('File not found: ' + file)
+            return None
 
         if m is None:
             self.main.print_message('NO TAGS FOR ' + file)

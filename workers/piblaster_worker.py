@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-""" pyblaster2.py -- Worker daemon for piremote app.
+""" pyblaster_worker.py -- Worker daemon for piremote app.
 
 Enable party mode for music player daemon, perform uploads, read/write GPIOs.
 
@@ -70,13 +70,13 @@ class PiBlasterWorker:
         poll_count = -1
         while self.keep_run:
 
-            time.sleep(100. / 1000.)  # 100ms
+            time.sleep(10. / 1000.)  # 10ms poll for file scanner (wait short period between 2 files)
             if self.rescan_ratings:
                 self.scanner.rescan()  # won't block too long
 
             poll_count += 1
 
-            if poll_count % 10 == 0:
+            if poll_count % 100 == 0:
                 scan_file = self.scanner.get_next_zero_field_path()
                 if scan_file is not None:
                     self.scanner.scan_length_and_size(scan_file)

@@ -272,7 +272,7 @@ class MPC:
             res.append(save_title(item))
             res.append(save_item(item, 'artist'))
             res.append(save_item(item, 'album'))
-            length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
+            length = time.strftime("%M:%S", time.gmtime(int(item['time']) if 'time' in item else 0))
             res.append(length)
             res.append(item['id'])
             res.append(file)
@@ -373,7 +373,7 @@ class MPC:
             res.append(save_title(item))
             res.append(save_item(item, 'artist'))
             res.append(save_item(item, 'album'))
-            length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
+            length = time.strftime("%M:%S", time.gmtime(int(item['time']) if time in item else 0))
             res.append(length)
             res.append(item['id'])
             res.append(file)
@@ -504,7 +504,7 @@ class MPC:
 
                 res.append(save_item(item, 'artist'))
                 res.append(save_item(item, 'album'))
-                length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
+                length = time.strftime("%M:%S", time.gmtime(int(item['time']) if 'time' in item else 0))
                 res.append(length)
                 res.append(item['file'])
 
@@ -725,7 +725,7 @@ class MPC:
             res.append(save_title(item))
             res.append(save_item(item, 'artist'))
             res.append(save_item(item, 'album'))
-            length = time.strftime("%M:%S", time.gmtime(int(item['time'])))
+            length = time.strftime("%M:%S", time.gmtime(int(item['time']) if 'time' in item else 0))
             res.append(length)
             res.append('')  # dummy to push file to pos #5
             res.append(item['file'])
