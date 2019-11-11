@@ -900,7 +900,7 @@ PiRemote.pl_action_on_playlists = (req) ->
             # Callback for click actions on navigation.
             $(document).off 'click', 'span.browse-action-file'
             $(document).on 'click', 'span.browse-action-file', () ->
-                plname = $(this).data('plname')
+                plname = String($(this).data('plname'))
                 if plname.length > 0
                     req.success plname if req.success
                 else
